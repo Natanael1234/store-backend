@@ -15,16 +15,20 @@ services:
       - "8080:3000"
   postgres:
     image: postgres:15.1
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: db
     ports:
       - "35000:5432"
+
+  ### Postgress Adminit ###
+  postgres_admin: 
+    image: dpage/pgadmin4:6.16
+    depends_on: 
+      - postgres
     environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=db
-
-
-#     WORKDIR /home/node/app
-#     COPY package*.json ./
-# RUN npm install
-# EXPOSE 8080
-# CMD [ "node", "dist/main" ]
+      PGADMIN_DEFAULT_EMAIL: admin@admin.de
+      PGADMIN_DEFAULT_PASSWORD: password
+    ports:
+      - 5050:80
