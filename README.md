@@ -44,6 +44,17 @@ docker-compose up
 # faz o build das imagens antes de iniciar os containers
 docker-compose up --build
 
+
+# --build
+#   -V,--renew-anon-volumes: remove volumes anônimos e os cria novamente;
+#   -d, --detach: detach mode. Run containers in the background;
+#   --build: build images before starting containers. garante que o npm install rode novamente, durante o processo de build.
+docker-compose up --build -V -d
+
+
+docker-compose up -V --build
+
+
 # inicia os serviços
 docker-compose start
 
@@ -76,3 +87,11 @@ npm run typeorm -- -d ./typeOrm.config.ts migration:run
 npm run typeorm -- -d ./typeOrm.config.ts migration:revert
 
 ```
+
+# Debugging
+
+# 1 - With Docker Desktop running type:
+
+docker-compose up --build -V
+
+# 2 - Run "Debug: NestJS-Store" in VS Code debug tab.

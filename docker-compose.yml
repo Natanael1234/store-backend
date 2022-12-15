@@ -1,34 +1,54 @@
-version: "3.8"
 services:
   api:
-    # image:  nest-store-backend
-    build: 
+    build:
       dockerfile: Dockerfile
-      context: ./
+      context: .
+      # Only will build development stage from our dockerfile
+      target: development
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+      # This is the only change
+    env_file:
+      - .env
+      # Run a command against the development stage of the image
+    command: npm run start:dev
+    ports:
+      - ${SERVER_PORT}:${SERVER_PORT}
+      # - ${SERVER_DEBUG_PORT}:${SERVER_DEBUG_PORT}
+    networks:
+      - webnet
     depends_on:
+      - redis
       - postgres
-    environment:
-      DATABASE_URL: postgres://user:password@postgres:5432/db
-      NODE_ENV: development
-      PORT: 3000
+  redis:
+    container_name: redis
+    image: redis
+    networks:
+      - webnet
     ports:
-      - "8080:3000"
+      - ${REDIS_PORT}:${REDIS_PORT}
+    volumes:
+      - redis:/data
   postgres:
-    image: postgres:15.1
+    container_name: postgres
+    image: postgres:12
+    networks:
+      - webnet
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: db
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_DB: ${DB_DATABASE_NAME}
+      PG_DATA: /var/lib/postgresql/data
     ports:
-      - "35000:5432"
-
-  ### Postgress Adminit ###
-  postgres_admin: 
-    image: dpage/pgadmin4:6.16
-    depends_on: 
-      - postgres
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.de
-      PGADMIN_DEFAULT_PASSWORD: password
-    ports:
-      - 5050:80
+      - ${DB_PORT}:${DB_PORT}
+    hostname: ${DB_HOST}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: always
+networks:
+  webnet:
+volumes:
+  pgdata:
+  redis:
+    driver: local
