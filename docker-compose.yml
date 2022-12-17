@@ -12,10 +12,10 @@ services:
     env_file:
       - .env
       # Run a command against the development stage of the image
-    command: npm run start:dev
+    command: npm run start:debug
     ports:
       - ${SERVER_PORT}:${SERVER_PORT}
-      # - ${SERVER_DEBUG_PORT}:${SERVER_DEBUG_PORT}
+      - ${SERVER_DEBUG_PORT}:${SERVER_DEBUG_PORT}
     networks:
       - webnet
     depends_on:
