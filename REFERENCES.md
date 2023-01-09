@@ -8,3 +8,9 @@ https://www.tomray.dev/nestjs-docker-production
 https://www.tomray.dev/nestjs-docker-compose-postgres
 
 https://www.tomray.dev/nestjs-caching-redis
+
+# Auth:
+
+https://docs.nestjs.com/security/authentication
+https://github.com/nestjs/nest/tree/master/sample/19-auth-jwt
+https://docs.nestjs.com/security/encryption-and-hashing
