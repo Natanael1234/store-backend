@@ -14,3 +14,16 @@ https://www.tomray.dev/nestjs-caching-redis
 https://docs.nestjs.com/security/authentication
 https://github.com/nestjs/nest/tree/master/sample/19-auth-jwt
 https://docs.nestjs.com/security/encryption-and-hashing
+
+# encryptation
+
+https://codeforgeek.com/encrypt-and-decrypt-data-in-node-js/
+
+# caching
+
+https://blog.logrocket.com/add-redis-cache-nestjs-app/#what-is-caching
+
+# refresh token
+
+https://gist.github.com/jengel3/6a49a25b2fc2eb56fcf8b38f5004ea2c
+https://github.com/jengel3/nestjs-auth-example

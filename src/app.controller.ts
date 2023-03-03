@@ -14,7 +14,7 @@ export class AppController {
 
   // @UseInterceptors(CacheInterceptor) // automatically cache the response
   // @CacheTTL(30) // sets the TTL to 30 seconds
-  @SkipAuth()
+  // @SkipAuth()
   @Get()
   getHello(): string {
     return this.appService.getHello();

@@ -8,10 +8,9 @@ export class UserEntity {
   @Column()
   name: string;
 
-  @Column()
+  @Column({ unique: true })
   email: string;
 
-  // TODO:  usar bcrypt https://github.com/kelektiv/node.bcrypt.js#readme
-  @Column()
-  password: string;
+  @Column({ type: 'json', select: false })
+  hash: any;
 }

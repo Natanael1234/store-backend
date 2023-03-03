@@ -6,18 +6,13 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { CachingModule } from './modules/system/caching/caching.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    // CacheModule.register({
-    //   isGlobal: true,
-    //   store: redisStore,
-    //   host: process.env.REDIS_HOST,
-    //   port: process.env.REDIS_PORT,
-    // }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       username: process.env.DB_USERNAME,
@@ -30,6 +25,7 @@ import { AuthModule } from './modules/auth/auth.module';
     }),
     UserModule,
     AuthModule,
+    CachingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

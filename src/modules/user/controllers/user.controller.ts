@@ -1,8 +1,11 @@
 import { Controller, Post, Get, Body } from '@nestjs/common';
-import { UseGuards } from '@nestjs/common/decorators';
+import { Patch, UseGuards } from '@nestjs/common/decorators';
 import { Observable } from 'rxjs';
 import { JwtAuthGuard } from 'src/modules/auth/guards/jwt/jwt-auth.guard';
-import { UserDTO } from '../models/dtos/user.dto';
+import { SkipAuth } from 'src/modules/auth/guards/skip-auth';
+import { CreateUserDTO } from '../models/dtos/create-user.dto';
+import { UpdateUserDTO } from '../models/dtos/update-user.dto';
+import { UserEntity } from '../models/user.entity';
 
 import { UserService } from '../services/user/user.service';
 
@@ -10,13 +13,23 @@ import { UserService } from '../services/user/user.service';
 export class UserController {
   constructor(private userService: UserService) {}
 
+  @Post('register')
+  register(@Body() user: CreateUserDTO): Promise<boolean> {
+    return this.userService.register(user);
+  }
+
   @Post()
-  add(@Body() user: UserDTO): Observable<UserDTO> {
-    return this.userService.add(user);
+  add(@Body() user: CreateUserDTO): Promise<UserEntity> {
+    return this.userService.create(user);
+  }
+
+  @Patch()
+  update(@Body() user: UpdateUserDTO): Observable<UserEntity> {
+    return this.userService.update(user);
   }
 
   @Get()
-  findAll(): Observable<UserDTO[]> {
+  findAll(): Observable<UserEntity[]> {
     return this.userService.findAll();
   }
 }
