@@ -30,7 +30,6 @@ export class TokenService {
     const exp = JWTConfigs.ACCESS_TOKEN_EXPIRATION;
     const ttl = +exp.replace(/\D/g, '') * 1000;
     const token = await this.tokens.createRefreshToken(user, ttl);
-    W;
     const opts: JwtSignOptions = {
       ...BASE_OPTIONS,
       subject: String(user.id),
