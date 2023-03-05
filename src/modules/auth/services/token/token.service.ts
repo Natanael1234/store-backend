@@ -8,7 +8,6 @@ import { SignOptions, TokenExpiredError } from 'jsonwebtoken';
 import { BASE_OPTIONS } from './jwt-signin-base-options.';
 import { RefreshTokenPayload } from './refresh-token-payload';
 import { JWTConfigs } from '../../jwt-configs';
-import ms, { StringValue } from 'ms';
 
 @Injectable()
 export class TokenService {
@@ -28,10 +27,10 @@ export class TokenService {
   }
 
   public async generateRefreshToken(user: UserEntity): Promise<string> {
-    const ttl = ms(JWTConfigs.ACCESS_TOKEN_EXPIRATION);
-
+    const exp = JWTConfigs.ACCESS_TOKEN_EXPIRATION;
+    const ttl = +exp.replace(/\D/g, '') * 1000;
     const token = await this.tokens.createRefreshToken(user, ttl);
-
+    W;
     const opts: JwtSignOptions = {
       ...BASE_OPTIONS,
       subject: String(user.id),
