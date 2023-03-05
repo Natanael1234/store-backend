@@ -3,7 +3,7 @@ import { UserModule } from '../user/user.module';
 import { PassportModule } from '@nestjs/passport';
 import { AuthService } from './services/auth/auth.service';
 import { LocalStrategy } from './strategies/local/local.strategy';
-import { jwtConstants } from './jwt-constants';
+import { JWTConfigs } from './jwt-configs';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategies/jwt/jwt.strategy';
 import { AuthController } from './controllers/auth/auth.controller';
@@ -23,9 +23,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     PassportModule,
     CachingModule,
     JwtModule.register({
-      secret: jwtConstants.secret,
+      secret: JWTConfigs.ACCESS_TOKEN_SECRET,
       signOptions: {
-        // expiresIn: '60s' TODO:
+        expiresIn: JWTConfigs.ACCESS_TOKEN_EXPIRATION,
       },
     }),
     EncryptionModule,

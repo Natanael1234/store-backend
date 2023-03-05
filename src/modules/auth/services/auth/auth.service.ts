@@ -3,9 +3,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { CachingService } from 'src/modules/system/caching/services/caching.service';
-import { EncryptionService } from 'src/modules/system/encryption/services/encryption/encryption.service';
 import { UserEntity } from 'src/modules/user/models/user.entity';
 import { UserService } from '../../../user/services/user/user.service';
 import { LoginRequestDto } from '../../dtos/requests/login.request.dto';
@@ -60,7 +58,6 @@ export class AuthService {
     return {
       status: 'success',
       data: payload,
-      // access_token: this.jwtService.sign(payload),
     };
   }
 
@@ -94,14 +91,8 @@ export class AuthService {
     accessToken: string,
     refreshToken?: string,
   ): AuthenticationPayloadDto {
-    // OLD
-    // const payload = {
-    //   username: loginRequest.username,
-    //   sub: loginRequest.id,
-    //   time: new Date().getTime(),
-    // };
-
     return {
+      // hides hash/password
       user: { ...user, hash: undefined },
       payload: {
         type: 'bearer',

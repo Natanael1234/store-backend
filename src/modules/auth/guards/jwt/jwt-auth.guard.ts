@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
-import { CachingService } from 'src/modules/system/caching/services/caching.service';
 import { IS_PUBLIC_KEY } from '../skip-auth';
 
 @Injectable()

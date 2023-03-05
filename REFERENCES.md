@@ -25,5 +25,4 @@ https://blog.logrocket.com/add-redis-cache-nestjs-app/#what-is-caching
 
 # refresh token
 
-https://gist.github.com/jengel3/6a49a25b2fc2eb56fcf8b38f5004ea2c
 https://github.com/jengel3/nestjs-auth-example

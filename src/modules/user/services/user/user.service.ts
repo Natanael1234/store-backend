@@ -51,21 +51,20 @@ export class UserService {
     return from(this.userRepository.find()); // TODO: paginação
   }
 
-  // TODO: passar para o novo formato
   public async validateCredentials(
     email: string,
     password: string,
   ): Promise<UserEntity | null> {
     const user = await this.userRepository
       .createQueryBuilder('user')
-      .addSelect('user.hash')
+      .addSelect('user.hash') // add hash/password
       .where({ email })
       .getOne();
 
     if (user) {
       const decryptedPasword = await this.encryptionService.decrypt(user.hash);
       if (decryptedPasword === password) {
-        delete user.hash;
+        delete user.hash; // remove hash/password
         return user;
       }
     }

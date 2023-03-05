@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { env } from 'process';
 import { UserService } from 'src/modules/user/services/user/user.service';
-import { jwtConstants } from '../../jwt-constants';
+import { JWTConfigs } from '../../jwt-configs';
 
 export interface AccessTokenPayload {
   sub: number;
@@ -15,10 +14,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env.ACCESS_TOKEN_SECRET,
+      secretOrKey: JWTConfigs.ACCESS_TOKEN_SECRET,
       // secretOrKey: jwtConstants.secret, // TODO:: estamos usando a opção conveniente de fornecer um segredo simétrico para assinar o token. Outras opções, como uma chave pública codificada por PEM, podem ser mais apropriadas para aplicativos de produção (consulte aqui, https://github.com/mikenicholson/passport-jwt#configure-strategy, para obter mais informações). De qualquer forma, conforme advertido anteriormente, não exponha esse segredo publicamente .
       signOptions: {
-        expiresIn: process.env.ACCESS_TOKEN_EXPIRATION,
+        expiresIn: JWTConfigs.ACCESS_TOKEN_EXPIRATION,
       },
     });
   }

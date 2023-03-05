@@ -7,6 +7,8 @@ import { RefreshTokensRepository } from '../../repositories/refresh-token.reposi
 import { SignOptions, TokenExpiredError } from 'jsonwebtoken';
 import { BASE_OPTIONS } from './jwt-signin-base-options.';
 import { RefreshTokenPayload } from './refresh-token-payload';
+import { JWTConfigs } from '../../jwt-configs';
+import ms, { StringValue } from 'ms';
 
 @Injectable()
 export class TokenService {
@@ -15,10 +17,6 @@ export class TokenService {
     private readonly usersService: UserService,
     private readonly jwtService: JwtService,
   ) {}
-
-  get expiresIn(): number {
-    return 60 * 60 * 24 * 30; // TODO: mudar o tempo para configurações?
-  }
 
   public async generateAccessToken(user: UserEntity): Promise<string> {
     const opts: SignOptions = {
@@ -30,12 +28,12 @@ export class TokenService {
   }
 
   public async generateRefreshToken(user: UserEntity): Promise<string> {
-    const expiresIn = this.expiresIn;
-    const token = await this.tokens.createRefreshToken(user, expiresIn);
+    const ttl = ms(JWTConfigs.ACCESS_TOKEN_EXPIRATION);
+
+    const token = await this.tokens.createRefreshToken(user, ttl);
 
     const opts: JwtSignOptions = {
       ...BASE_OPTIONS,
-      expiresIn,
       subject: String(user.id),
       jwtid: String(token.id),
     };
