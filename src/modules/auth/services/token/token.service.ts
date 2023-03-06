@@ -7,7 +7,7 @@ import { RefreshTokensRepository } from '../../repositories/refresh-token.reposi
 import { SignOptions, TokenExpiredError } from 'jsonwebtoken';
 import { BASE_OPTIONS } from './jwt-signin-base-options.';
 import { RefreshTokenPayload } from './refresh-token-payload';
-import { JWTConfigs } from '../../jwt-configs';
+import { JWTConfigs } from '../../jwt.config';
 
 @Injectable()
 export class TokenService {
