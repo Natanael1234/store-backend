@@ -64,17 +64,22 @@ export class AuthService {
   public async refresh(
     refreshRequestDto: RefreshRequestDto,
   ): Promise<RefreshResponseDto> {
-    const { user, token } =
-      await this.tokenService.createAccessTokenFromRefreshToken(
-        refreshRequestDto.refresh_token,
-      );
-
-    const payload = this.buildResponsePayload(user, token);
-
-    return {
-      status: 'success',
-      data: payload,
-    };
+    try {
+      const { user, token } =
+        await this.tokenService.createAccessTokenFromRefreshToken(
+          refreshRequestDto.refresh_token,
+        );
+      const payload = this.buildResponsePayload(user, token);
+      return {
+        status: 'success',
+        data: payload,
+      };
+    } catch (error) {
+      if (error.name == 'TokenExpiredError') {
+        throw new UnauthorizedException('Token expired');
+      }
+      throw error;
+    }
   }
 
   public async logout(bearerToken: string) {

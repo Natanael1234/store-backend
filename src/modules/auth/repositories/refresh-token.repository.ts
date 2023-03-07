@@ -19,10 +19,12 @@ export class RefreshTokensRepository extends Repository<RefreshTokenEntity> {
     token.id = user.id;
     token.revoked = false;
 
-    const expiration = new Date();
-    expiration.setTime(expiration.getTime() + ttl);
+    const currentTime = new Date();
+    const expirationTime = currentTime.getTime() + ttl;
 
-    token.expiresAt = expiration;
+    currentTime.setTime(expirationTime);
+
+    token.expiresAt = currentTime;
 
     return this.save(token);
   }

@@ -8,6 +8,7 @@ import { SignOptions, TokenExpiredError } from 'jsonwebtoken';
 import { BASE_OPTIONS } from './jwt-signin-base-options.';
 import { RefreshTokenPayload } from './refresh-token-payload';
 import { JWTConfigs } from '../../jwt.config';
+import ms, { StringValue } from 'src/modules/system/utils/time/ms/ms';
 
 @Injectable()
 export class TokenService {
@@ -27,10 +28,11 @@ export class TokenService {
   }
 
   public async generateRefreshToken(user: UserEntity): Promise<string> {
-    const exp = JWTConfigs.ACCESS_TOKEN_EXPIRATION;
-    const ttl = +exp.replace(/\D/g, '') * 1000;
+    const exp = JWTConfigs.REFRESH_TOKEN_EXPIRATION as StringValue;
+    const ttl = ms(exp);
     const token = await this.tokens.createRefreshToken(user, ttl);
     const opts: JwtSignOptions = {
+      expiresIn: ttl,
       ...BASE_OPTIONS,
       subject: String(user.id),
       jwtid: String(token.id),
@@ -107,6 +109,7 @@ export class TokenService {
       throw new UnprocessableEntityException('Refresh token malformed');
     }
 
-    return this.tokens.findTokenById(tokenId);
+    const token = await this.tokens.findTokenById(tokenId);
+    return token;
   }
 }

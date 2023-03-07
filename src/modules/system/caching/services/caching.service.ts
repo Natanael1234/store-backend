@@ -11,7 +11,6 @@ export class CachingService {
   }
 
   async getValue(key: string): Promise<any> {
-    console.log(await this.cacheManager.store.keys());
     return await this.cacheManager.get(key);
   }
 

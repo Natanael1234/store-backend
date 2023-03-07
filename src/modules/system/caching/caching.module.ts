@@ -3,10 +3,6 @@ import { Module, CacheModule, CacheStore } from '@nestjs/common';
 import { CachingConfig } from './caching.config';
 const redisStore = require('cache-manager-redis-store');
 
-console.error(
-  'URL',
-  `redis://${CachingConfig.REDIS_HOST}:${CachingConfig.REDIS_PORT}`,
-);
 @Module({
   imports: [
     CacheModule.register({
@@ -15,7 +11,6 @@ console.error(
       store: redisStore.redisStore,
       url: `redis://${CachingConfig.REDIS_HOST}:${CachingConfig.REDIS_PORT}`,
     }),
-    // CacheModule.register(),
   ],
   providers: [CachingService],
   exports: [CachingService],
