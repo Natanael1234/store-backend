@@ -2,7 +2,7 @@ import { Column, Entity, PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity({ name: 'refresh_tokens' })
 export class RefreshTokenEntity {
-  @PrimaryColumn()
+  @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ default: false })
@@ -10,4 +10,7 @@ export class RefreshTokenEntity {
 
   @Column({ type: 'timestamptz' })
   expiresAt: Date;
+
+  @Column()
+  userId: number;
 }

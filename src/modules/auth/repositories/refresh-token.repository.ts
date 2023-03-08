@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { RefreshTokenEntity } from '../models/refresh-token.entity';
 
 @Injectable()
-export class RefreshTokensRepository extends Repository<RefreshTokenEntity> {
+export class RefreshTokenRepository extends Repository<RefreshTokenEntity> {
   constructor(
     @InjectRepository(RefreshTokenEntity)
     repository: Repository<RefreshTokenEntity>,
@@ -16,8 +16,9 @@ export class RefreshTokensRepository extends Repository<RefreshTokenEntity> {
   public async createRefreshToken(user: UserEntity, ttl: number) {
     const token = new RefreshTokenEntity();
 
-    token.id = user.id;
+    // TODO: está sempre sobrescrevendo o token
     token.revoked = false;
+    token.userId = user.id;
 
     const currentTime = new Date();
     const expirationTime = currentTime.getTime() + ttl;

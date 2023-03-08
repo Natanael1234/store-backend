@@ -7,6 +7,7 @@ import { RegisterResponseDto } from '../../dtos/responses/register.response.dto'
 import { LoginResponseDto } from '../../dtos/responses/login.response.dto';
 import { RefreshRequestDto } from '../../dtos/requests/refresh.request.dto';
 import { RefreshResponseDto } from '../../dtos/responses/refresh.response.dto';
+import { LogoutRequestDto } from '../../dtos/requests/logout.request.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -38,8 +39,8 @@ export class AuthController {
   }
 
   @Post('logout')
-  public async logout(@Request() req) {
-    return this.authService.logout(req.headers.authorization);
+  public async logout(@Body() logoutRequestDto: LogoutRequestDto) {
+    return this.authService.logout(logoutRequestDto);
   }
 
   @Get('profile')

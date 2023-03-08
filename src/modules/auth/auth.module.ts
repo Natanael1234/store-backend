@@ -11,7 +11,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './guards/jwt/jwt-auth.guard';
 import { EncryptionModule } from '../system/encryption/encryption.module';
 import { CachingModule } from '../system/caching/caching.module';
-import { RefreshTokensRepository } from './repositories/refresh-token.repository';
+import { RefreshTokenRepository } from './repositories/refresh-token.repository';
 import { TokenService } from './services/token/token.service';
 import { RefreshTokenEntity } from './models/refresh-token.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -35,7 +35,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     LocalStrategy,
     JwtStrategy,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
-    RefreshTokensRepository,
+    RefreshTokenRepository,
     TokenService,
   ],
   exports: [AuthService],

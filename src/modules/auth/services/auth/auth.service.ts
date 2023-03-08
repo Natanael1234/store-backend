@@ -7,6 +7,7 @@ import { CachingService } from 'src/modules/system/caching/services/caching.serv
 import { UserEntity } from 'src/modules/user/models/user.entity';
 import { UserService } from '../../../user/services/user/user.service';
 import { LoginRequestDto } from '../../dtos/requests/login.request.dto';
+import { LogoutRequestDto } from '../../dtos/requests/logout.request.dto';
 import { RefreshRequestDto } from '../../dtos/requests/refresh.request.dto';
 import { RegisterRequestDto } from '../../dtos/requests/register.request.dto';
 import { AuthenticationPayloadDto } from '../../dtos/responses/authenticationPayload.dto';
@@ -64,31 +65,31 @@ export class AuthService {
   public async refresh(
     refreshRequestDto: RefreshRequestDto,
   ): Promise<RefreshResponseDto> {
-    try {
-      const { user, token } =
-        await this.tokenService.createAccessTokenFromRefreshToken(
-          refreshRequestDto.refresh_token,
-        );
-      const payload = this.buildResponsePayload(user, token);
-      return {
-        status: 'success',
-        data: payload,
-      };
-    } catch (error) {
-      if (error.name == 'TokenExpiredError') {
-        throw new UnauthorizedException('Token expired');
-      }
-      throw error;
-    }
+    const { user, token } =
+      await this.tokenService.createAccessTokenFromRefreshToken(
+        refreshRequestDto.refresh_token,
+      );
+    const payload = this.buildResponsePayload(user, token);
+    return {
+      status: 'success',
+      data: payload,
+    };
   }
 
-  public async logout(bearerToken: string) {
-    const token = bearerToken.replace('bearer ', '');
-    if (!token) new ForbiddenException('No token provided');
+  public async logout(logoutRequestDto: LogoutRequestDto) {
+    if (!logoutRequestDto.refresh_token)
+      new ForbiddenException('No refresh token provided');
+
+    // TODO: schedule revoked tokens removal
+    const revoked = await this.tokenService.revokeRefreshToken(
+      logoutRequestDto.refresh_token,
+    );
+
+    // TODO: blacklist token
 
     // add bearer token to blacklist
-    await this.cachingService.setValue(bearerToken, token); // TODO: add ttl
-    return true;
+    // await this.cachingService.setValue(bearerToken, token); // TODO: add ttl
+    return revoked;
   }
 
   private buildResponsePayload(
