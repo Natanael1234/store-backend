@@ -9,7 +9,7 @@ https://www.tomray.dev/nestjs-docker-compose-postgres
 
 https://www.tomray.dev/nestjs-caching-redis
 
-# Auth:
+# auth
 
 https://docs.nestjs.com/security/authentication
 https://github.com/nestjs/nest/tree/master/sample/19-auth-jwt
@@ -27,3 +27,7 @@ https://blog.logrocket.com/add-redis-cache-nestjs-app/#what-is-caching
 
 https://github.com/jengel3/nestjs-auth-example
 https://javascript.plainenglish.io/nestjs-implementing-access-refresh-token-jwt-authentication-97a39e448007
+
+# test
+
+https://github.com/jmcdo29/testing-nestjs

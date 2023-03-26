@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity({ name: 'refresh_tokens' })
 export class RefreshTokenEntity {
@@ -8,9 +8,10 @@ export class RefreshTokenEntity {
   @Column({ default: false })
   revoked: boolean;
 
-  @Column({ type: 'timestamptz' })
+  // @Column({ type: 'timestamptz' })
+  @Column({})
   expiresAt: Date;
 
-  @Column()
+  @Column({})
   userId: number;
 }

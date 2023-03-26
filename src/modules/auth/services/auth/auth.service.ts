@@ -3,13 +3,13 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { CachingService } from 'src/modules/system/caching/services/caching.service';
-import { UserEntity } from 'src/modules/user/models/user.entity';
+import { CachingService } from '../../../system/caching/services/caching.service';
+import { UserEntity } from '../../../user/models/user/user.entity';
 import { UserService } from '../../../user/services/user/user.service';
-import { LoginRequestDto } from '../../dtos/requests/login.request.dto';
-import { LogoutRequestDto } from '../../dtos/requests/logout.request.dto';
-import { RefreshRequestDto } from '../../dtos/requests/refresh.request.dto';
-import { RegisterRequestDto } from '../../dtos/requests/register.request.dto';
+import { LoginRequestDto } from '../../dtos/requests/login/login.request.dto';
+import { LogoutRequestDto } from '../../dtos/requests/logout/logout.request.dto';
+import { RefreshRequestDto } from '../../dtos/requests/refresh/refresh.request.dto';
+import { RegisterRequestDto } from '../../dtos/requests/register/register.request.dto';
 import { AuthenticationPayloadDto } from '../../dtos/responses/authenticationPayload.dto';
 import { LoginResponseDto } from '../../dtos/responses/login.response.dto';
 import { RefreshResponseDto } from '../../dtos/responses/refresh.response.dto';

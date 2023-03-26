@@ -1,12 +1,9 @@
 import { Controller, Post, Get, Body } from '@nestjs/common';
-import { Patch, UseGuards } from '@nestjs/common/decorators';
+import { Patch } from '@nestjs/common/decorators';
 import { Observable } from 'rxjs';
-import { JwtAuthGuard } from 'src/modules/auth/guards/jwt/jwt-auth.guard';
-import { SkipAuth } from 'src/modules/auth/guards/skip-auth';
-import { CreateUserDTO } from '../models/dtos/create-user.dto';
-import { UpdateUserDTO } from '../models/dtos/update-user.dto';
-import { UserEntity } from '../models/user.entity';
-
+import { CreateUserDTO } from '../dtos/create-user/create-user.dto';
+import { UpdateUserDTO } from '../dtos/update-user/update-user.dto';
+import { UserEntity } from '../models/user/user.entity';
 import { UserService } from '../services/user/user.service';
 
 @Controller('users')
@@ -24,12 +21,12 @@ export class UserController {
   }
 
   @Patch()
-  update(@Body() user: UpdateUserDTO): Observable<UserEntity> {
+  update(@Body() user: UpdateUserDTO): Promise<UserEntity> {
     return this.userService.update(user);
   }
 
   @Get()
-  findAll(): Observable<UserEntity[]> {
+  findAll(): Promise<UserEntity[]> {
     return this.userService.findAll();
   }
 }

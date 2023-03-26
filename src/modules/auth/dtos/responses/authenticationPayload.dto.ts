@@ -1,4 +1,4 @@
-import { UserEntity } from 'src/modules/user/models/user.entity';
+import { UserEntity } from '../../../user/models/user/user.entity';
 
 export interface AuthenticationPayloadDto {
   user: UserEntity;

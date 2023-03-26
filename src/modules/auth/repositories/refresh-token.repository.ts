@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UserEntity } from 'src/modules/user/models/user.entity';
+
 import { Repository } from 'typeorm';
+import { UserEntity } from '../../user/models/user/user.entity';
 import { RefreshTokenEntity } from '../models/refresh-token.entity';
 
 @Injectable()
