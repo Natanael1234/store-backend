@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common/exceptions/not-found.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { Repository } from 'typeorm';
@@ -15,23 +16,31 @@ export class RefreshTokenRepository extends Repository<RefreshTokenEntity> {
   }
 
   public async createRefreshToken(user: UserEntity, ttl: number) {
+    if (!user) {
+      throw new Error('User is not defined');
+    }
+    if (!user.id) {
+      throw new Error('User id is not defined');
+    }
+    if (ttl == null) {
+      throw new Error('ttl is not defined');
+    }
     const token = new RefreshTokenEntity();
-
     // TODO: está sempre sobrescrevendo o token
     token.revoked = false;
     token.userId = user.id;
-
     const currentTime = new Date();
     const expirationTime = currentTime.getTime() + ttl;
-
     currentTime.setTime(expirationTime);
-
     token.expiresAt = currentTime;
-
     return this.save(token);
   }
 
   public async findTokenById(id: number): Promise<RefreshTokenEntity | null> {
-    return this.findOne({ where: { id } });
+    if (id == null) throw new Error('User id is not defined');
+    const refreshToken = await this.findOne({ where: { id } });
+    if (!refreshToken)
+      throw new NotFoundException('Refresh token not found for id=' + id);
+    return refreshToken;
   }
 }

@@ -3,7 +3,6 @@ import { QueryFailedError, Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { getTestingModule } from '../../../.jest/test-config.module';
 import { RefreshTokenEntity } from './refresh-token.entity';
-import { ArrayMaxSize } from 'class-validator';
 
 describe('UserEntity', () => {
   let module: TestingModule;
