@@ -12,7 +12,6 @@ const options = {
   autoLoadEntities: true,
   synchronize: true,
 };
-console.log(options);
 
 @Module({
   imports: [TypeOrmModule.forRoot(options as TypeOrmModuleOptions)],

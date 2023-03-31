@@ -10,6 +10,7 @@ describe('AppController (e2e)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
+    // TODO: https://github.com/nestjs/nest/issues/5264
     // app = moduleFixture.createNestApplication();
     // await app.init();
   });

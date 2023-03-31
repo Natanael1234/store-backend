@@ -5,12 +5,16 @@ import { UserEntity } from '../../models/user/user.entity';
 import { UserService } from './user.service';
 import { getTestingModule } from '../../../../.jest/test-config.module';
 import { CreateUserDTO } from '../../dtos/create-user/create-user.dto';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 
 describe('UserService', () => {
   let module: TestingModule;
   let service: UserService;
-  let repo: Repository<UserEntity>;
+  let userRepo: Repository<UserEntity>;
 
   const userDto1: CreateUserDTO = {
     name: 'User 1',
@@ -30,20 +34,18 @@ describe('UserService', () => {
     password: '12345',
     acceptTerms: true,
   };
-  const userArray = [userDto1, userDto2, userDto3];
+  const userDtos = [userDto1, userDto2, userDto3];
 
   beforeEach(async () => {
     module = await getTestingModule();
     service = module.get<UserService>(UserService);
-    repo = module.get<Repository<UserEntity>>(getRepositoryToken(UserEntity));
+    userRepo = module.get<Repository<UserEntity>>(
+      getRepositoryToken(UserEntity),
+    );
   });
 
   afterEach(async () => {
     await module.close(); // TODO: é necessário?
-  });
-
-  it('should be defined', () => {
-    expect(service).toBeDefined();
   });
 
   describe('create', () => {
@@ -52,7 +54,7 @@ describe('UserService', () => {
       await service.create(userDto2);
       await service.create(userDto3);
 
-      const users = await repo.find();
+      const users = await userRepo.find();
 
       expect(Array.isArray(users)).toBe(true);
       expect(users).toHaveLength(3);
@@ -60,8 +62,8 @@ describe('UserService', () => {
       for (let i = 0, p = 1; i < 3; i++, p++) {
         expect(users[i]).toBeInstanceOf(UserEntity);
         expect(users[i].id).toEqual(p);
-        expect(users[i].name).toEqual(userArray[i].name);
-        expect(users[i].email).toEqual(userArray[i].email);
+        expect(users[i].name).toEqual(userDtos[i].name);
+        expect(users[i].email).toEqual(userDtos[i].email);
         expect(users[i].hash).toBeUndefined();
         expect(users[i].created).toBeDefined();
         expect(users[i].updated).toBeDefined();
@@ -69,35 +71,75 @@ describe('UserService', () => {
       }
     });
 
-    it('should throw error when passing null dto', async () => {
-      async function fn() {
-        await service.create(null);
-      }
-      await expect(fn()).rejects.toThrow(QueryFailedError);
-      await expect(fn()).rejects.toThrow('Undefined user data');
+    it.each([{ user: null }, { user: undefined }])(
+      'should fail when user data is $user',
+      async ({ user }) => {
+        async function fn() {
+          await service.create(user);
+        }
+        await expect(fn()).rejects.toThrow('User data is required');
+        await expect(fn()).rejects.toThrow(BadRequestException);
+      },
+    );
+
+    describe('email', () => {
+      it.each([
+        { emailDescription: null, email: null },
+        { emailDescription: undefined, email: undefined },
+        { emailDescription: 'empty', email: '' },
+      ])('should fail when email is $emailDescription', async ({ email }) => {
+        const fn = () =>
+          service.create({
+            name: 'User 3',
+            email,
+            password: '12345',
+            acceptTerms: true,
+          });
+
+        await expect(fn()).rejects.toThrow('Email is required');
+        await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+      });
     });
 
-    it('should throw error when passing an undefined dto', async () => {
-      async function fn() {
-        await service.create(undefined);
-      }
-      await expect(fn()).rejects.toThrow(BadRequestException);
-      await expect(fn()).rejects.toThrow('Undefined user data');
+    describe('name', () => {
+      it.each([
+        { nameDescription: null, name: null },
+        { nameDescription: undefined, name: undefined },
+        { nameDescription: 'empty', name: '' },
+      ])('should fail when name is $nameDescription', async ({ name }) => {
+        const fn = () =>
+          service.create({
+            name,
+            email: 'user@email.com',
+            password: '12345',
+            acceptTerms: true,
+          });
+
+        await expect(fn()).rejects.toThrow('Name is required');
+        await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+      });
     });
 
-    it('should throw error when passing a null email', async () => {
-      async function fn() {
-        const userDto: CreateUserDTO = {
-          name: 'User 3',
-          email: null,
-          password: '12345',
-          acceptTerms: true,
-        };
-        await service.create(userDto);
-      }
+    describe('password', () => {
+      it.each([
+        { passwordDescription: null, password: null },
+        { passwordDescription: undefined, password: undefined },
+        { passwordDescription: 'empty', password: '' },
+      ])(
+        'should fail when name is $passwordDescription',
+        async ({ password }) => {
+          const fn = () =>
+            service.create({
+              name: 'User',
+              email: 'user@email.com',
+              password,
+              acceptTerms: true,
+            });
 
-      await expect(fn()).rejects.toThrow(BadRequestException);
-      await expect(fn()).rejects.toThrow('Undefined user data').catch();
+          await expect(fn()).rejects.toThrow('Password is required');
+          await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+        },
+      );
     });
   });
 
@@ -120,8 +162,8 @@ describe('UserService', () => {
       for (let i = 0, p = 1; i < 3; i++, p++) {
         expect(users[i]).toBeInstanceOf(UserEntity);
         expect(users[i].id).toEqual(p);
-        expect(users[i].name).toEqual(userArray[i].name);
-        expect(users[i].email).toEqual(userArray[i].email);
+        expect(users[i].name).toEqual(userDtos[i].name);
+        expect(users[i].email).toEqual(userDtos[i].email);
         expect(users[i].hash).toBeUndefined();
         expect(users[i].created).toBeDefined();
         expect(users[i].updated).toBeDefined();
@@ -147,7 +189,7 @@ describe('UserService', () => {
       expect(user.deletedAt).toBeNull();
     });
 
-    it('should throw error when user is not found', async () => {
+    it('should fail when user is not found', async () => {
       await service.create(userDto1);
       await service.create(userDto2);
       await service.create(userDto3);
@@ -158,26 +200,99 @@ describe('UserService', () => {
       await expect(fn()).rejects.toThrow('User not found');
     });
 
-    it('should throw error when user id parameter is null', async () => {
+    it.each([
+      {
+        userId: null,
+      },
+      { userId: undefined },
+    ])('should fail when user id parameter is $userId', async ({ userId }) => {
       await service.create(userDto1);
       await service.create(userDto2);
       await service.create(userDto3);
       async function fn() {
-        await service.findForId(null);
+        await service.findForId(userId);
       }
       await expect(fn()).rejects.toThrow(BadRequestException);
-      await expect(fn()).rejects.toThrow('User id not defined');
+      await expect(fn()).rejects.toThrow('User id required');
+    });
+  });
+
+  function validateUser(user, validationData) {
+    expect(user).toBeDefined();
+    expect(user).toBeInstanceOf(UserEntity);
+    expect(user.id).toEqual(validationData.id);
+    expect(user.name).toEqual(validationData.name);
+    expect(user.email).toEqual(validationData.email);
+  }
+
+  describe('update', () => {
+    it('shoud update an user', async () => {
+      const newName = 'New Name';
+      const newEmail = 'newname@email.com';
+      await service.create(userDto1);
+      await service.create(userDto2);
+      await service.create(userDto3);
+
+      // TODO: atualização de senha em métodos separados
+      await service.update({
+        id: 2,
+        name: newName,
+        email: newEmail,
+      });
+
+      const users = await userRepo.find();
+      expect(users).toHaveLength(3);
+
+      validateUser(users[0], {
+        id: 1,
+        name: userDtos[0].name,
+        email: userDtos[0].email,
+      });
+
+      validateUser(users[1], {
+        id: 2,
+        name: newName,
+        email: newEmail,
+      });
+
+      validateUser(users[2], {
+        id: 3,
+        name: userDtos[2].name,
+        email: userDtos[2].email,
+      });
     });
 
-    it('should throw error when user id parameter is undefined', async () => {
+    it('should fail when user is not found', async () => {
+      const newName = 'New Name';
+      const newEmail = 'newname@email.com';
       await service.create(userDto1);
       await service.create(userDto2);
       await service.create(userDto3);
       async function fn() {
-        await service.findForId(undefined);
+        await service.update({
+          id: 10,
+          name: newName,
+          email: newEmail,
+        });
       }
-      await expect(fn()).rejects.toThrow(BadRequestException);
-      await expect(fn()).rejects.toThrow('User id not defined');
+      await expect(fn()).rejects.toThrow(NotFoundException);
+      await expect(fn()).rejects.toThrow('User not found');
+    });
+
+    describe('id', () => {
+      it.each([{ userId: null }, { userId: undefined }])(
+        'should fail when user id is $userId',
+        async ({ userId }) => {
+          await service.create(userDto1);
+          await service.create(userDto2);
+          await service.create(userDto3);
+          async function fn() {
+            await service.findForId(userId);
+          }
+          await expect(fn()).rejects.toThrow(BadRequestException);
+          await expect(fn()).rejects.toThrow('User id required');
+        },
+      );
     });
   });
 });

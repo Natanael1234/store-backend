@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { from, Observable } from 'rxjs';
 import { RegisterRequestDto } from '../../../auth/dtos/requests/register/register.request.dto';
 import { EncryptionService } from '../../../system/encryption/services/encryption/encryption.service';
-import { QueryFailedError, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { CreateUserDTO } from '../../dtos/create-user/create-user.dto';
 import { UpdateUserDTO } from '../../dtos/update-user/update-user.dto';
 import { UserEntity } from '../../models/user/user.entity';
@@ -12,6 +11,9 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common/exceptions';
+
+import { validate, validateOrReject } from 'class-validator';
+import { ClassTransformer } from 'class-transformer';
 
 @Injectable()
 export class UserService {
@@ -28,31 +30,42 @@ export class UserService {
   }
 
   public async create(userDto: CreateUserDTO): Promise<UserEntity> {
-    if (!userDto) throw new BadRequestException('Undefined user data');
+    if (!userDto) throw new BadRequestException('User data is required');
+    if (!userDto.password)
+      throw new UnprocessableEntityException('Password is required');
+    if (!userDto.email)
+      throw new UnprocessableEntityException('Email is required');
+    if (!userDto.name)
+      throw new UnprocessableEntityException('Name is required');
+    if (!userDto.password)
+      throw new UnprocessableEntityException('Password is required');
+
     const user = new UserEntity();
     user.email = userDto.email;
     user.name = userDto.name;
     user.hash = await this.encryptionService.encrypt(userDto.password);
-    try {
-    } catch (error) {
-      if (error instanceof QueryFailedError) {
-        console.log(error);
-        throw error;
-      } else {
-        console.error('sadfg');
-      }
-      throw error;
-    }
-    return this.userRepository.save(user);
+
+    return await this.userRepository.save(user);
   }
 
-  public async update(user: UpdateUserDTO): Promise<UserEntity> {
-    return this.userRepository.save(user);
+  public async update(userDto: UpdateUserDTO): Promise<UserEntity> {
+    if (!userDto)
+      throw new UnprocessableEntityException('User data is required');
+    if (!userDto.id) throw new UnprocessableEntityException('Id is required');
+    const user = await this.userRepository.findOne({
+      where: { id: userDto.id },
+    });
+    if (!user) throw new NotFoundException('User not found');
+    // TODO: melhorar
+    if (userDto.name) user.name = userDto.name;
+    if (userDto.email) user.email = userDto.email;
+
+    return await this.userRepository.save(user);
   }
 
   public async findForId(userId: number): Promise<UserEntity> {
     if (!userId) {
-      throw new BadRequestException('User id not defined');
+      throw new BadRequestException('User id required');
     }
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');

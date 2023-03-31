@@ -17,13 +17,13 @@ export class RefreshTokenRepository extends Repository<RefreshTokenEntity> {
 
   public async createRefreshToken(user: UserEntity, ttl: number) {
     if (!user) {
-      throw new Error('User is not defined');
+      throw new Error('User is required');
     }
     if (!user.id) {
-      throw new Error('User id is not defined');
+      throw new Error('User id is required');
     }
     if (ttl == null) {
-      throw new Error('ttl is not defined');
+      throw new Error('ttl is required');
     }
     const token = new RefreshTokenEntity();
     // TODO: está sempre sobrescrevendo o token
@@ -37,10 +37,9 @@ export class RefreshTokenRepository extends Repository<RefreshTokenEntity> {
   }
 
   public async findTokenById(id: number): Promise<RefreshTokenEntity | null> {
-    if (id == null) throw new Error('User id is not defined');
+    if (id == null) throw new Error('User id is required');
     const refreshToken = await this.findOne({ where: { id } });
-    if (!refreshToken)
-      throw new NotFoundException('Refresh token not found for id=' + id);
+    if (!refreshToken) throw new NotFoundException('Refresh token not found');
     return refreshToken;
   }
 }

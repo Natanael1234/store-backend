@@ -28,8 +28,6 @@ describe('RefreshTokenRepository', () => {
   };
   const usersData = [userData1, userData2, userData3];
 
-  const refreshTokenData1 = {};
-
   beforeEach(async () => {
     module = await getTestingModule({ providers: [RefreshTokenRepository] });
     refreshTokenRepo = module.get<RefreshTokenRepository>(
@@ -166,19 +164,19 @@ describe('RefreshTokenRepository', () => {
 
     it('should fail when user is null', async () => {
       const fn = async () => refreshTokenRepo.createRefreshToken(null, 1000);
-      expect(fn()).rejects.toThrow('User is not defined');
+      expect(fn()).rejects.toThrow('User is required');
     });
 
     it('should fail when user is undefined', async () => {
       const fn = async () =>
         refreshTokenRepo.createRefreshToken(undefined, 1000);
-      expect(fn()).rejects.toThrow('User is not defined');
+      expect(fn()).rejects.toThrow('User is required');
     });
 
     it('should fail when user id is undefined', async () => {
       const fn = async () =>
         refreshTokenRepo.createRefreshToken(new UserEntity(), 1000);
-      expect(fn()).rejects.toThrow('User id is not defined');
+      expect(fn()).rejects.toThrow('User id is required');
     });
 
     it('should fail when ttl is undefined', async () => {
@@ -186,14 +184,14 @@ describe('RefreshTokenRepository', () => {
       const user = await userRepo.findOne({ where: { id: 2 } });
       const fn = async () =>
         refreshTokenRepo.createRefreshToken(user, undefined);
-      expect(fn()).rejects.toThrow('ttl is not defined');
+      expect(fn()).rejects.toThrow('ttl is required');
     });
 
     it('should fail when ttl is null', async () => {
       await createUsers(usersData);
       const user = await userRepo.findOne({ where: { id: 2 } });
       const fn = async () => refreshTokenRepo.createRefreshToken(user, null);
-      expect(fn()).rejects.toThrow('ttl is not defined');
+      expect(fn()).rejects.toThrow('ttl is required');
     });
   });
 
@@ -254,18 +252,18 @@ describe('RefreshTokenRepository', () => {
 
     it('should fail when user id is null', async () => {
       const fn = async () => await refreshTokenRepo.findTokenById(null);
-      await expect(fn()).rejects.toThrow('User id is not defined');
+      await expect(fn()).rejects.toThrow('User id is required');
     });
 
     it('should fail when user id is undefined', async () => {
       const fn = async () => await refreshTokenRepo.findTokenById(undefined);
-      await expect(fn()).rejects.toThrow('User id is not defined');
+      await expect(fn()).rejects.toThrow('User id is required');
     });
 
     it('should fail when token is inexistent', async () => {
       await createUsers(usersData);
       const fn = async () => await refreshTokenRepo.findTokenById(10);
-      await expect(fn()).rejects.toThrow('Refresh token not found for id=10');
+      await expect(fn()).rejects.toThrow('Refresh token not found');
     });
   });
 });

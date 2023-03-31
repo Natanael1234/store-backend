@@ -18,16 +18,16 @@ import { JWTConfigs } from './configs/jwt.config';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([RefreshTokenEntity]),
-    UserModule,
-    PassportModule,
-    CachingModule,
     JwtModule.register({
       secret: JWTConfigs.ACCESS_TOKEN_SECRET,
       signOptions: {
         expiresIn: JWTConfigs.ACCESS_TOKEN_EXPIRATION,
       },
     }),
+    TypeOrmModule.forFeature([RefreshTokenEntity]),
+    UserModule,
+    PassportModule,
+    CachingModule,
     EncryptionModule,
   ],
   providers: [

@@ -35,12 +35,12 @@ export class AuthController {
   public refresh(
     @Body() refreshRequestDto: RefreshRequestDto,
   ): Promise<RefreshResponseDto> {
-    return this.authService.refresh(refreshRequestDto);
+    return this.authService.refresh(refreshRequestDto.refreshToken);
   }
 
   @Post('logout')
   public async logout(@Body() logoutRequestDto: LogoutRequestDto) {
-    return this.authService.logout(logoutRequestDto);
+    return this.authService.logout(logoutRequestDto.refreshToken);
   }
 
   @Get('profile')
