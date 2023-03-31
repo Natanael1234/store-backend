@@ -1,11 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CachingService } from './caching.service';
 
+// TODO:
 describe('CachingService', () => {
   let service: CachingService;
-
+  let module: TestingModule;
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    module = await Test.createTestingModule({
       providers: [CachingService],
     }).compile();
 

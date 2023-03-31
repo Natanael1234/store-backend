@@ -12,9 +12,6 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common/exceptions';
 
-import { validate, validateOrReject } from 'class-validator';
-import { ClassTransformer } from 'class-transformer';
-
 @Injectable()
 export class UserService {
   constructor(
