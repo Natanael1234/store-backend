@@ -6,6 +6,7 @@ process.env.SERVER_DEBUG_PORT = envTestParameters.SERVER_DEBUG_PORT;
 process.env.DB_TYPE = envTestParameters.DB_TYPE;
 process.env.DB_HOST = envTestParameters.DB_HOST;
 process.env.DB_PORT = envTestParameters.DB_PORT;
+process.env.DB_DATABASE_NAME = envTestParameters.DB_DATABASE_NAME;
 process.env.DB_USERNAME = envTestParameters.DB_USERNAME;
 process.env.DB_PASSWORD = envTestParameters.DB_PASSWORD;
 

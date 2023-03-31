@@ -1,7 +1,7 @@
 import { envTestParameters } from '../../../../.jest/env-test-parameters';
 import { EncryptationConfigs } from './encryptation.config';
 
-describe('EncryptionService', () => {
+describe('EncryptionConfigs', () => {
   it('EncryptationConfigs should be defined', () => {
     expect(EncryptationConfigs).toBeDefined();
   });

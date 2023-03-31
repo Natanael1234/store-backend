@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { DatabaseConfig } from './configs/database.config';
+import { DatabaseConfigs } from './configs/database.config';
 
 const options = {
-  type: DatabaseConfig.DB_TYPE,
-  username: DatabaseConfig.DB_USERNAME,
-  password: DatabaseConfig.DB_PASSWORD,
-  database: DatabaseConfig.DB_DATABASE_NAME,
-  host: DatabaseConfig.DB_HOST,
-  port: DatabaseConfig.DB_PORT,
+  type: DatabaseConfigs.DB_TYPE,
+  username: DatabaseConfigs.DB_USERNAME,
+  password: DatabaseConfigs.DB_PASSWORD,
+  database: DatabaseConfigs.DB_DATABASE_NAME,
+  host: DatabaseConfigs.DB_HOST,
+  port: DatabaseConfigs.DB_PORT,
   autoLoadEntities: true,
   synchronize: true,
 };

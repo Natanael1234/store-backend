@@ -1,6 +1,6 @@
 import { DatabaseType } from 'typeorm';
 
-export class DatabaseConfig {
+export class DatabaseConfigs {
   public static get DB_TYPE(): DatabaseType {
     const databaseType: DatabaseType = process.env.DB_TYPE as DatabaseType;
     return databaseType;
