@@ -1,6 +1,9 @@
-import { IsNotEmpty } from 'class-validator';
+import { IsNotEmpty, IsString, Matches } from 'class-validator';
+import { getJWTTokenRegexp } from '../../refresh-token.regex';
 
 export class RefreshRequestDto {
-  @IsNotEmpty({ message: 'The refresh token is required' })
+  @IsNotEmpty({ message: 'Refresh token is required' })
+  @IsString({ message: 'Refresh token must be a string' })
+  @Matches(getJWTTokenRegexp(), { message: 'Invalid refresh token' })
   readonly refreshToken: string;
 }

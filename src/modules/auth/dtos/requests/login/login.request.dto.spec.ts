@@ -1,7 +1,6 @@
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { LoginRequestDto } from './login.request.dto';
-import { log } from 'console';
 
 describe('LoginRequestDto', () => {
   it('should pass validation', async () => {
