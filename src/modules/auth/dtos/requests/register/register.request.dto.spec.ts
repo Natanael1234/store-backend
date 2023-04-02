@@ -1,6 +1,7 @@
 import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
+// import { validate } from 'class-validator';
 import { RegisterRequestDto } from './register.request.dto';
+import { validateFirstError } from '../../../../system/utils/validate-first-error';
 
 enum NameMessage {
   REQUIRED = 'Name is required',
@@ -28,6 +29,9 @@ enum AcceptermsMessage {
   REQUIRED = 'Acceptance of terms is required',
 }
 
+const validate = async (data) =>
+  await validateFirstError(data, RegisterRequestDto);
+
 describe('RegisterRequestDto', () => {
   it('should pass validation', async () => {
     const dto = plainToInstance(RegisterRequestDto, {
@@ -36,7 +40,7 @@ describe('RegisterRequestDto', () => {
       password: 'Abc12*',
       acceptTerms: true,
     });
-    const errors = await validate(dto, { stopAtFirstError: true });
+    const errors = await validate(dto);
     expect(errors).toHaveLength(0);
   });
 
@@ -108,7 +112,7 @@ describe('RegisterRequestDto', () => {
           acceptTerms: true,
         };
         const dto = plainToInstance(RegisterRequestDto, data);
-        const errors = await validate(dto, { stopAtFirstError: true });
+        const errors = await validate(dto);
         expect(errors).toHaveLength(1);
         expect(errors[0].property).toEqual('name');
         expect(errors[0].value).toEqual(data.name);
@@ -150,10 +154,10 @@ describe('RegisterRequestDto', () => {
         plainToInstance(RegisterRequestDto, data[3]),
       ];
       const errors = [
-        await validate(dtos[0], { stopAtFirstError: true }),
-        await validate(dtos[1], { stopAtFirstError: true }),
-        await validate(dtos[2], { stopAtFirstError: true }),
-        await validate(dtos[3], { stopAtFirstError: true }),
+        await validate(dtos[0]),
+        await validate(dtos[1]),
+        await validate(dtos[2]),
+        await validate(dtos[3]),
       ];
 
       expect(errors[0]).toHaveLength(1);
@@ -243,7 +247,7 @@ describe('RegisterRequestDto', () => {
           acceptTerms: true,
         };
         const dto = plainToInstance(RegisterRequestDto, data);
-        const errors = await validate(dto, { stopAtFirstError: true });
+        const errors = await validate(dto);
         expect(errors).toHaveLength(1);
         expect(errors[0].property).toEqual('email');
         expect(errors[0].value).toEqual(data.email);
@@ -271,10 +275,7 @@ describe('RegisterRequestDto', () => {
         plainToInstance(RegisterRequestDto, data[0]),
         plainToInstance(RegisterRequestDto, data[1]),
       ];
-      const errors = [
-        await validate(dtos[0], { stopAtFirstError: true }),
-        await validate(dtos[1], { stopAtFirstError: true }),
-      ];
+      const errors = [await validate(dtos[0]), await validate(dtos[1])];
 
       expect(errors[0]).toHaveLength(0);
 
@@ -383,7 +384,7 @@ describe('RegisterRequestDto', () => {
           acceptTerms: true,
         };
         const dto = plainToInstance(RegisterRequestDto, data);
-        const errors = await validate(dto, { stopAtFirstError: true });
+        const errors = await validate(dto);
         expect(errors).toHaveLength(1);
         expect(errors[0].property).toEqual('password');
         expect(errors[0].value).toEqual(data.password);
@@ -425,10 +426,10 @@ describe('RegisterRequestDto', () => {
         plainToInstance(RegisterRequestDto, data[3]),
       ];
       const errors = [
-        await validate(dtos[0], { stopAtFirstError: true }),
-        await validate(dtos[1], { stopAtFirstError: true }),
-        await validate(dtos[2], { stopAtFirstError: true }),
-        await validate(dtos[3], { stopAtFirstError: true }),
+        await validate(dtos[0]),
+        await validate(dtos[1]),
+        await validate(dtos[2]),
+        await validate(dtos[3]),
       ];
       expect(errors[0]).toHaveLength(1);
       expect(errors[0][0].property).toEqual('password');
@@ -458,7 +459,7 @@ describe('RegisterRequestDto', () => {
         acceptTerms: 'true',
       });
       const transformedValue = dto.acceptTerms;
-      const errors = await validate(dto, { stopAtFirstError: true });
+      const errors = await validate(dto);
 
       expect(transformedValue).toEqual(true);
       expect(errors).toHaveLength(0);
@@ -472,7 +473,7 @@ describe('RegisterRequestDto', () => {
         acceptTerms: 'true',
       });
       const transformedValue = dto.acceptTerms;
-      const errors = await validate(dto, { stopAtFirstError: true });
+      const errors = await validate(dto);
 
       expect(transformedValue).toEqual(true);
       expect(errors).toHaveLength(0);
@@ -485,7 +486,7 @@ describe('RegisterRequestDto', () => {
         password: 'Abc12*',
         acceptTerms: 'true',
       });
-      const errors = await validate(dto, { stopAtFirstError: true });
+      const errors = await validate(dto);
 
       expect(errors).toHaveLength(0);
       expect(dto.acceptTerms).toEqual(true);
@@ -551,7 +552,7 @@ describe('RegisterRequestDto', () => {
           password: 'Abc12*',
           acceptTerms,
         });
-        const errors = await validate(dto, { stopAtFirstError: true });
+        const errors = await validate(dto);
         expect(errors).toHaveLength(1);
         expect(errors[0].constraints).toEqual(expectedErrors);
       },
@@ -566,7 +567,7 @@ describe('RegisterRequestDto', () => {
         password: 'Abc123',
         acceptTerms: false,
       });
-      const errors = await validate(dto, { stopAtFirstError: true });
+      const errors = await validate(dto);
 
       expect(errors[0].constraints).toEqual({
         equals: AcceptermsMessage.REQUIRED,
