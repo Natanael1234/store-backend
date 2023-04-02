@@ -15,7 +15,7 @@ describe('LogoutRequestDto', () => {
       refreshToken:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImF5bGFuQGJvc2Nhcmluby5jb20iLCJwYXNzd29yZCI6InlhMGdzcWh5NHd6dnV2YjQifQ.yN_8-Mge9mFgsnYHnPEh_ZzNP7YKvSbQ3Alug9HMCsM',
     });
-    const errors = await validate(dto);
+    const errors = await validateFirstError(dto, LogoutRequestDto);
     expect(errors).toHaveLength(0);
   });
 

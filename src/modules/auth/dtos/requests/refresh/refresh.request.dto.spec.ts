@@ -1,6 +1,7 @@
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { RefreshRequestDto } from './refresh.request.dto';
+import { validateFirstError } from '../../../../system/utils/validate-first-error';
 
 enum RefreshtMessages {
   IS_STRING = 'Refresh token must be a string',
@@ -64,7 +65,7 @@ describe('RefreshRequestDto', () => {
     async ({ refreshToken, expectedErrors }) => {
       const data = { refreshToken };
       const dto = plainToInstance(RefreshRequestDto, data);
-      const errors = await validate(dto);
+      const errors = await validateFirstError(dto, RefreshRequestDto);
       expect(errors).toHaveLength(1);
       expect(errors[0].property).toEqual('refreshToken');
       expect(errors[0].value).toEqual(data.refreshToken);
