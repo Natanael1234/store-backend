@@ -54,27 +54,7 @@ describe('TokenServiceService', () => {
   let module: TestingModule;
 
   beforeEach(async () => {
-    module = await getTestingModule({
-      imports: [
-        ConfigModule.forRoot({
-          isGlobal: true,
-        }),
-        PassportModule,
-        JwtModule.register({
-          secret: JWTConfigs.ACCESS_TOKEN_SECRET,
-          signOptions: {
-            expiresIn: JWTConfigs.ACCESS_TOKEN_EXPIRATION,
-          },
-        }),
-      ],
-      providers: [
-        JwtStrategy,
-        RefreshTokenRepository,
-        LocalStrategy,
-        { provide: APP_GUARD, useClass: JwtAuthGuard },
-        TokenService,
-      ],
-    });
+    module = await getTestingModule();
     tokenService = module.get<TokenService>(TokenService);
     jwtService = module.get<JwtService>(JwtService);
     userRepo = module.get<Repository<UserEntity>>(

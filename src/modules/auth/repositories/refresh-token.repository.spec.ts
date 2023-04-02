@@ -29,7 +29,7 @@ describe('RefreshTokenRepository', () => {
   const usersData = [userData1, userData2, userData3];
 
   beforeEach(async () => {
-    module = await getTestingModule({ providers: [RefreshTokenRepository] });
+    module = await getTestingModule();
     refreshTokenRepo = module.get<RefreshTokenRepository>(
       RefreshTokenRepository,
     );

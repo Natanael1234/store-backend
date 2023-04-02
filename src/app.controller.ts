@@ -6,7 +6,6 @@ import {
   // UseInterceptors,
 } from '@nestjs/common';
 import { AppService } from './app.service';
-import { SkipAuth } from './modules/auth/guards/skip-auth';
 
 @Controller()
 export class AppController {

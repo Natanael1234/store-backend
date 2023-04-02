@@ -1,15 +1,14 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { EncryptedDataDto } from '../../dtos/encrypted-data.dto';
+import { TestingModule } from '@nestjs/testing';
 import { EncryptionService } from './encryption.service';
+import { getTestingModule } from '../../../../../.jest/test-config.module';
 
 describe('EncryptionService', () => {
   let service: EncryptionService;
   const plainData = 'teste';
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [EncryptionService],
-    }).compile();
+    const module: TestingModule = await getTestingModule();
+
     service = module.get<EncryptionService>(EncryptionService);
   });
 

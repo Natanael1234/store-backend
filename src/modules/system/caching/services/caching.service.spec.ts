@@ -1,15 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CachingService } from './caching.service';
+import { getTestingModule } from '../../../../.jest/test-config.module';
+import { CacheModule } from '@nestjs/common';
 
 // TODO:
 describe('CachingService', () => {
   let service: CachingService;
   let module: TestingModule;
   beforeEach(async () => {
-    module = await Test.createTestingModule({
-      providers: [CachingService],
-    }).compile();
-
+    module = await getTestingModule();
     service = module.get<CachingService>(CachingService);
   });
 
