@@ -1,6 +1,33 @@
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { RegisterRequestDto } from './register.request.dto';
+import { error } from 'console';
+
+enum NameMessage {
+  REQUIRED = 'Name is required',
+  IS_STRING = 'Name must be string',
+  MIN_SIZE = 'Name must be at least 6 characters long',
+  MAX_SIZE = 'Name must have a maximum of 60 characters',
+}
+
+enum EmailMessage {
+  MAX_SIZE = 'Email must have a maximum of 60 characters',
+  IS_STRING = 'Email must be string',
+  VALID = 'Invalid email',
+  REQUIRED = 'Email is required',
+}
+
+enum PasswordMessage {
+  IS_REQUIRED = 'Password is required',
+  MUST_BE_STRING = 'Password must be string',
+  MIN_SIZE = 'Password must be at least 6 characters long',
+  MAX_SIZE = 'Password must have a maximum of 12 characters',
+  STRONG = 'Password must have lowercase, uppercase, number and special characters',
+}
+
+enum AcceptermsMessage {
+  REQUIRED = 'Acceptance of terms is required',
+}
 
 describe('RegisterRequestDto', () => {
   it('should pass validation', async () => {
@@ -14,17 +41,7 @@ describe('RegisterRequestDto', () => {
     expect(errors).toHaveLength(0);
   });
 
-  //
-  // acceptTerms1
-
   describe('name', () => {
-    enum NameMessage {
-      REQUIRED = 'Name is required',
-      IS_STRING = 'Name must be string',
-      MIN_SIZE = 'Name must be at least 6 characters long',
-      MAX_SIZE = 'Name must have a maximum of 60 characters',
-    }
-
     it.each([
       {
         nameDescription: 'number',
@@ -160,13 +177,6 @@ describe('RegisterRequestDto', () => {
   });
 
   describe('email', () => {
-    enum EmailMessage {
-      MAX_SIZE = 'Email must have a maximum of 60 characters',
-      IS_STRING = 'Email must be string',
-      INVALID = 'Invalid email',
-      REQUIRED = 'Email is required',
-    }
-
     it.each([
       {
         emailDescription: 'number',
@@ -221,7 +231,7 @@ describe('RegisterRequestDto', () => {
         emailDescription: 'invalid',
         email: 'email.com',
         expectedErrors: {
-          isEmail: EmailMessage.INVALID,
+          isEmail: EmailMessage.VALID,
         },
       },
     ])(
@@ -279,14 +289,6 @@ describe('RegisterRequestDto', () => {
   });
 
   describe('password', () => {
-    enum PasswordMessage {
-      IS_REQUIRED = 'Password is required',
-      MUST_BE_STRING = 'Password must be string',
-      MIN_SIZE = 'Password must be at least 6 characters long',
-      MAX_SIZE = 'Password must have a maximum of 12 characters',
-      STRONG = 'Password must have lowercase, uppercase, number and special characters',
-    }
-
     it.each([
       {
         passwordDescription: 'number',
@@ -490,9 +492,6 @@ describe('RegisterRequestDto', () => {
       expect(dto.acceptTerms).toEqual(true);
     });
 
-    enum AcceptermsMessage {
-      REQUIRED = 'Acceptance of terms is required',
-    }
     it.each([
       {
         acceptTermsDescription: 'string false',
@@ -558,5 +557,29 @@ describe('RegisterRequestDto', () => {
         expect(errors[0].constraints).toEqual(expectedErrors);
       },
     );
+  });
+
+  describe('multiple errors', () => {
+    it('should fail in multiple fields', async () => {
+      const dto = plainToInstance(RegisterRequestDto, {
+        name: 'User',
+        email: 'email.com',
+        password: 'Abc123',
+        acceptTerms: false,
+      });
+      const errors = await validate(dto, { stopAtFirstError: true });
+      console.error(errors);
+      expect(errors).toHaveLength(4);
+      expect(errors[0].constraints).toEqual({
+        minLength: NameMessage.MIN_SIZE,
+      });
+      expect(errors[1].constraints).toEqual({ isEmail: EmailMessage.VALID });
+      expect(errors[2].constraints).toEqual({
+        isStrongPassword: PasswordMessage.STRONG,
+      });
+      expect(errors[3].constraints).toEqual({
+        equals: AcceptermsMessage.REQUIRED,
+      });
+    });
   });
 });

@@ -18,6 +18,15 @@ export class RegisterRequestDto {
   @IsString({ message: 'Name must be string' })
   @IsNotEmpty({ message: 'Name is required' })
   name: string;
+
+  @MaxLength(60, {
+    message: 'Email must have a maximum of 60 characters',
+  })
+  @IsEmail({}, { message: 'Invalid email' })
+  @IsString({ message: 'Email must be string' })
+  @IsNotEmpty({ message: 'Email is required' })
+  email: string;
+
   @IsStrongPassword(
     {
       minLength: 3,
@@ -38,14 +47,6 @@ export class RegisterRequestDto {
   @IsString({ message: 'Password must be string' })
   @IsNotEmpty({ message: 'Password is required' })
   password: string;
-
-  @MaxLength(60, {
-    message: 'Email must have a maximum of 60 characters',
-  })
-  @IsEmail({}, { message: 'Invalid email' })
-  @IsString({ message: 'Email must be string' })
-  @IsNotEmpty({ message: 'Email is required' })
-  email: string;
 
   @Equals(true, { message: 'Acceptance of terms is required' })
   @Transform(({ value }) => {
