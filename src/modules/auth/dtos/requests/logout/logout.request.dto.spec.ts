@@ -65,7 +65,6 @@ describe('LogoutRequestDto', () => {
     async ({ refreshToken, expectedErrors }) => {
       const data = { refreshToken };
       const errors = await validateFirstError(data, LogoutRequestDto);
-      console.error(errors);
 
       expect(errors).toHaveLength(1);
       expect(errors[0].property).toEqual('refreshToken');

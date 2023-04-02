@@ -2,6 +2,12 @@ import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { RefreshRequestDto } from './refresh.request.dto';
 
+enum RefreshtMessages {
+  IS_STRING = 'Refresh token must be a string',
+  FORMAT = 'Invalid refresh token',
+  REQUIRED = 'Refresh token is required',
+}
+
 describe('RefreshRequestDto', () => {
   it('should pass validation', async () => {
     const dto = plainToInstance(RefreshRequestDto, {
@@ -16,74 +22,47 @@ describe('RefreshRequestDto', () => {
     {
       refreshTokenDescription: 'number',
       refreshToken: 2323232,
-      expectedErrors: {
-        isString: 'Refresh token must be a string',
-        matches: 'Invalid refresh token',
-      },
+      expectedErrors: { isString: RefreshtMessages.IS_STRING },
     },
     {
       refreshTokenDescription: 'boolean',
       refreshToken: true,
-      expectedErrors: {
-        isString: 'Refresh token must be a string',
-        matches: 'Invalid refresh token',
-      },
+      expectedErrors: { isString: RefreshtMessages.IS_STRING },
     },
     {
       refreshTokenDescription: 'array',
       refreshToken: [],
-      expectedErrors: {
-        isString: 'Refresh token must be a string',
-        matches: 'Invalid refresh token',
-      },
+      expectedErrors: { isString: RefreshtMessages.IS_STRING },
     },
     {
       refreshTokenDescription: 'object',
       refreshToken: {},
-      expectedErrors: {
-        isString: 'Refresh token must be a string',
-        matches: 'Invalid refresh token',
-      },
+      expectedErrors: { isString: RefreshtMessages.IS_STRING },
     },
     {
       refreshTokenDescription: 'null',
       refreshToken: null,
-      expectedErrors: {
-        isNotEmpty: 'Refresh token is required',
-        isString: 'Refresh token must be a string',
-        matches: 'Invalid refresh token',
-      },
+      expectedErrors: { isNotEmpty: RefreshtMessages.REQUIRED },
     },
     {
       refreshTokenDescription: 'undefined',
       refreshToken: undefined,
-      expectedErrors: {
-        isNotEmpty: 'Refresh token is required',
-        isString: 'Refresh token must be a string',
-        matches: 'Invalid refresh token',
-      },
+      expectedErrors: { isNotEmpty: RefreshtMessages.REQUIRED },
     },
     {
       refreshTokenDescription: 'empty',
       refreshToken: '',
-      expectedErrors: {
-        isNotEmpty: 'Refresh token is required',
-        matches: 'Invalid refresh token',
-      },
+      expectedErrors: { isNotEmpty: RefreshtMessages.REQUIRED },
     },
     {
       refreshTokenDescription: 'invalid',
       refreshToken: 'invalid_token',
-      expectedErrors: {
-        matches: 'Invalid refresh token',
-      },
+      expectedErrors: { matches: RefreshtMessages.FORMAT },
     },
   ])(
     'should fail validation when refreshToken is $refreshTokenDescription',
     async ({ refreshToken, expectedErrors }) => {
-      const data = {
-        refreshToken,
-      };
+      const data = { refreshToken };
       const dto = plainToInstance(RefreshRequestDto, data);
       const errors = await validate(dto);
       expect(errors).toHaveLength(1);
