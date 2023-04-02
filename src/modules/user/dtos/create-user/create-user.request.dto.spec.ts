@@ -391,7 +391,6 @@ describe('CreateUserRequestDto', () => {
 
       expect(errors[1]).toHaveLength(0);
       expect(errors[2]).toHaveLength(0);
-      console.error({ data, errors });
 
       expect(errors[3]).toHaveLength(1);
       expect(errors[3][0].property).toEqual('password');

@@ -253,14 +253,14 @@ describe('UserService', () => {
       });
     });
 
-    it('should fail when user is not found', async () => {
+    it('should fail when user does not exists', async () => {
       const newName = 'New Name';
       const newEmail = 'newname@email.com';
       await service.create(userDto1);
       await service.create(userDto2);
       await service.create(userDto3);
       async function fn() {
-        await service.update(2, { name: newName, email: newEmail });
+        await service.update(12, { name: newName, email: newEmail });
       }
       await expect(fn()).rejects.toThrow(NotFoundException);
       await expect(fn()).rejects.toThrow('User not found');
