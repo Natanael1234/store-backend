@@ -151,21 +151,23 @@ describe('LoginRequestDto', () => {
     );
   });
 
-  it('should fail validation when there are multiple errors', async () => {
-    const data = { email: '@emailcom', password: '12345' };
-    const errors = await validateFirstError(data, LoginRequestDto);
+  describe('multiple errors', () => {
+    it('should fail validation when there are multiple errors', async () => {
+      const data = { email: '@emailcom', password: '12345' };
+      const errors = await validateFirstError(data, LoginRequestDto);
 
-    expect(errors).toHaveLength(2);
+      expect(errors).toHaveLength(2);
 
-    expect(errors[0].property).toEqual('email');
-    expect(errors[0].value).toEqual(data.email);
-    expect(errors[0].constraints).toEqual({
-      isEmail: EmailMessage.IS_EMAIL,
-    });
-    expect(errors[1].property).toEqual('password');
-    expect(errors[1].value).toEqual(data.password);
-    expect(errors[1].constraints).toEqual({
-      minLength: PasswordMessage.MIN_SIZE,
+      expect(errors[0].property).toEqual('email');
+      expect(errors[0].value).toEqual(data.email);
+      expect(errors[0].constraints).toEqual({
+        isEmail: EmailMessage.IS_EMAIL,
+      });
+      expect(errors[1].property).toEqual('password');
+      expect(errors[1].value).toEqual(data.password);
+      expect(errors[1].constraints).toEqual({
+        minLength: PasswordMessage.MIN_SIZE,
+      });
     });
   });
 });
