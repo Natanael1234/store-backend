@@ -1,28 +1,28 @@
+import { validateFirstError } from '../../../../system/utils/validate-first-error';
 import { LoginRequestDto } from './login.request.dto';
-import {
-  validateAllErrors,
-  validateFirstError,
-} from '../../../../system/utils/validate-first-error';
+
+enum EmailMessage {
+  IS_EMAIL = 'Email is invalid',
+  IS_STRING = 'Email must be string',
+  REQUIRED = 'Email is required',
+  MAX_LENGTH = 'Email must have a maximum of 60 characters',
+}
+
+enum PasswordMessage {
+  IS_STRING = 'Password must be a string',
+  MIN_SIZE = 'Password must be at least 6 characters long',
+  MAX_LENGTH = 'Password must have a maximum of 60 characters',
+  REQUIRED = 'Password is required',
+}
+const validate = async (data) => validateFirstError(data, LoginRequestDto);
 
 describe('LoginRequestDto', () => {
   it('should pass validation', async () => {
     const data = { email: 'user@email.com', password: '123456' };
-    const errors = await validateFirstError(data, LoginRequestDto);
+    const errors = await validate(data);
+
     expect(errors).toHaveLength(0);
   });
-  enum EmailMessage {
-    IS_EMAIL = 'Email is invalid',
-    IS_STRING = 'Email must be string',
-    REQUIRED = 'Email is required',
-    MAX_LENGTH = 'Email must have a maximum of 60 characters',
-  }
-
-  enum PasswordMessage {
-    IS_STRING = 'Password must be a string',
-    MIN_SIZE = 'Password must be at least 6 characters long',
-    MAX_LENGTH = 'Password must have a maximum of 60 characters',
-    REQUIRED = 'Password is required',
-  }
 
   describe('email', () => {
     it.each([
@@ -85,10 +85,7 @@ describe('LoginRequestDto', () => {
         { email: 'x'.repeat(51) + '@email.com', password: 'Ab123*' },
       ];
 
-      const validations = [
-        await validateFirstError(data[0], LoginRequestDto),
-        await validateFirstError(data[1], LoginRequestDto),
-      ];
+      const validations = [await validate(data[0]), await validate(data[1])];
 
       expect(validations[0]).toHaveLength(0);
       expect(validations[1]).toHaveLength(1);
@@ -141,7 +138,7 @@ describe('LoginRequestDto', () => {
       'should fail validation when password is $passwordDescription',
       async ({ password, expectedErrors }) => {
         const data = { email: 'user@email.com', password };
-        const errors = await validateFirstError(data, LoginRequestDto);
+        const errors = await validate(data);
 
         expect(errors).toHaveLength(1);
         expect(errors[0].property).toEqual('password');
@@ -154,7 +151,7 @@ describe('LoginRequestDto', () => {
   describe('multiple errors', () => {
     it('should fail validation when there are multiple errors', async () => {
       const data = { email: '@emailcom', password: '12345' };
-      const errors = await validateFirstError(data, LoginRequestDto);
+      const errors = await validate(data);
 
       expect(errors).toHaveLength(2);
 
