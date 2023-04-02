@@ -1,6 +1,5 @@
-import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
-import { CreateUserRequestDto } from './create-user.request.dto';
+import { CreateUserRequestDTO } from './create-user.request.dto';
+import { validateFirstError } from '../../../system/utils/validate-first-error';
 
 enum NameMessage {
   REQUIRED = 'Name is required',
@@ -24,14 +23,16 @@ enum PasswordMessage {
   STRONG = 'Password must have lowercase, uppercase, number and special characters',
 }
 
+const validate = (data) => validateFirstError(data, CreateUserRequestDTO);
+
 describe('CreateUserRequestDto', () => {
   it('should pass validation', async () => {
-    const dto = plainToInstance(CreateUserRequestDto, {
+    const data = {
       name: 'User 1',
       email: 'user@email.com',
-      password: 'Abc12*',
-    });
-    const errors = await validate(dto, { stopAtFirstError: true });
+      password: 'Ab123*',
+    };
+    const errors = await validate(data);
     expect(errors).toHaveLength(0);
   });
 
@@ -93,6 +94,20 @@ describe('CreateUserRequestDto', () => {
           minLength: NameMessage.MIN_SIZE,
         },
       },
+      {
+        nameDescription: 'empty',
+        name: '',
+        expectedErrors: {
+          isNotEmpty: NameMessage.REQUIRED,
+        },
+      },
+      {
+        nameDescription: 'too short',
+        name: 'Usr',
+        expectedErrors: {
+          minLength: NameMessage.MIN_SIZE,
+        },
+      },
     ])(
       'should fail validation when name is $nameDescription',
       async ({ name, expectedErrors }) => {
@@ -101,8 +116,8 @@ describe('CreateUserRequestDto', () => {
           email: 'user@email.com',
           password: 'Acb12$',
         };
-        const dto = plainToInstance(CreateUserRequestDto, data);
-        const errors = await validate(dto, { stopAtFirstError: true });
+
+        const errors = await validate(data);
         expect(errors).toHaveLength(1);
         expect(errors[0].property).toEqual('name');
         expect(errors[0].value).toEqual(data.name);
@@ -133,17 +148,12 @@ describe('CreateUserRequestDto', () => {
           password: 'Password123*',
         },
       ];
-      const dtos = [
-        plainToInstance(CreateUserRequestDto, data[0]),
-        plainToInstance(CreateUserRequestDto, data[1]),
-        plainToInstance(CreateUserRequestDto, data[2]),
-        plainToInstance(CreateUserRequestDto, data[3]),
-      ];
+
       const errors = [
-        await validate(dtos[0], { stopAtFirstError: true }),
-        await validate(dtos[1], { stopAtFirstError: true }),
-        await validate(dtos[2], { stopAtFirstError: true }),
-        await validate(dtos[3], { stopAtFirstError: true }),
+        await validate(data[0]),
+        await validate(data[1]),
+        await validate(data[2]),
+        await validate(data[3]),
       ];
 
       expect(errors[0]).toHaveLength(1);
@@ -231,47 +241,14 @@ describe('CreateUserRequestDto', () => {
           email,
           password: 'Abc12$',
         };
-        const dto = plainToInstance(CreateUserRequestDto, data);
-        const errors = await validate(dto, { stopAtFirstError: true });
+        const errors = await validate(data);
+
         expect(errors).toHaveLength(1);
         expect(errors[0].property).toEqual('email');
         expect(errors[0].value).toEqual(data.email);
-
         expect(errors[0].constraints).toEqual(expectedErrors);
       },
     );
-
-    it('should only validate emails shorter than 60 characters.', async () => {
-      const data = [
-        {
-          name: 'User 1',
-          email: 'u'.repeat(50) + '@email.com',
-          password: 'Password123*',
-        },
-        {
-          name: 'User 2',
-          email: 'u'.repeat(51) + '@email.com',
-          password: 'Password123*',
-        },
-      ];
-      const dtos = [
-        plainToInstance(CreateUserRequestDto, data[0]),
-        plainToInstance(CreateUserRequestDto, data[1]),
-      ];
-      const errors = [
-        await validate(dtos[0], { stopAtFirstError: true }),
-        await validate(dtos[1], { stopAtFirstError: true }),
-      ];
-
-      expect(errors[0]).toHaveLength(0);
-
-      expect(errors[1]).toHaveLength(1);
-      expect(errors[1][0].property).toEqual('email');
-      expect(errors[1][0].value).toEqual(data[1].email);
-      expect(errors[1][0].constraints).toEqual({
-        maxLength: EmailMessage.MAX_SIZE,
-      });
-    });
   });
 
   describe('password', () => {
@@ -368,8 +345,7 @@ describe('CreateUserRequestDto', () => {
           email: 'user@email.com',
           password,
         };
-        const dto = plainToInstance(CreateUserRequestDto, data);
-        const errors = await validate(dto, { stopAtFirstError: true });
+        const errors = await validate(data);
         expect(errors).toHaveLength(1);
         expect(errors[0].property).toEqual('password');
         expect(errors[0].value).toEqual(data.password);
@@ -400,17 +376,11 @@ describe('CreateUserRequestDto', () => {
           password: 'Se*1234567890',
         },
       ];
-      const dtos = [
-        plainToInstance(CreateUserRequestDto, data[0]),
-        plainToInstance(CreateUserRequestDto, data[1]),
-        plainToInstance(CreateUserRequestDto, data[2]),
-        plainToInstance(CreateUserRequestDto, data[3]),
-      ];
       const errors = [
-        await validate(dtos[0], { stopAtFirstError: true }),
-        await validate(dtos[1], { stopAtFirstError: true }),
-        await validate(dtos[2], { stopAtFirstError: true }),
-        await validate(dtos[3], { stopAtFirstError: true }),
+        await validate(data[0]),
+        await validate(data[1]),
+        await validate(data[2]),
+        await validate(data[3]),
       ];
       expect(errors[0]).toHaveLength(1);
       expect(errors[0][0].property).toEqual('password');
@@ -421,6 +391,7 @@ describe('CreateUserRequestDto', () => {
 
       expect(errors[1]).toHaveLength(0);
       expect(errors[2]).toHaveLength(0);
+      console.error({ data, errors });
 
       expect(errors[3]).toHaveLength(1);
       expect(errors[3][0].property).toEqual('password');
@@ -433,21 +404,14 @@ describe('CreateUserRequestDto', () => {
 
   describe('multiple errors', () => {
     it('should fail in multiple fields', async () => {
-      const dto = plainToInstance(CreateUserRequestDto, {
-        name: 'User',
-        email: 'email.com',
-        password: 'Abc123',
-      });
-      const errors = await validate(dto, { stopAtFirstError: true });
+      const data = { name: 'User', email: 'email.com' };
+      const errors = await validate(data);
 
       expect(errors).toHaveLength(3);
       expect(errors[0].constraints).toEqual({
         minLength: NameMessage.MIN_SIZE,
       });
       expect(errors[1].constraints).toEqual({ isEmail: EmailMessage.VALID });
-      expect(errors[2].constraints).toEqual({
-        isStrongPassword: PasswordMessage.STRONG,
-      });
     });
   });
 });

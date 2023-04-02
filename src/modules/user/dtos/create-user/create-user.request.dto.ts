@@ -7,7 +7,7 @@ import {
   MinLength,
 } from 'class-validator';
 
-export class CreateUserRequestDto {
+export class CreateUserRequestDTO {
   @MaxLength(60, {
     message: 'Name must have a maximum of 60 characters',
   })
@@ -37,10 +37,10 @@ export class CreateUserRequestDto {
         'Password must have lowercase, uppercase, number and special characters',
     },
   )
-  @MinLength(6, { message: 'Password must be at least 6 characters long' })
   @MaxLength(12, {
     message: 'Password must have a maximum of 12 characters',
   })
+  @MinLength(6, { message: 'Password must be at least 6 characters long' })
   @IsString({ message: 'Password must be string' })
   @IsNotEmpty({ message: 'Password is required' })
   password: string;

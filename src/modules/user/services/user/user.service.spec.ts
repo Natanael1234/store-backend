@@ -10,24 +10,24 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { CreateUserRequestDto } from '../../dtos/create-user/create-user.request.dto';
+import { CreateUserRequestDTO } from '../../dtos/create-user/create-user.request.dto';
 
 describe('UserService', () => {
   let module: TestingModule;
   let service: UserService;
   let userRepo: Repository<UserEntity>;
 
-  const userDto1: CreateUserRequestDto = {
+  const userDto1: CreateUserRequestDTO = {
     name: 'User 1',
     email: 'user1@email.com',
     password: '123',
   };
-  const userDto2: CreateUserRequestDto = {
+  const userDto2: CreateUserRequestDTO = {
     name: 'User 2',
     email: 'user2@email.com',
     password: '1234',
   };
-  const userDto3: CreateUserRequestDto = {
+  const userDto3: CreateUserRequestDTO = {
     name: 'User 3',
     email: 'user3@email.com',
     password: '12345',
@@ -229,11 +229,7 @@ describe('UserService', () => {
       await service.create(userDto3);
 
       // TODO: atualização de senha em métodos separados
-      await service.update({
-        id: 2,
-        name: newName,
-        email: newEmail,
-      });
+      await service.update(2, { name: newName, email: newEmail });
 
       const users = await userRepo.find();
       expect(users).toHaveLength(3);
@@ -264,11 +260,7 @@ describe('UserService', () => {
       await service.create(userDto2);
       await service.create(userDto3);
       async function fn() {
-        await service.update({
-          id: 10,
-          name: newName,
-          email: newEmail,
-        });
+        await service.update(2, { name: newName, email: newEmail });
       }
       await expect(fn()).rejects.toThrow(NotFoundException);
       await expect(fn()).rejects.toThrow('User not found');

@@ -9,7 +9,7 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common/exceptions';
-import { CreateUserRequestDto } from '../../dtos/create-user/create-user.request.dto';
+import { CreateUserRequestDTO } from '../../dtos/create-user/create-user.request.dto';
 
 @Injectable()
 export class UserService {
@@ -19,7 +19,7 @@ export class UserService {
     private encryptionService: EncryptionService,
   ) {}
 
-  public async create(userDto: CreateUserRequestDto): Promise<UserEntity> {
+  public async create(userDto: CreateUserRequestDTO): Promise<UserEntity> {
     if (!userDto) throw new BadRequestException('User data is required');
     if (!userDto.password)
       throw new UnprocessableEntityException('Password is required');
@@ -38,12 +38,15 @@ export class UserService {
     return await this.userRepository.save(user);
   }
 
-  public async update(userDto: UpdateUserRequestDTO): Promise<UserEntity> {
+  public async update(
+    userId: number,
+    userDto: UpdateUserRequestDTO,
+  ): Promise<UserEntity> {
     if (!userDto)
       throw new UnprocessableEntityException('User data is required');
-    if (!userDto.id) throw new UnprocessableEntityException('Id is required');
+    if (!userId) throw new UnprocessableEntityException('Id is required');
     const user = await this.userRepository.findOne({
-      where: { id: userDto.id },
+      where: { id: userId },
     });
     if (!user) throw new NotFoundException('User not found');
     // TODO: melhorar

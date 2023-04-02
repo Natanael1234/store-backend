@@ -1,8 +1,8 @@
 import { Transform } from 'class-transformer';
 import { Equals } from 'class-validator';
-import { CreateUserRequestDto } from '../../../../user/dtos/create-user/create-user.request.dto';
+import { CreateUserRequestDTO } from '../../../../user/dtos/create-user/create-user.request.dto';
 
-export class RegisterRequestDto extends CreateUserRequestDto {
+export class RegisterRequestDto extends CreateUserRequestDTO {
   @Equals(true, { message: 'Acceptance of terms is required' })
   @Transform(({ value }) => {
     if (typeof value == 'string') {
