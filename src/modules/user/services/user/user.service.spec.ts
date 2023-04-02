@@ -1,38 +1,36 @@
 import { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { QueryFailedError, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { UserEntity } from '../../models/user/user.entity';
 import { UserService } from './user.service';
 import { getTestingModule } from '../../../../.jest/test-config.module';
-import { CreateUserDTO } from '../../dtos/create-user/create-user.dto';
+
 import {
   BadRequestException,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import { CreateUserRequestDto } from '../../dtos/create-user/create-user.request.dto';
 
 describe('UserService', () => {
   let module: TestingModule;
   let service: UserService;
   let userRepo: Repository<UserEntity>;
 
-  const userDto1: CreateUserDTO = {
+  const userDto1: CreateUserRequestDto = {
     name: 'User 1',
     email: 'user1@email.com',
     password: '123',
-    acceptTerms: true,
   };
-  const userDto2: CreateUserDTO = {
+  const userDto2: CreateUserRequestDto = {
     name: 'User 2',
     email: 'user2@email.com',
     password: '1234',
-    acceptTerms: true,
   };
-  const userDto3: CreateUserDTO = {
+  const userDto3: CreateUserRequestDto = {
     name: 'User 3',
     email: 'user3@email.com',
     password: '12345',
-    acceptTerms: true,
   };
   const userDtos = [userDto1, userDto2, userDto3];
 
@@ -93,7 +91,6 @@ describe('UserService', () => {
             name: 'User 3',
             email,
             password: '12345',
-            acceptTerms: true,
           });
 
         await expect(fn()).rejects.toThrow('Email is required');
@@ -112,7 +109,6 @@ describe('UserService', () => {
             name,
             email: 'user@email.com',
             password: '12345',
-            acceptTerms: true,
           });
 
         await expect(fn()).rejects.toThrow('Name is required');
@@ -133,7 +129,6 @@ describe('UserService', () => {
               name: 'User',
               email: 'user@email.com',
               password,
-              acceptTerms: true,
             });
 
           await expect(fn()).rejects.toThrow('Password is required');

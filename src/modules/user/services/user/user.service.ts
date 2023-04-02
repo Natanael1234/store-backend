@@ -1,16 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { RegisterRequestDto } from '../../../auth/dtos/requests/register/register.request.dto';
 import { EncryptionService } from '../../../system/encryption/services/encryption/encryption.service';
 import { Repository } from 'typeorm';
-import { CreateUserDTO } from '../../dtos/create-user/create-user.dto';
-import { UpdateUserDTO } from '../../dtos/update-user/update-user.dto';
+import { UpdateUserRequestDTO } from '../../dtos/update-user/update-user.request.dto';
 import { UserEntity } from '../../models/user/user.entity';
 import {
   BadRequestException,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common/exceptions';
+import { CreateUserRequestDto } from '../../dtos/create-user/create-user.request.dto';
 
 @Injectable()
 export class UserService {
@@ -20,13 +19,7 @@ export class UserService {
     private encryptionService: EncryptionService,
   ) {}
 
-  public async register(
-    registerRequestDto: RegisterRequestDto,
-  ): Promise<boolean> {
-    return !!(await this.create(registerRequestDto));
-  }
-
-  public async create(userDto: CreateUserDTO): Promise<UserEntity> {
+  public async create(userDto: CreateUserRequestDto): Promise<UserEntity> {
     if (!userDto) throw new BadRequestException('User data is required');
     if (!userDto.password)
       throw new UnprocessableEntityException('Password is required');
@@ -45,7 +38,7 @@ export class UserService {
     return await this.userRepository.save(user);
   }
 
-  public async update(userDto: UpdateUserDTO): Promise<UserEntity> {
+  public async update(userDto: UpdateUserRequestDTO): Promise<UserEntity> {
     if (!userDto)
       throw new UnprocessableEntityException('User data is required');
     if (!userDto.id) throw new UnprocessableEntityException('Id is required');

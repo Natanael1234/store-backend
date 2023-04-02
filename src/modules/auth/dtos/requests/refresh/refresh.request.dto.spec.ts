@@ -1,5 +1,4 @@
 import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
 import { RefreshRequestDto } from './refresh.request.dto';
 import { validateFirstError } from '../../../../system/utils/validate-first-error';
 
@@ -15,7 +14,7 @@ describe('RefreshRequestDto', () => {
       refreshToken:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImF5bGFuQGJvc2Nhcmluby5jb20iLCJwYXNzd29yZCI6InlhMGdzcWh5NHd6dnV2YjQifQ.yN_8-Mge9mFgsnYHnPEh_ZzNP7YKvSbQ3Alug9HMCsM',
     });
-    const errors = await validate(dto);
+    const errors = await validateFirstError(dto, RefreshRequestDto);
     expect(errors).toHaveLength(0);
   });
 

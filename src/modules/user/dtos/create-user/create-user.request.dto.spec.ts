@@ -1,6 +1,6 @@
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { RegisterRequestDto } from './register.request.dto';
+import { CreateUserRequestDto } from './create-user.request.dto';
 
 enum NameMessage {
   REQUIRED = 'Name is required',
@@ -24,17 +24,12 @@ enum PasswordMessage {
   STRONG = 'Password must have lowercase, uppercase, number and special characters',
 }
 
-enum AcceptermsMessage {
-  REQUIRED = 'Acceptance of terms is required',
-}
-
-describe('RegisterRequestDto', () => {
+describe('CreateUserRequestDto', () => {
   it('should pass validation', async () => {
-    const dto = plainToInstance(RegisterRequestDto, {
+    const dto = plainToInstance(CreateUserRequestDto, {
       name: 'User 1',
       email: 'user@email.com',
       password: 'Abc12*',
-      acceptTerms: true,
     });
     const errors = await validate(dto, { stopAtFirstError: true });
     expect(errors).toHaveLength(0);
@@ -105,9 +100,8 @@ describe('RegisterRequestDto', () => {
           name,
           email: 'user@email.com',
           password: 'Acb12$',
-          acceptTerms: true,
         };
-        const dto = plainToInstance(RegisterRequestDto, data);
+        const dto = plainToInstance(CreateUserRequestDto, data);
         const errors = await validate(dto, { stopAtFirstError: true });
         expect(errors).toHaveLength(1);
         expect(errors[0].property).toEqual('name');
@@ -122,32 +116,28 @@ describe('RegisterRequestDto', () => {
           name: 'User',
           email: 'user@email.com',
           password: 'Password123*',
-          acceptTerms: true,
         },
         {
           name: 'User 2',
           email: 'user@email.com',
           password: 'Password123*',
-          acceptTerms: true,
         },
         {
           name: 'User ' + '3'.repeat(55),
           email: 'user@email.com',
           password: 'Password123*',
-          acceptTerms: true,
         },
         {
           name: 'User ' + 'x'.repeat(56),
           email: 'user@email.com',
           password: 'Password123*',
-          acceptTerms: true,
         },
       ];
       const dtos = [
-        plainToInstance(RegisterRequestDto, data[0]),
-        plainToInstance(RegisterRequestDto, data[1]),
-        plainToInstance(RegisterRequestDto, data[2]),
-        plainToInstance(RegisterRequestDto, data[3]),
+        plainToInstance(CreateUserRequestDto, data[0]),
+        plainToInstance(CreateUserRequestDto, data[1]),
+        plainToInstance(CreateUserRequestDto, data[2]),
+        plainToInstance(CreateUserRequestDto, data[3]),
       ];
       const errors = [
         await validate(dtos[0], { stopAtFirstError: true }),
@@ -240,9 +230,8 @@ describe('RegisterRequestDto', () => {
           name: 'User 1',
           email,
           password: 'Abc12$',
-          acceptTerms: true,
         };
-        const dto = plainToInstance(RegisterRequestDto, data);
+        const dto = plainToInstance(CreateUserRequestDto, data);
         const errors = await validate(dto, { stopAtFirstError: true });
         expect(errors).toHaveLength(1);
         expect(errors[0].property).toEqual('email');
@@ -258,18 +247,16 @@ describe('RegisterRequestDto', () => {
           name: 'User 1',
           email: 'u'.repeat(50) + '@email.com',
           password: 'Password123*',
-          acceptTerms: true,
         },
         {
           name: 'User 2',
           email: 'u'.repeat(51) + '@email.com',
           password: 'Password123*',
-          acceptTerms: true,
         },
       ];
       const dtos = [
-        plainToInstance(RegisterRequestDto, data[0]),
-        plainToInstance(RegisterRequestDto, data[1]),
+        plainToInstance(CreateUserRequestDto, data[0]),
+        plainToInstance(CreateUserRequestDto, data[1]),
       ];
       const errors = [
         await validate(dtos[0], { stopAtFirstError: true }),
@@ -380,9 +367,8 @@ describe('RegisterRequestDto', () => {
           name: 'User 1',
           email: 'user@email.com',
           password,
-          acceptTerms: true,
         };
-        const dto = plainToInstance(RegisterRequestDto, data);
+        const dto = plainToInstance(CreateUserRequestDto, data);
         const errors = await validate(dto, { stopAtFirstError: true });
         expect(errors).toHaveLength(1);
         expect(errors[0].property).toEqual('password');
@@ -397,32 +383,28 @@ describe('RegisterRequestDto', () => {
           name: 'User 1',
           email: 'user@email.com',
           password: 'Se*12',
-          acceptTerms: true,
         },
         {
           name: 'User 1',
           email: 'user@email.com',
           password: 'Se*123',
-          acceptTerms: true,
         },
         {
           name: 'User 1',
           email: 'user@email.com',
           password: 'Se*123456789',
-          acceptTerms: true,
         },
         {
           name: 'User 1',
           email: 'user@email.com',
           password: 'Se*1234567890',
-          acceptTerms: true,
         },
       ];
       const dtos = [
-        plainToInstance(RegisterRequestDto, data[0]),
-        plainToInstance(RegisterRequestDto, data[1]),
-        plainToInstance(RegisterRequestDto, data[2]),
-        plainToInstance(RegisterRequestDto, data[3]),
+        plainToInstance(CreateUserRequestDto, data[0]),
+        plainToInstance(CreateUserRequestDto, data[1]),
+        plainToInstance(CreateUserRequestDto, data[2]),
+        plainToInstance(CreateUserRequestDto, data[3]),
       ];
       const errors = [
         await validate(dtos[0], { stopAtFirstError: true }),
@@ -449,134 +431,21 @@ describe('RegisterRequestDto', () => {
     });
   });
 
-  describe('acceptTerms', () => {
-    it('should validate when accept terms is boolean true', async () => {
-      const dto = plainToInstance(RegisterRequestDto, {
-        name: 'User 1',
-        email: 'user@email.com',
-        password: 'Abc12*',
-        acceptTerms: 'true',
-      });
-      const transformedValue = dto.acceptTerms;
-      const errors = await validate(dto, { stopAtFirstError: true });
-
-      expect(transformedValue).toEqual(true);
-      expect(errors).toHaveLength(0);
-    });
-
-    it('should transform transform transform string true into boolean true and validate', async () => {
-      const dto = plainToInstance(RegisterRequestDto, {
-        name: 'User 1',
-        email: 'user@email.com',
-        password: 'Abc12*',
-        acceptTerms: 'true',
-      });
-      const transformedValue = dto.acceptTerms;
-      const errors = await validate(dto, { stopAtFirstError: true });
-
-      expect(transformedValue).toEqual(true);
-      expect(errors).toHaveLength(0);
-    });
-
-    it('should transform accept terms when string into boolean true', async () => {
-      const dto = plainToInstance(RegisterRequestDto, {
-        name: 'User 1',
-        email: 'user@email.com',
-        password: 'Abc12*',
-        acceptTerms: 'true',
-      });
-      const errors = await validate(dto, { stopAtFirstError: true });
-
-      expect(errors).toHaveLength(0);
-      expect(dto.acceptTerms).toEqual(true);
-    });
-
-    it.each([
-      {
-        acceptTermsDescription: 'string false',
-        acceptTerms: 'false',
-        expectedErrors: { equals: AcceptermsMessage.REQUIRED },
-      },
-      {
-        acceptTermsDescription: 'boolean false',
-        acceptTerms: false,
-        expectedErrors: { equals: AcceptermsMessage.REQUIRED },
-      },
-      {
-        acceptTermsDescription: 'number 0',
-        acceptTerms: 0,
-        expectedErrors: { equals: AcceptermsMessage.REQUIRED },
-      },
-      {
-        acceptTermsDescription: 'number 1',
-        acceptTerms: 1,
-        expectedErrors: { equals: AcceptermsMessage.REQUIRED },
-      },
-      {
-        acceptTermsDescription: 'array',
-        acceptTerms: [],
-        expectedErrors: { equals: AcceptermsMessage.REQUIRED },
-      },
-      {
-        acceptTermsDescription: 'object',
-        acceptTerms: {},
-        expectedErrors: { equals: AcceptermsMessage.REQUIRED },
-      },
-      {
-        acceptTermsDescription: 'null',
-        acceptTerms: null,
-        expectedErrors: { equals: AcceptermsMessage.REQUIRED },
-      },
-      {
-        acceptTermsDescription: 'undefined',
-        acceptTerms: undefined,
-        expectedErrors: { equals: AcceptermsMessage.REQUIRED },
-      },
-      {
-        acceptTermsDescription: 'empty',
-        acceptTerms: '',
-        expectedErrors: { equals: AcceptermsMessage.REQUIRED },
-      },
-      {
-        acceptTermsDescription: 'invalid',
-        acceptTerms: 'invalid_boolean_string',
-        expectedErrors: { equals: AcceptermsMessage.REQUIRED },
-      },
-    ])(
-      'should fail when accept terms is $acceptTermsDescription',
-      async ({ acceptTerms, expectedErrors }) => {
-        const dto = plainToInstance(RegisterRequestDto, {
-          name: 'User 1',
-          email: 'user@email.com',
-          password: 'Abc12*',
-          acceptTerms,
-        });
-        const errors = await validate(dto, { stopAtFirstError: true });
-        expect(errors).toHaveLength(1);
-        expect(errors[0].constraints).toEqual(expectedErrors);
-      },
-    );
-  });
-
   describe('multiple errors', () => {
     it('should fail in multiple fields', async () => {
-      const dto = plainToInstance(RegisterRequestDto, {
+      const dto = plainToInstance(CreateUserRequestDto, {
         name: 'User',
         email: 'email.com',
         password: 'Abc123',
-        acceptTerms: false,
       });
       const errors = await validate(dto, { stopAtFirstError: true });
 
+      expect(errors).toHaveLength(3);
       expect(errors[0].constraints).toEqual({
-        equals: AcceptermsMessage.REQUIRED,
-      });
-      expect(errors).toHaveLength(4);
-      expect(errors[1].constraints).toEqual({
         minLength: NameMessage.MIN_SIZE,
       });
-      expect(errors[2].constraints).toEqual({ isEmail: EmailMessage.VALID });
-      expect(errors[3].constraints).toEqual({
+      expect(errors[1].constraints).toEqual({ isEmail: EmailMessage.VALID });
+      expect(errors[2].constraints).toEqual({
         isStrongPassword: PasswordMessage.STRONG,
       });
     });

@@ -162,7 +162,6 @@ describe('AuthService', () => {
         name: 'Another user',
         email: 'anotheruser@email.com',
         password: 'abc',
-        acceptTerms: true,
       });
       const response3 = await authService.register(registerData[2]);
 

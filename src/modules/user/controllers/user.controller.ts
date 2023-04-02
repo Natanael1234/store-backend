@@ -1,27 +1,23 @@
 import { Controller, Post, Get, Body } from '@nestjs/common';
 import { Patch } from '@nestjs/common/decorators';
-import { Observable } from 'rxjs';
-import { CreateUserDTO } from '../dtos/create-user/create-user.dto';
-import { UpdateUserDTO } from '../dtos/update-user/update-user.dto';
+
+import { UpdateUserRequestDTO } from '../dtos/update-user/update-user.request.dto';
 import { UserEntity } from '../models/user/user.entity';
 import { UserService } from '../services/user/user.service';
+import { CreateUserRequestDto } from '../dtos/create-user/create-user.request.dto';
+import { RegisterRequestDto } from '../../auth/dtos/requests/register/register.request.dto';
 
 @Controller('users')
 export class UserController {
   constructor(private userService: UserService) {}
 
-  @Post('register')
-  register(@Body() user: CreateUserDTO): Promise<boolean> {
-    return this.userService.register(user);
-  }
-
   @Post()
-  add(@Body() user: CreateUserDTO): Promise<UserEntity> {
+  add(@Body() user: CreateUserRequestDto): Promise<UserEntity> {
     return this.userService.create(user);
   }
 
   @Patch()
-  update(@Body() user: UpdateUserDTO): Promise<UserEntity> {
+  update(@Body() user: UpdateUserRequestDTO): Promise<UserEntity> {
     return this.userService.update(user);
   }
 
