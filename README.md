@@ -32,6 +32,8 @@ $ npm run test:e2e
 
 # test coverage
 $ npm run test:cov
+
+# Obs: to debug tests use the commands above in VSCode's Javascript Debug Terminal. Make sure Auto Attach is disabled. (F1->Toggle Auto Attach)
 ```
 
 ## Docker-Compose
