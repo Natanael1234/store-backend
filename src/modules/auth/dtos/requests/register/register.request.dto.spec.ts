@@ -1,7 +1,6 @@
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { RegisterRequestDto } from './register.request.dto';
-import { error } from 'console';
 
 enum NameMessage {
   REQUIRED = 'Name is required',
@@ -568,7 +567,7 @@ describe('RegisterRequestDto', () => {
         acceptTerms: false,
       });
       const errors = await validate(dto, { stopAtFirstError: true });
-      console.error(errors);
+
       expect(errors).toHaveLength(4);
       expect(errors[0].constraints).toEqual({
         minLength: NameMessage.MIN_SIZE,
