@@ -1,5 +1,4 @@
 import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
 import { LogoutRequestDto } from './logout.request.dto';
 import { validateFirstError } from '../../../../system/utils/validate-first-error';
 

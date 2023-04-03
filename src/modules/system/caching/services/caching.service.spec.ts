@@ -12,6 +12,10 @@ describe('CachingService', () => {
     service = module.get<CachingService>(CachingService);
   });
 
+  afterEach(async () => {
+    await module.close(); // TODO: é necessário?
+  });
+
   it('should be defined', () => {
     expect(service).toBeDefined();
   });

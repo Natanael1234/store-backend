@@ -5,12 +5,6 @@ import { UserService } from '../../../user/services/user/user.service';
 import { RefreshTokenRepository } from '../../repositories/refresh-token.repository';
 import { TokenService } from '../token/token.service';
 import { AuthService } from './auth.service';
-import { ConfigModule } from '@nestjs/config';
-import { PassportModule } from '@nestjs/passport';
-import { JWTConfigs } from '../../configs/jwt.config';
-import { APP_GUARD } from '@nestjs/core';
-import { JwtAuthGuard } from '../../guards/jwt/jwt-auth.guard';
-import { LocalStrategy } from '../../strategies/local/local.strategy';
 import { UserEntity } from '../../../user/models/user/user.entity';
 import { QueryFailedError, Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -67,6 +61,10 @@ describe('AuthService', () => {
     userRepo = module.get<Repository<UserEntity>>(
       getRepositoryToken(UserEntity),
     );
+  });
+
+  afterEach(async () => {
+    await module.close(); // TODO: é necessário?
   });
 
   function validateDecodedAccessToken(decodedAccessToken, userId) {

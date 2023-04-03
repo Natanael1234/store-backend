@@ -68,6 +68,10 @@ describe('UserEntity', () => {
       );
     });
 
+    afterEach(async () => {
+      await module.close(); // TODO: é necessário?
+    });
+
     describe('find', () => {
       it('should retrieve refreshtokens', async () => {
         await repo

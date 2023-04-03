@@ -47,6 +47,10 @@ describe('UserEntity', () => {
     repo = module.get<Repository<UserEntity>>(getRepositoryToken(UserEntity));
   });
 
+  afterEach(async () => {
+    await module.close(); // TODO: é necessário?
+  });
+
   function validateUser(
     userData: {
       name: string;

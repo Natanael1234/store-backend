@@ -1,7 +1,6 @@
-import { plainToInstance } from 'class-transformer';
-// import { validate } from 'class-validator';
 import { RegisterRequestDto } from './register.request.dto';
 import { validateFirstError } from '../../../../system/utils/validate-first-error';
+import { plainToInstance } from 'class-transformer';
 
 enum NameMessage {
   REQUIRED = 'Name is required',
@@ -34,13 +33,13 @@ const validate = async (data) =>
 
 describe('RegisterRequestDto', () => {
   it('should pass validation', async () => {
-    const dto = plainToInstance(RegisterRequestDto, {
+    const data = {
       name: 'User 1',
       email: 'user@email.com',
       password: 'Abc12*',
       acceptTerms: true,
-    });
-    const errors = await validate(dto);
+    };
+    const errors = await validate(data);
     expect(errors).toHaveLength(0);
   });
 
@@ -111,8 +110,7 @@ describe('RegisterRequestDto', () => {
           password: 'Acb12$',
           acceptTerms: true,
         };
-        const dto = plainToInstance(RegisterRequestDto, data);
-        const errors = await validate(dto);
+        const errors = await validate(data);
         expect(errors).toHaveLength(1);
         expect(errors[0].property).toEqual('name');
         expect(errors[0].value).toEqual(data.name);
@@ -147,17 +145,12 @@ describe('RegisterRequestDto', () => {
           acceptTerms: true,
         },
       ];
-      const dtos = [
-        plainToInstance(RegisterRequestDto, data[0]),
-        plainToInstance(RegisterRequestDto, data[1]),
-        plainToInstance(RegisterRequestDto, data[2]),
-        plainToInstance(RegisterRequestDto, data[3]),
-      ];
+
       const errors = [
-        await validate(dtos[0]),
-        await validate(dtos[1]),
-        await validate(dtos[2]),
-        await validate(dtos[3]),
+        await validate(data[0]),
+        await validate(data[1]),
+        await validate(data[2]),
+        await validate(data[3]),
       ];
 
       expect(errors[0]).toHaveLength(1);
@@ -246,8 +239,8 @@ describe('RegisterRequestDto', () => {
           password: 'Abc12$',
           acceptTerms: true,
         };
-        const dto = plainToInstance(RegisterRequestDto, data);
-        const errors = await validate(dto);
+
+        const errors = await validate(data);
         expect(errors).toHaveLength(1);
         expect(errors[0].property).toEqual('email');
         expect(errors[0].value).toEqual(data.email);
@@ -271,11 +264,8 @@ describe('RegisterRequestDto', () => {
           acceptTerms: true,
         },
       ];
-      const dtos = [
-        plainToInstance(RegisterRequestDto, data[0]),
-        plainToInstance(RegisterRequestDto, data[1]),
-      ];
-      const errors = [await validate(dtos[0]), await validate(dtos[1])];
+
+      const errors = [await validate(data[0]), await validate(data[1])];
 
       expect(errors[0]).toHaveLength(0);
 
@@ -383,8 +373,7 @@ describe('RegisterRequestDto', () => {
           password,
           acceptTerms: true,
         };
-        const dto = plainToInstance(RegisterRequestDto, data);
-        const errors = await validate(dto);
+        const errors = await validate(data);
         expect(errors).toHaveLength(1);
         expect(errors[0].property).toEqual('password');
         expect(errors[0].value).toEqual(data.password);
@@ -419,17 +408,12 @@ describe('RegisterRequestDto', () => {
           acceptTerms: true,
         },
       ];
-      const dtos = [
-        plainToInstance(RegisterRequestDto, data[0]),
-        plainToInstance(RegisterRequestDto, data[1]),
-        plainToInstance(RegisterRequestDto, data[2]),
-        plainToInstance(RegisterRequestDto, data[3]),
-      ];
+
       const errors = [
-        await validate(dtos[0]),
-        await validate(dtos[1]),
-        await validate(dtos[2]),
-        await validate(dtos[3]),
+        await validate(data[0]),
+        await validate(data[1]),
+        await validate(data[2]),
+        await validate(data[3]),
       ];
       expect(errors[0]).toHaveLength(1);
       expect(errors[0][0].property).toEqual('password');
@@ -452,44 +436,55 @@ describe('RegisterRequestDto', () => {
 
   describe('acceptTerms', () => {
     it('should validate when accept terms is boolean true', async () => {
-      const dto = plainToInstance(RegisterRequestDto, {
+      const data = {
         name: 'User 1',
         email: 'user@email.com',
         password: 'Abc12*',
         acceptTerms: 'true',
-      });
-      const transformedValue = dto.acceptTerms;
-      const errors = await validate(dto);
+      };
+      const transformedValue = plainToInstance(
+        RegisterRequestDto,
+        data,
+      ).acceptTerms;
+      const errors = await validate(data);
 
       expect(transformedValue).toEqual(true);
       expect(errors).toHaveLength(0);
     });
 
     it('should transform transform transform string true into boolean true and validate', async () => {
-      const dto = plainToInstance(RegisterRequestDto, {
+      const data = {
         name: 'User 1',
         email: 'user@email.com',
         password: 'Abc12*',
         acceptTerms: 'true',
-      });
-      const transformedValue = dto.acceptTerms;
-      const errors = await validate(dto);
+      };
+      const transformedValue = plainToInstance(
+        RegisterRequestDto,
+        data,
+      ).acceptTerms;
+      const errors = await validate(data);
 
       expect(transformedValue).toEqual(true);
       expect(errors).toHaveLength(0);
     });
 
     it('should transform accept terms when string into boolean true', async () => {
-      const dto = plainToInstance(RegisterRequestDto, {
+      const data = {
         name: 'User 1',
         email: 'user@email.com',
         password: 'Abc12*',
         acceptTerms: 'true',
-      });
-      const errors = await validate(dto);
+      };
+
+      const transformedValue = plainToInstance(
+        RegisterRequestDto,
+        data,
+      ).acceptTerms;
+      const errors = await validate(data);
 
       expect(errors).toHaveLength(0);
-      expect(dto.acceptTerms).toEqual(true);
+      expect(transformedValue).toEqual(true);
     });
 
     it.each([
@@ -546,13 +541,13 @@ describe('RegisterRequestDto', () => {
     ])(
       'should fail when accept terms is $acceptTermsDescription',
       async ({ acceptTerms, expectedErrors }) => {
-        const dto = plainToInstance(RegisterRequestDto, {
+        const data = {
           name: 'User 1',
           email: 'user@email.com',
           password: 'Abc12*',
           acceptTerms,
-        });
-        const errors = await validate(dto);
+        };
+        const errors = await validate(data);
         expect(errors).toHaveLength(1);
         expect(errors[0].constraints).toEqual(expectedErrors);
       },
@@ -561,13 +556,13 @@ describe('RegisterRequestDto', () => {
 
   describe('multiple errors', () => {
     it('should fail in multiple fields', async () => {
-      const dto = plainToInstance(RegisterRequestDto, {
+      const data = {
         name: 'User',
         email: 'email.com',
         password: 'Abc123',
         acceptTerms: false,
-      });
-      const errors = await validate(dto);
+      };
+      const errors = await validate(data);
 
       expect(errors[0].constraints).toEqual({
         equals: AcceptermsMessage.REQUIRED,

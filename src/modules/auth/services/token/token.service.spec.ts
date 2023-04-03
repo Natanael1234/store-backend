@@ -1,16 +1,9 @@
-import { PassportModule } from '@nestjs/passport';
-import { JwtModule, JwtService } from '@nestjs/jwt';
+import { JwtService } from '@nestjs/jwt';
 import { TestingModule } from '@nestjs/testing';
 import { getTestingModule } from '../../../../.jest/test-config.module';
 import { UserEntity } from '../../../user/models/user/user.entity';
-import { JWTConfigs } from '../../configs/jwt.config';
 import { RefreshTokenRepository } from '../../repositories/refresh-token.repository';
 import { TokenService } from './token.service';
-import { JwtStrategy } from '../../strategies/jwt/jwt.strategy';
-import { LocalStrategy } from '../../strategies/local/local.strategy';
-import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
-import { JwtAuthGuard } from '../../guards/jwt/jwt-auth.guard';
 import { JsonWebTokenError } from 'jsonwebtoken';
 import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -63,6 +56,10 @@ describe('TokenServiceService', () => {
     refreshTokenRepo = module.get<RefreshTokenRepository>(
       RefreshTokenRepository,
     );
+  });
+
+  afterEach(async () => {
+    await module.close(); // TODO: é necessário?
   });
 
   describe('generateAccessToken', () => {

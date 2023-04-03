@@ -38,6 +38,10 @@ describe('RefreshTokenRepository', () => {
     );
   });
 
+  afterEach(async () => {
+    await module.close(); // TODO: é necessário?
+  });
+
   async function createUsers(usersData: any[]) {
     for (const userData of usersData) {
       await userRepo.insert(userRepo.create(userData));

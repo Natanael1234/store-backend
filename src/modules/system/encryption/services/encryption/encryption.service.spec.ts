@@ -5,11 +5,15 @@ import { getTestingModule } from '../../../../../.jest/test-config.module';
 describe('EncryptionService', () => {
   let service: EncryptionService;
   const plainData = 'teste';
+  let module: TestingModule;
 
   beforeEach(async () => {
-    const module: TestingModule = await getTestingModule();
-
+    module = await getTestingModule();
     service = module.get<EncryptionService>(EncryptionService);
+  });
+
+  afterEach(async () => {
+    await module.close(); // TODO: é necessário?
   });
 
   it('should be defined', () => {
