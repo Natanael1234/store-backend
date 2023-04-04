@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { getTestingModule } from '../../../../.jest/test-config.module';
 
@@ -7,10 +7,7 @@ describe('AuthController', () => {
   let module: TestingModule;
 
   beforeEach(async () => {
-    module = await getTestingModule({
-      controllers: [AuthController],
-    });
-
+    module = await getTestingModule();
     controller = module.get<AuthController>(AuthController);
   });
 

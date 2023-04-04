@@ -28,11 +28,20 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   }
 
   // TODO: verificar tipos
-  handleRequest(err: any, user: any, info: any) {
+  handleRequest(error: any, user: any, info: Error) {
     // TODO:
     // You can throw an exception based on either "info" or "err" arguments
-    if (err || info || !user) {
-      throw err || info || new UnauthorizedException();
+    if (error || info || !user) {
+      if (error) {
+        throw error;
+      } else if (info) {
+        if (info.message == 'No auth token') {
+          throw new UnauthorizedException();
+        }
+        throw info;
+      } else {
+        throw new UnauthorizedException();
+      }
     } else {
       return user;
     }

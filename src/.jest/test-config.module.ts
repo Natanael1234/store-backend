@@ -20,6 +20,9 @@ import { JwtStrategy } from '../modules/auth/strategies/jwt/jwt.strategy';
 import { CachingService } from '../modules/system/caching/services/caching.service';
 import { CacheModule } from '@nestjs/common';
 import { UserController } from '../modules/user/controllers/user.controller';
+import { AuthController } from '../modules/auth/controllers/auth/auth.controller';
+import { AppController } from '../app.controller';
+import { AppService } from '../app.service';
 
 export async function getTestingModule(
   additionalMetadata?: ModuleMetadata,
@@ -51,9 +54,15 @@ export async function getTestingModule(
       RefreshTokenRepository,
       TokenService,
       AuthService,
+      AppService,
       ...(additionalMetadata?.providers || []),
       CachingService, // TODO: verificar se não dará conflito com o de produção
     ],
-    controllers: [UserController, ...(additionalMetadata?.controllers || [])],
+    controllers: [
+      UserController,
+      AuthController,
+      AppController,
+      ...(additionalMetadata?.controllers || []),
+    ],
   }).compile();
 }
