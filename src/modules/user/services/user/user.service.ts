@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EncryptionService } from '../../../system/encryption/services/encryption/encryption.service';
-import { Repository } from 'typeorm';
+import { InsertResult, Repository } from 'typeorm';
 import { UpdateUserRequestDTO } from '../../dtos/update-user/update-user.request.dto';
 import { UserEntity } from '../../models/user/user.entity';
 import {
@@ -21,8 +21,6 @@ export class UserService {
 
   public async create(userDto: CreateUserRequestDTO): Promise<UserEntity> {
     if (!userDto) throw new BadRequestException('User data is required');
-    if (!userDto.password)
-      throw new UnprocessableEntityException('Password is required');
     if (!userDto.email)
       throw new UnprocessableEntityException('Email is required');
     if (!userDto.name)
@@ -35,7 +33,8 @@ export class UserService {
     user.name = userDto.name;
     user.hash = await this.encryptionService.encrypt(userDto.password);
 
-    return await this.userRepository.save(user);
+    await this.userRepository.save(user);
+    return this.userRepository.findOne({ where: { id: user.id } });
   }
 
   public async update(
@@ -53,7 +52,8 @@ export class UserService {
     if (userDto.name) user.name = userDto.name;
     if (userDto.email) user.email = userDto.email;
 
-    return await this.userRepository.save(user);
+    await this.userRepository.save(user);
+    return this.userRepository.findOne({ where: { id: user.id } });
   }
 
   public async findForId(userId: number): Promise<UserEntity> {

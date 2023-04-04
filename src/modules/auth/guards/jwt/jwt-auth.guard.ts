@@ -28,13 +28,13 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   }
 
   // TODO: verificar tipos
-  handleRequest(err, user, info: Error) {
+  handleRequest(err: any, user: any, info: any) {
     // TODO:
     // You can throw an exception based on either "info" or "err" arguments
     if (err || info || !user) {
       throw err || info || new UnauthorizedException();
+    } else {
+      return user;
     }
-
-    return user;
   }
 }

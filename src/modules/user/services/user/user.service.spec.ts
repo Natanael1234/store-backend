@@ -4,39 +4,28 @@ import { Repository } from 'typeorm';
 import { UserEntity } from '../../models/user/user.entity';
 import { UserService } from './user.service';
 import { getTestingModule } from '../../../../.jest/test-config.module';
-
 import {
   BadRequestException,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { CreateUserRequestDTO } from '../../dtos/create-user/create-user.request.dto';
+import {
+  testCreateUser,
+  testFindUserForId,
+  testFindUsers,
+  testUpdateUser,
+  testValidateUser,
+  usersData,
+} from '../../test-user-utils';
 
 describe('UserService', () => {
   let module: TestingModule;
-  let service: UserService;
+  let userService: UserService;
   let userRepo: Repository<UserEntity>;
-
-  const userDto1: CreateUserRequestDTO = {
-    name: 'User 1',
-    email: 'user1@email.com',
-    password: '123',
-  };
-  const userDto2: CreateUserRequestDTO = {
-    name: 'User 2',
-    email: 'user2@email.com',
-    password: '1234',
-  };
-  const userDto3: CreateUserRequestDTO = {
-    name: 'User 3',
-    email: 'user3@email.com',
-    password: '12345',
-  };
-  const userDtos = [userDto1, userDto2, userDto3];
 
   beforeEach(async () => {
     module = await getTestingModule();
-    service = module.get<UserService>(UserService);
+    userService = module.get<UserService>(UserService);
     userRepo = module.get<Repository<UserEntity>>(
       getRepositoryToken(UserEntity),
     );
@@ -48,33 +37,15 @@ describe('UserService', () => {
 
   describe('create', () => {
     it('should create users', async () => {
-      await service.create(userDto1);
-      await service.create(userDto2);
-      await service.create(userDto3);
-
-      const users = await userRepo.find();
-
-      expect(Array.isArray(users)).toBe(true);
-      expect(users).toHaveLength(3);
-
-      for (let i = 0, p = 1; i < 3; i++, p++) {
-        expect(users[i]).toBeInstanceOf(UserEntity);
-        expect(users[i].id).toEqual(p);
-        expect(users[i].name).toEqual(userDtos[i].name);
-        expect(users[i].email).toEqual(userDtos[i].email);
-        expect(users[i].hash).toBeUndefined();
-        expect(users[i].created).toBeDefined();
-        expect(users[i].updated).toBeDefined();
-        expect(users[i].deletedAt).toBeNull();
-      }
+      await testCreateUser(userRepo, (userData: any) =>
+        userService.create(userData),
+      );
     });
 
     it.each([{ user: null }, { user: undefined }])(
       'should fail when user data is $user',
       async ({ user }) => {
-        async function fn() {
-          await service.create(user);
-        }
+        const fn = () => userService.create(user);
         await expect(fn()).rejects.toThrow('User data is required');
         await expect(fn()).rejects.toThrow(BadRequestException);
       },
@@ -87,7 +58,7 @@ describe('UserService', () => {
         { emailDescription: 'empty', email: '' },
       ])('should fail when email is $emailDescription', async ({ email }) => {
         const fn = () =>
-          service.create({
+          userService.create({
             name: 'User 3',
             email,
             password: '12345',
@@ -105,7 +76,7 @@ describe('UserService', () => {
         { nameDescription: 'empty', name: '' },
       ])('should fail when name is $nameDescription', async ({ name }) => {
         const fn = () =>
-          service.create({
+          userService.create({
             name,
             email: 'user@email.com',
             password: '12345',
@@ -125,7 +96,7 @@ describe('UserService', () => {
         'should fail when name is $passwordDescription',
         async ({ password }) => {
           const fn = () =>
-            service.create({
+            userService.create({
               name: 'User',
               email: 'user@email.com',
               password,
@@ -140,56 +111,29 @@ describe('UserService', () => {
 
   describe('find', () => {
     it('should return an empty array when no users are found', async () => {
-      const users = await service.findAll();
+      const users = await userService.findAll();
       expect(Array.isArray(users)).toBe(true);
       expect(users).toHaveLength(0);
     });
 
     it('should return an array of users', async () => {
-      await service.create(userDto1);
-      await service.create(userDto2);
-      await service.create(userDto3);
-      const users = await service.findAll();
-
-      expect(Array.isArray(users)).toBe(true);
-      expect(users).toHaveLength(3);
-
-      for (let i = 0, p = 1; i < 3; i++, p++) {
-        expect(users[i]).toBeInstanceOf(UserEntity);
-        expect(users[i].id).toEqual(p);
-        expect(users[i].name).toEqual(userDtos[i].name);
-        expect(users[i].email).toEqual(userDtos[i].email);
-        expect(users[i].hash).toBeUndefined();
-        expect(users[i].created).toBeDefined();
-        expect(users[i].updated).toBeDefined();
-        expect(users[i].deletedAt).toBeNull();
-      }
+      await testFindUsers(userRepo, () => userService.findAll());
     });
   });
 
   describe('findForId', () => {
     it('should get a single user', async () => {
-      await service.create(userDto1);
-      await service.create(userDto2);
-      await service.create(userDto3);
-      const user = await service.findForId(2);
-      expect(user).toBeDefined();
-      expect(user).toBeInstanceOf(UserEntity);
-      expect(user.id).toEqual(2);
-      expect(user.hash).toBeUndefined();
-      expect(user.name).toEqual(userDto2.name);
-      expect(user.email).toEqual(userDto2.email);
-      expect(user.created).toBeDefined();
-      expect(user.updated).toBeDefined();
-      expect(user.deletedAt).toBeNull();
+      await testFindUserForId(userRepo, (userId: number) =>
+        userService.findForId(userId),
+      );
     });
 
     it('should fail when user is not found', async () => {
-      await service.create(userDto1);
-      await service.create(userDto2);
-      await service.create(userDto3);
+      await userService.create(usersData[0]);
+      await userService.create(usersData[1]);
+      await userService.create(usersData[2]);
       async function fn() {
-        await service.findForId(10);
+        await userService.findForId(10);
       }
       await expect(fn()).rejects.toThrow(NotFoundException);
       await expect(fn()).rejects.toThrow('User not found');
@@ -201,66 +145,32 @@ describe('UserService', () => {
       },
       { userId: undefined },
     ])('should fail when user id parameter is $userId', async ({ userId }) => {
-      await service.create(userDto1);
-      await service.create(userDto2);
-      await service.create(userDto3);
+      await userService.create(usersData[0]);
+      await userService.create(usersData[1]);
+      await userService.create(usersData[2]);
       async function fn() {
-        await service.findForId(userId);
+        await userService.findForId(userId);
       }
       await expect(fn()).rejects.toThrow(BadRequestException);
       await expect(fn()).rejects.toThrow('User id required');
     });
   });
 
-  function validateUser(user, validationData) {
-    expect(user).toBeDefined();
-    expect(user).toBeInstanceOf(UserEntity);
-    expect(user.id).toEqual(validationData.id);
-    expect(user.name).toEqual(validationData.name);
-    expect(user.email).toEqual(validationData.email);
-  }
-
   describe('update', () => {
-    it('shoud update an user', async () => {
-      const newName = 'New Name';
-      const newEmail = 'newname@email.com';
-      await service.create(userDto1);
-      await service.create(userDto2);
-      await service.create(userDto3);
-
-      // TODO: atualização de senha em métodos separados
-      await service.update(2, { name: newName, email: newEmail });
-
-      const users = await userRepo.find();
-      expect(users).toHaveLength(3);
-
-      validateUser(users[0], {
-        id: 1,
-        name: userDtos[0].name,
-        email: userDtos[0].email,
-      });
-
-      validateUser(users[1], {
-        id: 2,
-        name: newName,
-        email: newEmail,
-      });
-
-      validateUser(users[2], {
-        id: 3,
-        name: userDtos[2].name,
-        email: userDtos[2].email,
-      });
+    it('shoud update user', async () => {
+      await testUpdateUser(userRepo, (userId, updateData) =>
+        userService.update(userId, updateData),
+      );
     });
 
     it('should fail when user does not exists', async () => {
       const newName = 'New Name';
       const newEmail = 'newname@email.com';
-      await service.create(userDto1);
-      await service.create(userDto2);
-      await service.create(userDto3);
+      await userService.create(usersData[0]);
+      await userService.create(usersData[1]);
+      await userService.create(usersData[2]);
       async function fn() {
-        await service.update(12, { name: newName, email: newEmail });
+        await userService.update(12, { name: newName, email: newEmail });
       }
       await expect(fn()).rejects.toThrow(NotFoundException);
       await expect(fn()).rejects.toThrow('User not found');
@@ -270,11 +180,11 @@ describe('UserService', () => {
       it.each([{ userId: null }, { userId: undefined }])(
         'should fail when user id is $userId',
         async ({ userId }) => {
-          await service.create(userDto1);
-          await service.create(userDto2);
-          await service.create(userDto3);
+          await userService.create(usersData[0]);
+          await userService.create(usersData[1]);
+          await userService.create(usersData[2]);
           async function fn() {
-            await service.findForId(userId);
+            await userService.findForId(userId);
           }
           await expect(fn()).rejects.toThrow(BadRequestException);
           await expect(fn()).rejects.toThrow('User id required');
