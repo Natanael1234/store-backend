@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  Body,
   ForbiddenException,
   Injectable,
   UnauthorizedException,
@@ -15,6 +14,7 @@ import { LoginResponseDto } from '../../dtos/responses/login.response.dto';
 import { RefreshResponseDto } from '../../dtos/responses/refresh.response.dto';
 import { RegisterResponseDto } from '../../dtos/responses/register.response.dto';
 import { TokenService } from '../token/token.service';
+import { LogoutResponseDto } from '../../dtos/responses/logout.response.dto';
 
 @Injectable()
 export class AuthService {
@@ -85,7 +85,7 @@ export class AuthService {
     };
   }
 
-  public async logout(refreshToken: string) {
+  public async logout(refreshToken: string): Promise<LogoutResponseDto> {
     // TODO: pegar os dados de refresh token da sessão.
     if (refreshToken) new ForbiddenException('No refresh token provided');
 
@@ -94,7 +94,9 @@ export class AuthService {
 
     // add bearer token to blacklist
     // await this.cachingService.setValue(bearerToken, token); // TODO: add ttl
-    return true;
+    return {
+      status: 'success',
+    };
   }
 
   private buildResponsePayload(

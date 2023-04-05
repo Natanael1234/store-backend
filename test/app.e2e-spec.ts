@@ -12,10 +12,7 @@ describe('AppController (e2e)', () => {
   let authService: AuthService;
 
   beforeEach(async () => {
-    moduleFixture = await getTestingModule({
-      // imports: [AppModule],
-      // controllers: [AppController],
-    });
+    moduleFixture = await getTestingModule();
     app = moduleFixture.createNestApplication();
     userService = app.get<UserService>(UserService);
     authService = app.get<AuthService>(AuthService);

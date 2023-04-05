@@ -15,6 +15,12 @@ import {
   UnauthorizedException,
 } from '@nestjs/common/exceptions';
 import { JsonWebTokenError } from 'jsonwebtoken';
+import {
+  testLogin,
+  testLogout,
+  testRefresh,
+  testRegister,
+} from './auth-test-utils';
 
 describe('AuthService', () => {
   let module: TestingModule;
@@ -67,105 +73,15 @@ describe('AuthService', () => {
     await module.close(); // TODO: é necessário?
   });
 
-  function validateDecodedAccessToken(decodedAccessToken, userId) {
-    expect(decodedAccessToken).toBeDefined();
-    expect(decodedAccessToken['sub']).toEqual(`${userId}`);
-    expect(decodedAccessToken['exp']).toBeDefined();
-    expect(decodedAccessToken['iat']).toBeDefined();
-    // TODO: validate times
-  }
-
-  function validateDecodedRefreshToken(decodedRefreshToken, userId) {
-    expect(decodedRefreshToken).toBeDefined();
-    expect(decodedRefreshToken['sub']).toEqual(`${userId}`);
-    expect(decodedRefreshToken['iat']).toBeDefined();
-    expect(decodedRefreshToken['exp']).toBeDefined();
-    expect(decodedRefreshToken['exp']).toBeGreaterThanOrEqual(
-      decodedRefreshToken['iat'],
-    );
-    // TODO: validate times
-  }
-
-  function validatePayload(payload, userId) {
-    expect(payload).toBeDefined();
-    expect(payload.type).toEqual('bearer');
-    expect(payload.token).toBeDefined();
-    expect(payload.refreshToken).toBeDefined();
-    const decodedAccessToken = jwtService.decode(payload.token);
-    const decodedRefreshToken = jwtService.decode(payload.refreshToken);
-    validateDecodedAccessToken(decodedAccessToken, userId);
-    validateDecodedRefreshToken(decodedRefreshToken, userId);
-  }
-
-  function validateUser(user, expectedUserData) {
-    expect(user).toBeDefined();
-    expect(user.id).toEqual(expectedUserData.id);
-    expect(user.email).toEqual(expectedUserData.email);
-    expect(user.name).toEqual(expectedUserData.name);
-    expect(user.hash).toBeUndefined();
-    expect(user.created).toBeDefined();
-    expect(user.updated).toBeDefined();
-    expect(user.deletedAt).toBeNull();
-  }
-
-  function validateAuthResponse(
-    response,
-    expectedUserData: { id: number; name: string; email: string },
-  ) {
-    expect(response).toBeDefined();
-    expect(response.status).toEqual('success');
-    expect(response.data).toBeDefined();
-    validateUser(response.data.user, expectedUserData);
-    validatePayload(response.data.payload, response.data.user.id);
-  }
-
-  function checkDistinctTokens(payload1, payload2) {
-    expect(payload1.token).not.toEqual(payload1.refreshToken);
-    expect(payload2.token).not.toEqual(payload2.refreshToken);
-
-    expect(payload1.token).not.toEqual(payload2.token);
-    expect(payload1.token).not.toEqual(payload2.refreshToken);
-    expect(payload1.refreshToken).not.toEqual(payload2.token);
-    expect(payload1.refreshToken).not.toEqual(payload2.refreshToken);
-  }
-
   describe('register', () => {
     it('should register users', async () => {
-      const response1 = await authService.register(registerData[0]);
-      const response2 = await authService.register(registerData[1]);
-
-      await userService.create({
-        name: 'Another user',
-        email: 'anotheruser@email.com',
-        password: 'abc',
-      });
-      const response3 = await authService.register(registerData[2]);
-
-      const refreshTokens = await refreshTokenRepo.find();
-      const users = await userRepo.find();
-
-      expect(refreshTokens).toHaveLength(3);
-      expect(users).toHaveLength(4);
-
-      validateAuthResponse(response1, {
-        id: 1,
-        name: registerData[0].name,
-        email: 'user1@email.com',
-      });
-      validateAuthResponse(response2, {
-        id: 2,
-        name: registerData[1].name,
-        email: 'user2@email.com',
-      });
-      validateAuthResponse(response3, {
-        id: 4,
-        name: registerData[2].name,
-        email: 'user3@email.com',
-      });
-
-      checkDistinctTokens(response1.data.payload, response2.data.payload);
-      checkDistinctTokens(response1.data.payload, response3.data.payload);
-      checkDistinctTokens(response2.data.payload, response3.data.payload);
+      await testRegister(
+        userService,
+        userRepo,
+        refreshTokenRepo,
+        jwtService,
+        (data: any) => authService.register(data),
+      );
     });
 
     it.each([{ data: null }, { data: undefined }])(
@@ -253,56 +169,9 @@ describe('AuthService', () => {
 
   describe('login', () => {
     it('should login', async () => {
-      await authService.register(registerData[0]);
-      await authService.register(registerData[1]);
-      const createUserData = {
-        name: 'Another user',
-        email: 'anotheruser@email.com',
-        password: 'abc',
-        acceptTerms: true,
-      };
-      await userService.create(createUserData);
-      await authService.register(registerData[2]);
-
-      const loginRet1 = await authService.login({
-        email: registerData[1].email,
-        password: registerData[1].password,
-      });
-
-      const loginRet2 = await authService.login({
-        email: createUserData.email,
-        password: createUserData.password,
-      });
-
-      // prevents tokens for the same user to be equal due to be generated at the same time
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const loginRet3 = await authService.login({
-        email: createUserData.email,
-        password: createUserData.password,
-      });
-
-      validateAuthResponse(loginRet1, {
-        id: 2,
-        name: registerData[1].name,
-        email: registerData[1].email,
-      });
-
-      validateAuthResponse(loginRet2, {
-        id: 3,
-        name: createUserData.name,
-        email: createUserData.email,
-      });
-
-      validateAuthResponse(loginRet3, {
-        id: 3,
-        name: createUserData.name,
-        email: createUserData.email,
-      });
-
-      checkDistinctTokens(loginRet1.data.payload, loginRet2.data.payload);
-      checkDistinctTokens(loginRet1.data.payload, loginRet3.data.payload);
-      checkDistinctTokens(loginRet2.data.payload, loginRet3.data.payload);
+      await testLogin(userService, authService, jwtService, (data) =>
+        authService.login(data),
+      );
     });
 
     it.each([{ loginData: null }, { loginData: undefined }])(
@@ -382,33 +251,9 @@ describe('AuthService', () => {
 
   describe('refresh', () => {
     it('should refresh login', async () => {
-      const registerResponses = [
-        await authService.register(registerData[0]),
-        await authService.register(registerData[1]),
-        await authService.register(registerData[2]),
-      ];
-
-      const refreshResponses = [
-        await authService.refresh(
-          registerResponses[0].data.payload.refreshToken,
-        ),
-        await authService.refresh(
-          registerResponses[1].data.payload.refreshToken,
-        ),
-        await authService.refresh(
-          registerResponses[1].data.payload.refreshToken,
-        ),
-      ];
-
-      const decodedAccessTokens = [
-        await jwtService.decode(refreshResponses[0].data.payload.token),
-        await jwtService.decode(refreshResponses[1].data.payload.token),
-        await jwtService.decode(refreshResponses[2].data.payload.token),
-      ];
-
-      validateDecodedAccessToken(decodedAccessTokens[0], 1);
-      validateDecodedAccessToken(decodedAccessTokens[1], 2);
-      validateDecodedAccessToken(decodedAccessTokens[2], 2);
+      await testRefresh(authService, jwtService, (refreshToken) =>
+        authService.refresh(refreshToken),
+      );
     });
 
     it.each([
@@ -473,23 +318,9 @@ describe('AuthService', () => {
 
   describe('logout', () => {
     it('should logout', async () => {
-      const registered = [
-        await authService.register(registerData[0]),
-        await authService.register(registerData[1]),
-        await authService.register(registerData[2]),
-      ];
-
-      const logoutsResults = [
-        await authService.logout(registered[1].data.payload.refreshToken),
-      ];
-
-      const refreshTokens = await refreshTokenRepo.find();
-
-      expect(logoutsResults[0]).toEqual(true);
-      expect(refreshTokens).toHaveLength(3);
-      expect(refreshTokens[0].revoked).toEqual(false);
-      expect(refreshTokens[1].revoked).toEqual(true);
-      expect(refreshTokens[2].revoked).toEqual(false);
+      await testLogout(authService, refreshTokenRepo, (refreshToken) =>
+        authService.logout(refreshToken),
+      );
     });
 
     it.each([

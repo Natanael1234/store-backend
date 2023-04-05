@@ -55,18 +55,17 @@ describe('JwtAutthGuard', () => {
     });
 
     it('should fail when receive info', () => {
-      class Teste {}
-      const fn = () => guard.handleRequest(null, new UserEntity(), new Teste());
-      expect(fn).toThrow(Teste);
+      const fn = () =>
+        guard.handleRequest(null, new UserEntity(), new Error('test'));
+      expect(fn).toThrow(Error);
     });
 
     it('should fail when receive error and info', () => {
-      class Teste {}
       const fn = () =>
         guard.handleRequest(
           new NotFoundException(),
           new UserEntity(),
-          new Teste(),
+          new Error('test'),
         );
       expect(fn).toThrow(NotFoundException);
     });

@@ -38,14 +38,9 @@ export class AuthController {
     return this.authService.refresh(refreshRequestDto.refreshToken);
   }
 
+  @SkipAuth()
   @Post('logout')
   public async logout(@Body() logoutRequestDto: LogoutRequestDto) {
     return this.authService.logout(logoutRequestDto.refreshToken);
-  }
-
-  @Get('profile')
-  public async getProfile(@Request() req) {
-    // return this.authService.login(req.user);
-    return req.user;
   }
 }
