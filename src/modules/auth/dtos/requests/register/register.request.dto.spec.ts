@@ -1,32 +1,10 @@
 import { RegisterRequestDto } from './register.request.dto';
-import { validateFirstError } from '../../../../system/utils/validate-first-error';
+import { validateFirstError } from '../../../../system/utils/validation';
 import { plainToInstance } from 'class-transformer';
-
-enum NameMessage {
-  REQUIRED = 'Name is required',
-  IS_STRING = 'Name must be string',
-  MIN_SIZE = 'Name must be at least 6 characters long',
-  MAX_SIZE = 'Name must have a maximum of 60 characters',
-}
-
-enum EmailMessage {
-  MAX_SIZE = 'Email must have a maximum of 60 characters',
-  IS_STRING = 'Email must be string',
-  VALID = 'Invalid email',
-  REQUIRED = 'Email is required',
-}
-
-enum PasswordMessage {
-  IS_REQUIRED = 'Password is required',
-  MUST_BE_STRING = 'Password must be string',
-  MIN_SIZE = 'Password must be at least 6 characters long',
-  MAX_SIZE = 'Password must have a maximum of 12 characters',
-  STRONG = 'Password must have lowercase, uppercase, number and special characters',
-}
-
-enum AcceptermsMessage {
-  REQUIRED = 'Acceptance of terms is required',
-}
+import { PasswordMessage } from '../../../../user/enums/password-messages/password-messages.enum';
+import { RefreshTokenMessage } from '../../../enums/refresh-token-messages.ts/refresh-token-messages.enum';
+import { NameMessage } from '../../../../user/enums/name-messages/name-messages.enum';
+import { EmailMessage } from '../../../../user/enums/email-messages/email-messages.enum';
 
 const validate = async (data) =>
   await validateFirstError(data, RegisterRequestDto);
@@ -49,28 +27,28 @@ describe('RegisterRequestDto', () => {
         nameDescription: 'number',
         name: 2323232,
         expectedErrors: {
-          isString: NameMessage.IS_STRING,
+          isString: NameMessage.STRING,
         },
       },
       {
         nameDescription: 'boolean',
         name: true,
         expectedErrors: {
-          isString: NameMessage.IS_STRING,
+          isString: NameMessage.STRING,
         },
       },
       {
         nameDescription: 'array',
         name: [],
         expectedErrors: {
-          isString: NameMessage.IS_STRING,
+          isString: NameMessage.STRING,
         },
       },
       {
         nameDescription: 'object',
         name: {},
         expectedErrors: {
-          isString: NameMessage.IS_STRING,
+          isString: NameMessage.STRING,
         },
       },
       {
@@ -98,7 +76,7 @@ describe('RegisterRequestDto', () => {
         nameDescription: 'too short',
         name: 'Usr',
         expectedErrors: {
-          minLength: NameMessage.MIN_SIZE,
+          minLength: NameMessage.MIN_LEN,
         },
       },
     ])(
@@ -157,7 +135,7 @@ describe('RegisterRequestDto', () => {
       expect(errors[0][0].property).toEqual('name');
       expect(errors[0][0].value).toEqual(data[0].name);
       expect(errors[0][0].constraints).toEqual({
-        minLength: NameMessage.MIN_SIZE,
+        minLength: NameMessage.MIN_LEN,
       });
 
       expect(errors[1]).toHaveLength(0);
@@ -167,7 +145,7 @@ describe('RegisterRequestDto', () => {
       expect(errors[3][0].property).toEqual('name');
       expect(errors[3][0].value).toEqual(data[3].name);
       expect(errors[3][0].constraints).toEqual({
-        maxLength: NameMessage.MAX_SIZE,
+        maxLength: NameMessage.MAX_LEN,
       });
     });
   });
@@ -178,28 +156,28 @@ describe('RegisterRequestDto', () => {
         emailDescription: 'number',
         email: 2323232,
         expectedErrors: {
-          isString: EmailMessage.IS_STRING,
+          isString: EmailMessage.STRING,
         },
       },
       {
         emailDescription: 'boolean',
         email: true,
         expectedErrors: {
-          isString: EmailMessage.IS_STRING,
+          isString: EmailMessage.STRING,
         },
       },
       {
         emailDescription: 'array',
         email: [],
         expectedErrors: {
-          isString: EmailMessage.IS_STRING,
+          isString: EmailMessage.STRING,
         },
       },
       {
         emailDescription: 'object',
         email: {},
         expectedErrors: {
-          isString: EmailMessage.IS_STRING,
+          isString: EmailMessage.STRING,
         },
       },
       {
@@ -227,7 +205,7 @@ describe('RegisterRequestDto', () => {
         emailDescription: 'invalid',
         email: 'email.com',
         expectedErrors: {
-          isEmail: EmailMessage.VALID,
+          isEmail: EmailMessage.INVALID,
         },
       },
     ])(
@@ -273,7 +251,7 @@ describe('RegisterRequestDto', () => {
       expect(errors[1][0].property).toEqual('email');
       expect(errors[1][0].value).toEqual(data[1].email);
       expect(errors[1][0].constraints).toEqual({
-        maxLength: EmailMessage.MAX_SIZE,
+        maxLength: EmailMessage.MAX_LEN,
       });
     });
   });
@@ -284,84 +262,84 @@ describe('RegisterRequestDto', () => {
         passwordDescription: 'number',
         password: 2323232,
         expectedErrors: {
-          isString: PasswordMessage.MUST_BE_STRING,
+          isString: PasswordMessage.STRING,
         },
       },
       {
         passwordDescription: 'boolean',
         password: true,
         expectedErrors: {
-          isString: PasswordMessage.MUST_BE_STRING,
+          isString: PasswordMessage.STRING,
         },
       },
       {
         passwordDescription: 'array',
         password: [],
         expectedErrors: {
-          isString: PasswordMessage.MUST_BE_STRING,
+          isString: PasswordMessage.STRING,
         },
       },
       {
         passwordDescription: 'object',
         password: {},
         expectedErrors: {
-          isString: PasswordMessage.MUST_BE_STRING,
+          isString: PasswordMessage.STRING,
         },
       },
       {
         passwordDescription: 'null',
         password: null,
         expectedErrors: {
-          isNotEmpty: PasswordMessage.IS_REQUIRED,
+          isNotEmpty: PasswordMessage.REQUIRED,
         },
       },
       {
         passwordDescription: 'undefined',
         password: undefined,
         expectedErrors: {
-          isNotEmpty: PasswordMessage.IS_REQUIRED,
+          isNotEmpty: PasswordMessage.REQUIRED,
         },
       },
       {
         passwordDescription: 'empty',
         password: '',
         expectedErrors: {
-          isNotEmpty: PasswordMessage.IS_REQUIRED,
+          isNotEmpty: PasswordMessage.REQUIRED,
         },
       },
       {
         passwordDescription: 'too short',
         password: 'Usr',
         expectedErrors: {
-          minLength: PasswordMessage.MIN_SIZE,
+          minLength: PasswordMessage.MIN_LEN,
         },
       },
       {
         passwordDescription: 'without uppercase letter',
         password: 'senha123*',
         expectedErrors: {
-          isStrongPassword: PasswordMessage.STRONG,
+          isStrongPassword: PasswordMessage.INVALID,
         },
       },
       {
         passwordDescription: 'without lowercase letter',
         password: 'SENHA123*',
         expectedErrors: {
-          isStrongPassword: PasswordMessage.STRONG,
+          isStrongPassword: PasswordMessage.INVALID,
         },
       },
       {
         passwordDescription: 'without number',
         password: 'SenhaABC*',
         expectedErrors: {
-          isStrongPassword: PasswordMessage.STRONG,
+          isStrongPassword: PasswordMessage.INVALID,
         },
       },
       {
         passwordDescription: 'without special character',
         password: 'Senha123',
         expectedErrors: {
-          isStrongPassword: PasswordMessage.STRONG,
+          isStrongPassword: PasswordMessage.INVALID,
         },
       },
     ])(
@@ -419,7 +397,7 @@ describe('RegisterRequestDto', () => {
       expect(errors[0][0].property).toEqual('password');
       expect(errors[0][0].value).toEqual(data[0].password);
       expect(errors[0][0].constraints).toEqual({
-        minLength: PasswordMessage.MIN_SIZE,
+        minLength: PasswordMessage.MIN_LEN,
       });
 
       expect(errors[1]).toHaveLength(0);
@@ -429,7 +407,7 @@ describe('RegisterRequestDto', () => {
       expect(errors[3][0].property).toEqual('password');
       expect(errors[3][0].value).toEqual(data[3].password);
       expect(errors[3][0].constraints).toEqual({
-        maxLength: PasswordMessage.MAX_SIZE,
+        maxLength: PasswordMessage.MAX_LEN,
       });
     });
   });
@@ -491,52 +469,52 @@ describe('RegisterRequestDto', () => {
       {
         acceptTermsDescription: 'string false',
         acceptTerms: 'false',
-        expectedErrors: { equals: AcceptermsMessage.REQUIRED },
+        expectedErrors: { equals: RefreshTokenMessage.REQUIRED },
       },
       {
         acceptTermsDescription: 'boolean false',
         acceptTerms: false,
-        expectedErrors: { equals: AcceptermsMessage.REQUIRED },
+        expectedErrors: { equals: RefreshTokenMessage.REQUIRED },
       },
       {
         acceptTermsDescription: 'number 0',
         acceptTerms: 0,
-        expectedErrors: { equals: AcceptermsMessage.REQUIRED },
+        expectedErrors: { equals: RefreshTokenMessage.REQUIRED },
       },
       {
         acceptTermsDescription: 'number 1',
         acceptTerms: 1,
-        expectedErrors: { equals: AcceptermsMessage.REQUIRED },
+        expectedErrors: { equals: RefreshTokenMessage.REQUIRED },
       },
       {
         acceptTermsDescription: 'array',
         acceptTerms: [],
-        expectedErrors: { equals: AcceptermsMessage.REQUIRED },
+        expectedErrors: { equals: RefreshTokenMessage.REQUIRED },
       },
       {
         acceptTermsDescription: 'object',
         acceptTerms: {},
-        expectedErrors: { equals: AcceptermsMessage.REQUIRED },
+        expectedErrors: { equals: RefreshTokenMessage.REQUIRED },
       },
       {
         acceptTermsDescription: 'null',
         acceptTerms: null,
-        expectedErrors: { equals: AcceptermsMessage.REQUIRED },
+        expectedErrors: { equals: RefreshTokenMessage.REQUIRED },
       },
       {
         acceptTermsDescription: 'undefined',
         acceptTerms: undefined,
-        expectedErrors: { equals: AcceptermsMessage.REQUIRED },
+        expectedErrors: { equals: RefreshTokenMessage.REQUIRED },
       },
       {
         acceptTermsDescription: 'empty',
         acceptTerms: '',
-        expectedErrors: { equals: AcceptermsMessage.REQUIRED },
+        expectedErrors: { equals: RefreshTokenMessage.REQUIRED },
       },
       {
         acceptTermsDescription: 'invalid',
         acceptTerms: 'invalid_boolean_string',
-        expectedErrors: { equals: AcceptermsMessage.REQUIRED },
+        expectedErrors: { equals: RefreshTokenMessage.REQUIRED },
       },
     ])(
       'should fail when accept terms is $acceptTermsDescription',
@@ -565,15 +543,15 @@ describe('RegisterRequestDto', () => {
       const errors = await validate(data);
 
       expect(errors[0].constraints).toEqual({
-        equals: AcceptermsMessage.REQUIRED,
+        equals: RefreshTokenMessage.REQUIRED,
       });
       expect(errors).toHaveLength(4);
       expect(errors[1].constraints).toEqual({
-        minLength: NameMessage.MIN_SIZE,
+        minLength: NameMessage.MIN_LEN,
       });
-      expect(errors[2].constraints).toEqual({ isEmail: EmailMessage.VALID });
+      expect(errors[2].constraints).toEqual({ isEmail: EmailMessage.INVALID });
       expect(errors[3].constraints).toEqual({
-        isStrongPassword: PasswordMessage.STRONG,
+        isStrongPassword: PasswordMessage.INVALID,
       });
     });
   });

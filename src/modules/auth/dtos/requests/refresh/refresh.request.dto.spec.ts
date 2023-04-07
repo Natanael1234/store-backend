@@ -1,12 +1,7 @@
 import { plainToInstance } from 'class-transformer';
 import { RefreshRequestDto } from './refresh.request.dto';
-import { validateFirstError } from '../../../../system/utils/validate-first-error';
-
-enum RefreshtMessages {
-  IS_STRING = 'Refresh token must be a string',
-  FORMAT = 'Invalid refresh token',
-  REQUIRED = 'Refresh token is required',
-}
+import { validateFirstError } from '../../../../system/utils/validation';
+import { RefreshTokenMessage } from '../../../enums/refresh-token-messages.ts/refresh-token-messages.enum';
 
 describe('RefreshRequestDto', () => {
   it('should pass validation', async () => {
@@ -22,42 +17,42 @@ describe('RefreshRequestDto', () => {
     {
       refreshTokenDescription: 'number',
       refreshToken: 2323232,
-      expectedErrors: { isString: RefreshtMessages.IS_STRING },
+      expectedErrors: { isString: RefreshTokenMessage.STRING },
     },
     {
       refreshTokenDescription: 'boolean',
       refreshToken: true,
-      expectedErrors: { isString: RefreshtMessages.IS_STRING },
+      expectedErrors: { isString: RefreshTokenMessage.STRING },
     },
     {
       refreshTokenDescription: 'array',
       refreshToken: [],
-      expectedErrors: { isString: RefreshtMessages.IS_STRING },
+      expectedErrors: { isString: RefreshTokenMessage.STRING },
     },
     {
       refreshTokenDescription: 'object',
       refreshToken: {},
-      expectedErrors: { isString: RefreshtMessages.IS_STRING },
+      expectedErrors: { isString: RefreshTokenMessage.STRING },
     },
     {
       refreshTokenDescription: 'null',
       refreshToken: null,
-      expectedErrors: { isNotEmpty: RefreshtMessages.REQUIRED },
+      expectedErrors: { isNotEmpty: RefreshTokenMessage.REQUIRED },
     },
     {
       refreshTokenDescription: 'undefined',
       refreshToken: undefined,
-      expectedErrors: { isNotEmpty: RefreshtMessages.REQUIRED },
+      expectedErrors: { isNotEmpty: RefreshTokenMessage.REQUIRED },
     },
     {
       refreshTokenDescription: 'empty',
       refreshToken: '',
-      expectedErrors: { isNotEmpty: RefreshtMessages.REQUIRED },
+      expectedErrors: { isNotEmpty: RefreshTokenMessage.REQUIRED },
     },
     {
       refreshTokenDescription: 'invalid',
       refreshToken: 'invalid_token',
-      expectedErrors: { matches: RefreshtMessages.FORMAT },
+      expectedErrors: { matches: RefreshTokenMessage.INVALID },
     },
   ])(
     'should fail validation when refreshToken is $refreshTokenDescription',

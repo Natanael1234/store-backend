@@ -1,4 +1,11 @@
-import { Body, Controller, Get, Post, Request } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Request,
+  UseFilters,
+} from '@nestjs/common';
 import { SkipAuth } from '../../guards/skip-auth';
 import { RegisterRequestDto } from '../../dtos/requests/register/register.request.dto';
 import { AuthService } from '../../services/auth/auth.service';

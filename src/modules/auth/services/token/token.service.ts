@@ -14,6 +14,8 @@ import { JWTConfigs } from '../../configs/jwt.config';
 import { UserService } from '../../../user/services/user/user.service';
 import { UserEntity } from '../../../user/models/user/user.entity';
 import ms, { StringValue } from '../../../system/utils/time/ms/ms';
+import { UserMessage } from '../../../user/enums/user-messages.ts/user-messages.enum';
+import { RefreshTokenMessage } from '../../enums/refresh-token-messages.ts/refresh-token-messages.enum';
 
 @Injectable()
 export class TokenService {
@@ -24,8 +26,9 @@ export class TokenService {
   ) {}
 
   public async generateAccessToken(user: UserEntity): Promise<string> {
-    if (!user) throw new UnprocessableEntityException('User is required');
-    if (!user.id) throw new UnprocessableEntityException('User id is required');
+    if (!user) throw new UnprocessableEntityException(UserMessage.REQUIRED);
+    if (!user.id)
+      throw new UnprocessableEntityException(UserMessage.ID_REQUIRED);
     const opts: SignOptions = {
       ...BASE_OPTIONS,
       subject: String(user.id),
@@ -52,13 +55,13 @@ export class TokenService {
 
   public async revokeRefreshToken(encodedRefreshToken: string) {
     if (!encodedRefreshToken)
-      throw new UnprocessableEntityException('Refresh token is required');
+      throw new UnprocessableEntityException(RefreshTokenMessage.REQUIRED);
     // TODO: testar se encodedRefreshToken existe?
     const { user, refreshToken } = await this.resolveRefreshToken(
       encodedRefreshToken,
     );
     if (!refreshToken) {
-      throw new NotFoundException('Refresh token not found');
+      throw new NotFoundException(RefreshTokenMessage.NOT_FOUND);
     }
     if (!refreshToken.revoked) {
       refreshToken.revoked = true;
@@ -75,17 +78,17 @@ export class TokenService {
       await this.getStoredTRefreshTokenFromRefreshTokenPayload(payload);
 
     if (!refreshToken) {
-      throw new NotFoundException('Refresh token not found');
+      throw new NotFoundException(RefreshTokenMessage.NOT_FOUND);
     }
 
     if (refreshToken.revoked) {
-      throw new UnauthorizedException('Refresh token revoked');
+      throw new UnauthorizedException(RefreshTokenMessage.REVOKED);
     }
 
     const user = await this.getUserFromRefreshTokenPayload(payload);
 
     if (!user) {
-      throw new UnprocessableEntityException('Refresh token malformed');
+      throw new UnprocessableEntityException(RefreshTokenMessage.MALFORMED);
     }
 
     return { user, refreshToken };
@@ -95,7 +98,7 @@ export class TokenService {
     refreshToken: string,
   ): Promise<{ token: string; user: UserEntity }> {
     if (!refreshToken)
-      throw new UnprocessableEntityException('Refresh token is required');
+      throw new UnprocessableEntityException(RefreshTokenMessage.REQUIRED);
     const { user } = await this.resolveRefreshToken(refreshToken);
     const token = await this.generateAccessToken(user);
     return { user, token };
@@ -105,14 +108,14 @@ export class TokenService {
     refreshToken: string,
   ): Promise<RefreshTokenPayload> {
     if (!refreshToken)
-      throw new UnprocessableEntityException('Refresh token is required');
+      throw new UnprocessableEntityException(RefreshTokenMessage.REQUIRED);
     try {
       return this.jwtService.verifyAsync(refreshToken);
     } catch (e) {
       if (e instanceof TokenExpiredError) {
-        throw new UnprocessableEntityException('Refresh token expired');
+        throw new UnprocessableEntityException(RefreshTokenMessage.EXPIRED);
       } else {
-        throw new UnprocessableEntityException('Refresh token malformed');
+        throw new UnprocessableEntityException(RefreshTokenMessage.MALFORMED);
       }
     }
   }
@@ -121,11 +124,13 @@ export class TokenService {
     refreshTokenPayload: RefreshTokenPayload,
   ): Promise<UserEntity> {
     if (!refreshTokenPayload)
-      throw new UnprocessableEntityException('Payload is required');
+      throw new UnprocessableEntityException(
+        RefreshTokenMessage.PAYLOAD_REQUIRED,
+      );
     const subId = refreshTokenPayload.sub;
 
     if (!subId) {
-      throw new UnprocessableEntityException('Refresh token malformed');
+      throw new UnprocessableEntityException(RefreshTokenMessage.MALFORMED);
     }
 
     return this.usersService.findForId(+subId);
@@ -137,14 +142,14 @@ export class TokenService {
     const tokenId = payload.jti;
 
     if (!tokenId) {
-      throw new UnprocessableEntityException('Refresh token malformed');
+      throw new UnprocessableEntityException(RefreshTokenMessage.MALFORMED);
     }
 
     const refreshToken = await this.refreshTokenRepository.findTokenById(
       tokenId,
     );
     if (refreshToken.revoked)
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new UnauthorizedException(RefreshTokenMessage.INVALID);
     return refreshToken;
   }
 }

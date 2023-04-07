@@ -13,6 +13,8 @@ import {
 } from '@nestjs/common/exceptions';
 import { RefreshTokenEntity } from '../../models/refresh-token.entity';
 import { UnauthorizedException } from '@nestjs/common/exceptions/unauthorized.exception';
+import { RefreshTokenMessage } from '../../enums/refresh-token-messages.ts/refresh-token-messages.enum';
+import { UserMessage } from '../../../user/enums/user-messages.ts/user-messages.enum';
 
 const userData1 = {
   name: 'User 1',
@@ -83,19 +85,19 @@ describe('TokenServiceService', () => {
 
     it('should fail when user is null', async () => {
       const fn = async () => tokenService.generateAccessToken(null);
-      await expect(fn()).rejects.toThrow('User is required');
+      await expect(fn()).rejects.toThrow(UserMessage.REQUIRED);
       await expect(fn()).rejects.toThrow(UnprocessableEntityException);
     });
 
     it('should fail when user is undefined', async () => {
       const fn = async () => tokenService.generateAccessToken(undefined);
-      await expect(fn()).rejects.toThrow('User is required');
+      await expect(fn()).rejects.toThrow(UserMessage.REQUIRED);
       await expect(fn()).rejects.toThrow(UnprocessableEntityException);
     });
 
     it('should fail when user id is not defined', async () => {
       const fn = async () => tokenService.generateAccessToken(new UserEntity());
-      await expect(fn()).rejects.toThrow('User id is required');
+      await expect(fn()).rejects.toThrow(UserMessage.ID_REQUIRED);
       await expect(fn()).rejects.toThrow(UnprocessableEntityException);
     });
   });
@@ -111,18 +113,18 @@ describe('TokenServiceService', () => {
 
     it('should fail when user is null', async () => {
       const fn = async () => tokenService.generateRefreshToken(null);
-      await expect(fn()).rejects.toThrow('User is required');
+      await expect(fn()).rejects.toThrow(UserMessage.REQUIRED);
     });
 
     it('should fail when user is undefined', async () => {
       const fn = async () => tokenService.generateRefreshToken(undefined);
-      await expect(fn()).rejects.toThrow('User is required');
+      await expect(fn()).rejects.toThrow(UserMessage.REQUIRED);
     });
 
     it('should fail when user id is not defined', async () => {
       const fn = async () =>
         tokenService.generateRefreshToken(new UserEntity());
-      await expect(fn()).rejects.toThrow('User id is required');
+      await expect(fn()).rejects.toThrow(UserMessage.ID_REQUIRED);
     });
   });
 
@@ -185,7 +187,7 @@ describe('TokenServiceService', () => {
 
       const fn = async () =>
         tokenService.resolveRefreshToken(generatedRefreshTokens[1]);
-      await expect(fn()).rejects.toThrow('Refresh token not found');
+      await expect(fn()).rejects.toThrow(RefreshTokenMessage.NOT_FOUND);
       await expect(fn()).rejects.toThrow(NotFoundException);
     });
 
@@ -206,25 +208,25 @@ describe('TokenServiceService', () => {
 
       const fn = async () =>
         tokenService.resolveRefreshToken(generatedRefreshTokens[1]);
-      await expect(fn()).rejects.toThrow('User not found');
+      await expect(fn()).rejects.toThrow(UserMessage.NOT_FOUND);
       await expect(fn()).rejects.toThrow(NotFoundException);
     });
 
     it('should fail when refresh token is null', async () => {
       const fn = async () => tokenService.resolveRefreshToken(null);
-      await expect(fn()).rejects.toThrow('Refresh token is required');
+      await expect(fn()).rejects.toThrow(RefreshTokenMessage.REQUIRED);
       await expect(fn()).rejects.toThrow(UnprocessableEntityException);
     });
 
     it('should fail when refresh token is undefined', async () => {
       const fn = async () => tokenService.resolveRefreshToken(undefined);
-      await expect(fn()).rejects.toThrow('Refresh token is required');
+      await expect(fn()).rejects.toThrow(RefreshTokenMessage.REQUIRED);
       await expect(fn()).rejects.toThrow(UnprocessableEntityException);
     });
 
     it('should fail when refresh token is empty', async () => {
       const fn = async () => tokenService.resolveRefreshToken('');
-      await expect(fn()).rejects.toThrow('Refresh token is required');
+      await expect(fn()).rejects.toThrow(RefreshTokenMessage.REQUIRED);
       await expect(fn()).rejects.toThrow(UnprocessableEntityException);
     });
 
@@ -281,20 +283,20 @@ describe('TokenServiceService', () => {
 
     it('should fail when access token is null', async () => {
       const fn = async () => await tokenService['decodeRefreshToken'](null);
-      await expect(fn()).rejects.toThrow('Refresh token is required');
+      await expect(fn()).rejects.toThrow(RefreshTokenMessage.REQUIRED);
       await expect(fn()).rejects.toThrow(UnprocessableEntityException);
     });
 
     it('should fail when access token is undefined', async () => {
       const fn = async () =>
         await tokenService['decodeRefreshToken'](undefined);
-      await expect(fn()).rejects.toThrow('Refresh token is required');
+      await expect(fn()).rejects.toThrow(RefreshTokenMessage.REQUIRED);
       await expect(fn()).rejects.toThrow(UnprocessableEntityException);
     });
 
     it('should fail when access token is empty', async () => {
       const fn = async () => await tokenService['decodeRefreshToken']('');
-      await expect(fn()).rejects.toThrow('Refresh token is required');
+      await expect(fn()).rejects.toThrow(RefreshTokenMessage.REQUIRED);
       await expect(fn()).rejects.toThrow(UnprocessableEntityException);
     });
 
@@ -348,7 +350,7 @@ describe('TokenServiceService', () => {
         await tokenService.revokeRefreshToken(refreshToken);
 
       await expect(fn(generatedRefreshTokens[1])).rejects.toThrow(
-        'Refresh token not found',
+        RefreshTokenMessage.NOT_FOUND,
       );
       await expect(fn(generatedRefreshTokens[1])).rejects.toThrow(
         NotFoundException,
@@ -358,21 +360,21 @@ describe('TokenServiceService', () => {
     it('should fail when token is null', async () => {
       const fn = async (refreshToken: string) =>
         await tokenService.revokeRefreshToken(refreshToken);
-      await expect(fn(null)).rejects.toThrow('Refresh token is required');
+      await expect(fn(null)).rejects.toThrow(RefreshTokenMessage.REQUIRED);
       await expect(fn(null)).rejects.toThrow(UnprocessableEntityException);
     });
 
     it('should fail when token is undefined', async () => {
       const fn = async (refreshToken: string) =>
         await tokenService.revokeRefreshToken(refreshToken);
-      await expect(fn(undefined)).rejects.toThrow('Refresh token is required');
+      await expect(fn(undefined)).rejects.toThrow(RefreshTokenMessage.REQUIRED);
       await expect(fn(undefined)).rejects.toThrow(UnprocessableEntityException);
     });
 
     it('should fail when token is empty', async () => {
       const fn = async (refreshToken: string) =>
         await tokenService.revokeRefreshToken(refreshToken);
-      await expect(fn('')).rejects.toThrow('Refresh token is required');
+      await expect(fn('')).rejects.toThrow(RefreshTokenMessage.REQUIRED);
       await expect(fn('')).rejects.toThrow(UnprocessableEntityException);
     });
 
@@ -471,7 +473,7 @@ describe('TokenServiceService', () => {
         await tokenService.createAccessTokenFromRefreshToken(refreshToken);
 
       await expect(fn(generatedRefreshTokens[1])).rejects.toThrow(
-        'Refresh token not found',
+        RefreshTokenMessage.NOT_FOUND,
       );
       await expect(fn(generatedRefreshTokens[1])).rejects.toThrow(
         NotFoundException,
@@ -499,7 +501,7 @@ describe('TokenServiceService', () => {
         await tokenService.createAccessTokenFromRefreshToken(refreshToken);
 
       await expect(fn(generatedRefreshTokens[1])).rejects.toThrow(
-        'User not found',
+        UserMessage.NOT_FOUND,
       );
       await expect(fn(generatedRefreshTokens[1])).rejects.toThrow(
         NotFoundException,
@@ -509,20 +511,20 @@ describe('TokenServiceService', () => {
     it('should fail when refresh token is null', async () => {
       const fn = async () =>
         tokenService.createAccessTokenFromRefreshToken(null);
-      await expect(fn()).rejects.toThrow('Refresh token is required');
+      await expect(fn()).rejects.toThrow(RefreshTokenMessage.REQUIRED);
       await expect(fn()).rejects.toThrow(UnprocessableEntityException);
     });
 
     it('should fail when refresh token is undefined', async () => {
       const fn = async () =>
         tokenService.createAccessTokenFromRefreshToken(undefined);
-      await expect(fn()).rejects.toThrow('Refresh token is required');
+      await expect(fn()).rejects.toThrow(RefreshTokenMessage.REQUIRED);
       await expect(fn()).rejects.toThrow(UnprocessableEntityException);
     });
 
     it('should fail when refresh token is empty', async () => {
       const fn = async () => tokenService.createAccessTokenFromRefreshToken('');
-      await expect(fn()).rejects.toThrow('Refresh token is required');
+      await expect(fn()).rejects.toThrow(RefreshTokenMessage.REQUIRED);
       await expect(fn()).rejects.toThrow(UnprocessableEntityException);
     });
 
@@ -589,21 +591,21 @@ describe('TokenServiceService', () => {
           jti: 2,
           sub: '3',
         });
-      await expect(fn()).rejects.toThrow('User not found');
+      await expect(fn()).rejects.toThrow(UserMessage.NOT_FOUND);
       await expect(fn()).rejects.toThrow(NotFoundException);
     });
 
-    it('should fail when refresh tokenpayload is null', async () => {
+    it('should fail when refresh token payload is null', async () => {
       const fn = async () =>
         await tokenService['getUserFromRefreshTokenPayload'](null);
-      await expect(fn()).rejects.toThrow('Payload is required');
+      await expect(fn()).rejects.toThrow(RefreshTokenMessage.PAYLOAD_REQUIRED);
       await expect(fn()).rejects.toThrow(UnprocessableEntityException);
     });
 
-    it('should fail when refresh tokenpayload is undefined', async () => {
+    it('should fail when refresh token payload is undefined', async () => {
       const fn = async () =>
         await tokenService['getUserFromRefreshTokenPayload'](undefined);
-      await expect(fn()).rejects.toThrow('Payload is required');
+      await expect(fn()).rejects.toThrow(RefreshTokenMessage.PAYLOAD_REQUIRED);
       await expect(fn()).rejects.toThrow(UnprocessableEntityException);
     });
 
@@ -615,7 +617,7 @@ describe('TokenServiceService', () => {
           jti: 2,
           sub: null,
         });
-      await expect(fn()).rejects.toThrow('Refresh token malformed');
+      await expect(fn()).rejects.toThrow(RefreshTokenMessage.MALFORMED);
       await expect(fn()).rejects.toThrow(UnprocessableEntityException);
     });
   });

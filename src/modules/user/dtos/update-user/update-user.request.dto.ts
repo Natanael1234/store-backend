@@ -1,26 +1,23 @@
 import {
-  IsDefined,
   IsEmail,
-  IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
   MinLength,
-  isNotEmpty,
 } from 'class-validator';
+import { NameMessage } from '../../enums/name-messages/name-messages.enum';
+import { EmailMessage } from '../../enums/email-messages/email-messages.enum';
 
 export class UpdateUserRequestDTO {
-  @MaxLength(60, { message: 'Name must have a maximum of 60 characters' })
-  @MinLength(6, { message: 'Name must be at least 6 characters long' })
-  @IsString({ message: 'Name must be string' })
+  @MaxLength(60, { message: NameMessage.MAX_LEN })
+  @MinLength(6, { message: NameMessage.MIN_LEN })
+  @IsString({ message: NameMessage.STRING })
   @IsOptional()
   name?: string;
 
-  @MaxLength(60, {
-    message: 'Email must have a maximum of 60 characters',
-  })
-  @IsEmail({}, { message: 'Invalid email' })
-  @IsString({ message: 'Email must be string' })
+  @MaxLength(60, { message: EmailMessage.MAX_LEN })
+  @IsEmail({}, { message: EmailMessage.INVALID })
+  @IsString({ message: EmailMessage.STRING })
   @IsOptional()
   email?: string;
 }

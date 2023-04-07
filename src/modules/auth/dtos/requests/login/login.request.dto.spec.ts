@@ -1,19 +1,8 @@
-import { validateFirstError } from '../../../../system/utils/validate-first-error';
+import { validateFirstError } from '../../../../system/utils/validation';
+import { EmailMessage } from '../../../../user/enums/email-messages/email-messages.enum';
+import { PasswordMessage } from '../../../../user/enums/password-messages/password-messages.enum';
 import { LoginRequestDto } from './login.request.dto';
 
-enum EmailMessage {
-  IS_EMAIL = 'Email is invalid',
-  IS_STRING = 'Email must be string',
-  REQUIRED = 'Email is required',
-  MAX_LENGTH = 'Email must have a maximum of 60 characters',
-}
-
-enum PasswordMessage {
-  IS_STRING = 'Password must be a string',
-  MIN_SIZE = 'Password must be at least 6 characters long',
-  MAX_LENGTH = 'Password must have a maximum of 60 characters',
-  REQUIRED = 'Password is required',
-}
 const validate = async (data) => validateFirstError(data, LoginRequestDto);
 
 describe('LoginRequestDto', () => {
@@ -29,22 +18,22 @@ describe('LoginRequestDto', () => {
       {
         emailDescription: 'number',
         email: 2323232,
-        expectedErrors: { isString: EmailMessage.IS_STRING },
+        expectedErrors: { isString: EmailMessage.STRING },
       },
       {
         emailDescription: 'boolean',
         email: true,
-        expectedErrors: { isString: EmailMessage.IS_STRING },
+        expectedErrors: { isString: EmailMessage.STRING },
       },
       {
         emailDescription: 'array',
         email: [],
-        expectedErrors: { isString: EmailMessage.IS_STRING },
+        expectedErrors: { isString: EmailMessage.STRING },
       },
       {
         emailDescription: 'object',
         email: {},
-        expectedErrors: { isString: EmailMessage.IS_STRING },
+        expectedErrors: { isString: EmailMessage.STRING },
       },
       {
         emailDescription: 'null',
@@ -64,7 +53,7 @@ describe('LoginRequestDto', () => {
       {
         emailDescription: 'invalid formated',
         email: 'email.com',
-        expectedErrors: { isEmail: EmailMessage.IS_EMAIL },
+        expectedErrors: { isEmail: EmailMessage.INVALID },
       },
     ])(
       'should fail when email is $emailDescription',
@@ -92,7 +81,7 @@ describe('LoginRequestDto', () => {
       expect(validations[1][0].property).toEqual('email');
       expect(validations[1][0].value).toEqual(data[1].email);
       expect(validations[1][0].constraints).toEqual({
-        maxLength: EmailMessage.MAX_LENGTH,
+        maxLength: EmailMessage.MAX_LEN,
       });
     });
   });
@@ -102,22 +91,22 @@ describe('LoginRequestDto', () => {
       {
         passwordDescription: 'number',
         password: 2323232,
-        expectedErrors: { isString: PasswordMessage.IS_STRING },
+        expectedErrors: { isString: PasswordMessage.STRING },
       },
       {
         passwordDescription: 'boolean',
         password: true,
-        expectedErrors: { isString: PasswordMessage.IS_STRING },
+        expectedErrors: { isString: PasswordMessage.STRING },
       },
       {
         passwordDescription: 'array',
         password: [],
-        expectedErrors: { isString: PasswordMessage.IS_STRING },
+        expectedErrors: { isString: PasswordMessage.STRING },
       },
       {
         passwordDescription: 'object',
         password: {},
-        expectedErrors: { isString: PasswordMessage.IS_STRING },
+        expectedErrors: { isString: PasswordMessage.STRING },
       },
       {
         passwordDescription: 'null',
@@ -158,12 +147,12 @@ describe('LoginRequestDto', () => {
       expect(errors[0].property).toEqual('email');
       expect(errors[0].value).toEqual(data.email);
       expect(errors[0].constraints).toEqual({
-        isEmail: EmailMessage.IS_EMAIL,
+        isEmail: EmailMessage.INVALID,
       });
       expect(errors[1].property).toEqual('password');
       expect(errors[1].value).toEqual(data.password);
       expect(errors[1].constraints).toEqual({
-        minLength: PasswordMessage.MIN_SIZE,
+        minLength: PasswordMessage.MIN_LEN,
       });
     });
   });

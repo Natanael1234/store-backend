@@ -83,19 +83,19 @@ export function testDistinctTokens(payload1, payload2) {
 export const registerData = [
   {
     name: 'User 1',
-    password: '123',
+    password: 'Abc12*',
     email: 'user1@email.com',
     acceptTerms: true,
   },
   {
     name: 'User 2',
-    password: '1234',
+    password: 'Xyz12*',
     email: 'user2@email.com',
     acceptTerms: true,
   },
   {
     name: 'User 3',
-    password: '12345',
+    password: 'Cba12*',
     email: 'user3@email.com',
     acceptTerms: true,
   },
@@ -114,7 +114,7 @@ export async function testRegister(
   await userService.create({
     name: 'Another user',
     email: 'anotheruser@email.com',
-    password: 'abc',
+    password: 'A123df*',
   });
   const response3 = await registerCallback(registerData[2]);
 
@@ -156,7 +156,7 @@ export async function testLogin(
   const createUserData = {
     name: 'Another user',
     email: 'anotheruser@email.com',
-    password: 'abc',
+    password: '123Acb*',
     acceptTerms: true,
   };
   await userService.create(createUserData);

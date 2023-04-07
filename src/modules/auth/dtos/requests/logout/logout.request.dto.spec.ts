@@ -1,12 +1,7 @@
 import { plainToInstance } from 'class-transformer';
 import { LogoutRequestDto } from './logout.request.dto';
-import { validateFirstError } from '../../../../system/utils/validate-first-error';
-
-enum LogoutMessages {
-  IS_STRING = 'Refresh token must be a string',
-  FORMAT = 'Invalid refresh token',
-  REQUIRED = 'Refresh token is required',
-}
+import { validateFirstError } from '../../../../system/utils/validation';
+import { RefreshTokenMessage } from '../../../enums/refresh-token-messages.ts/refresh-token-messages.enum';
 
 describe('LogoutRequestDto', () => {
   it('should pass validation', async () => {
@@ -22,42 +17,42 @@ describe('LogoutRequestDto', () => {
     {
       refreshTokenDescription: 'number',
       refreshToken: 2323232,
-      expectedErrors: { isString: LogoutMessages.IS_STRING },
+      expectedErrors: { isString: RefreshTokenMessage.STRING },
     },
     {
       refreshTokenDescription: 'boolean',
       refreshToken: true,
-      expectedErrors: { isString: LogoutMessages.IS_STRING },
+      expectedErrors: { isString: RefreshTokenMessage.STRING },
     },
     {
       refreshTokenDescription: 'array',
       refreshToken: [],
-      expectedErrors: { isString: LogoutMessages.IS_STRING },
+      expectedErrors: { isString: RefreshTokenMessage.STRING },
     },
     {
       refreshTokenDescription: 'object',
       refreshToken: {},
-      expectedErrors: { isString: LogoutMessages.IS_STRING },
+      expectedErrors: { isString: RefreshTokenMessage.STRING },
     },
     {
       refreshTokenDescription: 'null',
       refreshToken: null,
-      expectedErrors: { isNotEmpty: LogoutMessages.REQUIRED },
+      expectedErrors: { isNotEmpty: RefreshTokenMessage.REQUIRED },
     },
     {
       refreshTokenDescription: 'undefined',
       refreshToken: undefined,
-      expectedErrors: { isNotEmpty: LogoutMessages.REQUIRED },
+      expectedErrors: { isNotEmpty: RefreshTokenMessage.REQUIRED },
     },
     {
       refreshTokenDescription: 'empty',
       refreshToken: '',
-      expectedErrors: { isNotEmpty: LogoutMessages.REQUIRED },
+      expectedErrors: { isNotEmpty: RefreshTokenMessage.REQUIRED },
     },
     {
       refreshTokenDescription: 'invalid',
       refreshToken: 'invalid_token',
-      expectedErrors: { matches: LogoutMessages.FORMAT },
+      expectedErrors: { matches: RefreshTokenMessage.INVALID },
     },
   ])(
     'should fail validation when refreshToken is $refreshTokenDescription',

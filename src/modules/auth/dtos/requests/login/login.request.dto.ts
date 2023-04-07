@@ -5,19 +5,21 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { PasswordMessage } from '../../../../user/enums/password-messages/password-messages.enum';
+import { EmailMessage } from '../../../../user/enums/email-messages/email-messages.enum';
 
 export class LoginRequestDto {
   @MaxLength(60, {
     message: 'Email must have a maximum of 60 characters',
   })
-  @IsEmail({}, { message: 'Email is invalid' })
-  @IsString({ message: 'Email must be string' })
-  @IsNotEmpty({ message: 'Email is required' })
+  @IsEmail({}, { message: EmailMessage.INVALID })
+  @IsString({ message: EmailMessage.STRING })
+  @IsNotEmpty({ message: EmailMessage.REQUIRED })
   readonly email: string;
 
-  @MaxLength(60, { message: 'Password must have a maximum of 60 characters' })
-  @MinLength(6, { message: 'Password must be at least 6 characters long' })
-  @IsString({ message: 'Password must be a string' })
-  @IsNotEmpty({ message: 'Password is required' })
+  @MaxLength(60, { message: PasswordMessage.MAX_LEN })
+  @MinLength(6, { message: PasswordMessage.MIN_LEN })
+  @IsString({ message: PasswordMessage.STRING })
+  @IsNotEmpty({ message: PasswordMessage.REQUIRED })
   readonly password: string;
 }

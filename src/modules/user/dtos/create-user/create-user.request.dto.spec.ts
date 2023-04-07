@@ -1,27 +1,8 @@
 import { CreateUserRequestDTO } from './create-user.request.dto';
-import { validateFirstError } from '../../../system/utils/validate-first-error';
-
-enum NameMessage {
-  REQUIRED = 'Name is required',
-  IS_STRING = 'Name must be string',
-  MIN_SIZE = 'Name must be at least 6 characters long',
-  MAX_SIZE = 'Name must have a maximum of 60 characters',
-}
-
-enum EmailMessage {
-  MAX_SIZE = 'Email must have a maximum of 60 characters',
-  IS_STRING = 'Email must be string',
-  VALID = 'Invalid email',
-  REQUIRED = 'Email is required',
-}
-
-enum PasswordMessage {
-  IS_REQUIRED = 'Password is required',
-  MUST_BE_STRING = 'Password must be string',
-  MIN_SIZE = 'Password must be at least 6 characters long',
-  MAX_SIZE = 'Password must have a maximum of 12 characters',
-  STRONG = 'Password must have lowercase, uppercase, number and special characters',
-}
+import { validateFirstError } from '../../../system/utils/validation';
+import { PasswordMessage } from '../../enums/password-messages/password-messages.enum';
+import { NameMessage } from '../../enums/name-messages/name-messages.enum';
+import { EmailMessage } from '../../enums/email-messages/email-messages.enum';
 
 const validate = (data) => validateFirstError(data, CreateUserRequestDTO);
 
@@ -42,28 +23,28 @@ describe('CreateUserRequestDto', () => {
         nameDescription: 'number',
         name: 2323232,
         expectedErrors: {
-          isString: NameMessage.IS_STRING,
+          isString: NameMessage.STRING,
         },
       },
       {
         nameDescription: 'boolean',
         name: true,
         expectedErrors: {
-          isString: NameMessage.IS_STRING,
+          isString: NameMessage.STRING,
         },
       },
       {
         nameDescription: 'array',
         name: [],
         expectedErrors: {
-          isString: NameMessage.IS_STRING,
+          isString: NameMessage.STRING,
         },
       },
       {
         nameDescription: 'object',
         name: {},
         expectedErrors: {
-          isString: NameMessage.IS_STRING,
+          isString: NameMessage.STRING,
         },
       },
       {
@@ -91,7 +72,7 @@ describe('CreateUserRequestDto', () => {
         nameDescription: 'too short',
         name: 'Usr',
         expectedErrors: {
-          minLength: NameMessage.MIN_SIZE,
+          minLength: NameMessage.MIN_LEN,
         },
       },
       {
@@ -105,7 +86,7 @@ describe('CreateUserRequestDto', () => {
         nameDescription: 'too short',
         name: 'Usr',
         expectedErrors: {
-          minLength: NameMessage.MIN_SIZE,
+          minLength: NameMessage.MIN_LEN,
         },
       },
     ])(
@@ -160,7 +141,7 @@ describe('CreateUserRequestDto', () => {
       expect(errors[0][0].property).toEqual('name');
       expect(errors[0][0].value).toEqual(data[0].name);
       expect(errors[0][0].constraints).toEqual({
-        minLength: NameMessage.MIN_SIZE,
+        minLength: NameMessage.MIN_LEN,
       });
 
       expect(errors[1]).toHaveLength(0);
@@ -170,7 +151,7 @@ describe('CreateUserRequestDto', () => {
       expect(errors[3][0].property).toEqual('name');
       expect(errors[3][0].value).toEqual(data[3].name);
       expect(errors[3][0].constraints).toEqual({
-        maxLength: NameMessage.MAX_SIZE,
+        maxLength: NameMessage.MAX_LEN,
       });
     });
   });
@@ -181,28 +162,28 @@ describe('CreateUserRequestDto', () => {
         emailDescription: 'number',
         email: 2323232,
         expectedErrors: {
-          isString: EmailMessage.IS_STRING,
+          isString: EmailMessage.STRING,
         },
       },
       {
         emailDescription: 'boolean',
         email: true,
         expectedErrors: {
-          isString: EmailMessage.IS_STRING,
+          isString: EmailMessage.STRING,
         },
       },
       {
         emailDescription: 'array',
         email: [],
         expectedErrors: {
-          isString: EmailMessage.IS_STRING,
+          isString: EmailMessage.STRING,
         },
       },
       {
         emailDescription: 'object',
         email: {},
         expectedErrors: {
-          isString: EmailMessage.IS_STRING,
+          isString: EmailMessage.STRING,
         },
       },
       {
@@ -230,7 +211,7 @@ describe('CreateUserRequestDto', () => {
         emailDescription: 'invalid',
         email: 'email.com',
         expectedErrors: {
-          isEmail: EmailMessage.VALID,
+          isEmail: EmailMessage.INVALID,
         },
       },
     ])(
@@ -257,84 +238,84 @@ describe('CreateUserRequestDto', () => {
         passwordDescription: 'number',
         password: 2323232,
         expectedErrors: {
-          isString: PasswordMessage.MUST_BE_STRING,
+          isString: PasswordMessage.STRING,
         },
       },
       {
         passwordDescription: 'boolean',
         password: true,
         expectedErrors: {
-          isString: PasswordMessage.MUST_BE_STRING,
+          isString: PasswordMessage.STRING,
         },
       },
       {
         passwordDescription: 'array',
         password: [],
         expectedErrors: {
-          isString: PasswordMessage.MUST_BE_STRING,
+          isString: PasswordMessage.STRING,
         },
       },
       {
         passwordDescription: 'object',
         password: {},
         expectedErrors: {
-          isString: PasswordMessage.MUST_BE_STRING,
+          isString: PasswordMessage.STRING,
         },
       },
       {
         passwordDescription: 'null',
         password: null,
         expectedErrors: {
-          isNotEmpty: PasswordMessage.IS_REQUIRED,
+          isNotEmpty: PasswordMessage.REQUIRED,
         },
       },
       {
         passwordDescription: 'undefined',
         password: undefined,
         expectedErrors: {
-          isNotEmpty: PasswordMessage.IS_REQUIRED,
+          isNotEmpty: PasswordMessage.REQUIRED,
         },
       },
       {
         passwordDescription: 'empty',
         password: '',
         expectedErrors: {
-          isNotEmpty: PasswordMessage.IS_REQUIRED,
+          isNotEmpty: PasswordMessage.REQUIRED,
         },
       },
       {
         passwordDescription: 'too short',
         password: 'Usr',
         expectedErrors: {
-          minLength: PasswordMessage.MIN_SIZE,
+          minLength: PasswordMessage.MIN_LEN,
         },
       },
       {
         passwordDescription: 'without uppercase letter',
         password: 'senha123*',
         expectedErrors: {
-          isStrongPassword: PasswordMessage.STRONG,
+          isStrongPassword: PasswordMessage.INVALID,
         },
       },
       {
         passwordDescription: 'without lowercase letter',
         password: 'SENHA123*',
         expectedErrors: {
-          isStrongPassword: PasswordMessage.STRONG,
+          isStrongPassword: PasswordMessage.INVALID,
         },
       },
       {
         passwordDescription: 'without number',
         password: 'SenhaABC*',
         expectedErrors: {
-          isStrongPassword: PasswordMessage.STRONG,
+          isStrongPassword: PasswordMessage.INVALID,
         },
       },
       {
         passwordDescription: 'without special character',
         password: 'Senha123',
         expectedErrors: {
-          isStrongPassword: PasswordMessage.STRONG,
+          isStrongPassword: PasswordMessage.INVALID,
         },
       },
     ])(
@@ -386,7 +367,7 @@ describe('CreateUserRequestDto', () => {
       expect(errors[0][0].property).toEqual('password');
       expect(errors[0][0].value).toEqual(data[0].password);
       expect(errors[0][0].constraints).toEqual({
-        minLength: PasswordMessage.MIN_SIZE,
+        minLength: PasswordMessage.MIN_LEN,
       });
 
       expect(errors[1]).toHaveLength(0);
@@ -396,7 +377,7 @@ describe('CreateUserRequestDto', () => {
       expect(errors[3][0].property).toEqual('password');
       expect(errors[3][0].value).toEqual(data[3].password);
       expect(errors[3][0].constraints).toEqual({
-        maxLength: PasswordMessage.MAX_SIZE,
+        maxLength: PasswordMessage.MAX_LEN,
       });
     });
   });
@@ -408,9 +389,9 @@ describe('CreateUserRequestDto', () => {
 
       expect(errors).toHaveLength(3);
       expect(errors[0].constraints).toEqual({
-        minLength: NameMessage.MIN_SIZE,
+        minLength: NameMessage.MIN_LEN,
       });
-      expect(errors[1].constraints).toEqual({ isEmail: EmailMessage.VALID });
+      expect(errors[1].constraints).toEqual({ isEmail: EmailMessage.INVALID });
     });
   });
 });

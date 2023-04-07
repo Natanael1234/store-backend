@@ -14,9 +14,12 @@ import {
   testFindUserForId,
   testFindUsers,
   testUpdateUser,
-  testValidateUser,
   usersData,
 } from '../../test-user-utils';
+import { UserMessage } from '../../enums/user-messages.ts/user-messages.enum';
+import { PasswordMessage } from '../../enums/password-messages/password-messages.enum';
+import { NameMessage } from '../../enums/name-messages/name-messages.enum';
+import { EmailMessage } from '../../enums/email-messages/email-messages.enum';
 
 describe('UserService', () => {
   let module: TestingModule;
@@ -46,7 +49,7 @@ describe('UserService', () => {
       'should fail when user data is $user',
       async ({ user }) => {
         const fn = () => userService.create(user);
-        await expect(fn()).rejects.toThrow('User data is required');
+        await expect(fn()).rejects.toThrow(UserMessage.DATA_REQUIRED);
         await expect(fn()).rejects.toThrow(BadRequestException);
       },
     );
@@ -64,7 +67,7 @@ describe('UserService', () => {
             password: '12345',
           });
 
-        await expect(fn()).rejects.toThrow('Email is required');
+        await expect(fn()).rejects.toThrow(EmailMessage.REQUIRED);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
       });
     });
@@ -82,7 +85,7 @@ describe('UserService', () => {
             password: '12345',
           });
 
-        await expect(fn()).rejects.toThrow('Name is required');
+        await expect(fn()).rejects.toThrow(NameMessage.REQUIRED);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
       });
     });
@@ -102,7 +105,7 @@ describe('UserService', () => {
               password,
             });
 
-          await expect(fn()).rejects.toThrow('Password is required');
+          await expect(fn()).rejects.toThrow(PasswordMessage.REQUIRED);
           await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         },
       );
@@ -136,7 +139,7 @@ describe('UserService', () => {
         await userService.findForId(10);
       }
       await expect(fn()).rejects.toThrow(NotFoundException);
-      await expect(fn()).rejects.toThrow('User not found');
+      await expect(fn()).rejects.toThrow(UserMessage.NOT_FOUND);
     });
 
     it.each([
@@ -152,7 +155,7 @@ describe('UserService', () => {
         await userService.findForId(userId);
       }
       await expect(fn()).rejects.toThrow(BadRequestException);
-      await expect(fn()).rejects.toThrow('User id required');
+      await expect(fn()).rejects.toThrow(UserMessage.ID_REQUIRED);
     });
   });
 
@@ -173,7 +176,7 @@ describe('UserService', () => {
         await userService.update(12, { name: newName, email: newEmail });
       }
       await expect(fn()).rejects.toThrow(NotFoundException);
-      await expect(fn()).rejects.toThrow('User not found');
+      await expect(fn()).rejects.toThrow(UserMessage.NOT_FOUND);
     });
 
     describe('id', () => {
@@ -187,7 +190,7 @@ describe('UserService', () => {
             await userService.findForId(userId);
           }
           await expect(fn()).rejects.toThrow(BadRequestException);
-          await expect(fn()).rejects.toThrow('User id required');
+          await expect(fn()).rejects.toThrow(UserMessage.ID_REQUIRED);
         },
       );
     });

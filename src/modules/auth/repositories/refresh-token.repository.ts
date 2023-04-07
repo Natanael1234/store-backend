@@ -5,6 +5,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserEntity } from '../../user/models/user/user.entity';
 import { RefreshTokenEntity } from '../models/refresh-token.entity';
+import { RefreshTokenMessage } from '../enums/refresh-token-messages.ts/refresh-token-messages.enum';
+import { UserMessage } from '../../user/enums/user-messages.ts/user-messages.enum';
 
 @Injectable()
 export class RefreshTokenRepository extends Repository<RefreshTokenEntity> {
@@ -17,10 +19,10 @@ export class RefreshTokenRepository extends Repository<RefreshTokenEntity> {
 
   public async createRefreshToken(user: UserEntity, ttl: number) {
     if (!user) {
-      throw new Error('User is required');
+      throw new Error(UserMessage.REQUIRED);
     }
     if (!user.id) {
-      throw new Error('User id is required');
+      throw new Error(UserMessage.ID_REQUIRED);
     }
     if (ttl == null) {
       throw new Error('ttl is required');
@@ -37,9 +39,10 @@ export class RefreshTokenRepository extends Repository<RefreshTokenEntity> {
   }
 
   public async findTokenById(id: number): Promise<RefreshTokenEntity | null> {
-    if (id == null) throw new Error('User id is required');
+    if (id == null) throw new Error(UserMessage.ID_REQUIRED);
     const refreshToken = await this.findOne({ where: { id } });
-    if (!refreshToken) throw new NotFoundException('Refresh token not found');
+    if (!refreshToken)
+      throw new NotFoundException(RefreshTokenMessage.NOT_FOUND);
     return refreshToken;
   }
 }

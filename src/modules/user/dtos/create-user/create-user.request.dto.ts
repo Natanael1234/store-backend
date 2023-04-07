@@ -6,22 +6,21 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { PasswordMessage } from '../../enums/password-messages/password-messages.enum';
+import { NameMessage } from '../../enums/name-messages/name-messages.enum';
+import { EmailMessage } from '../../enums/email-messages/email-messages.enum';
 
 export class CreateUserRequestDTO {
-  @MaxLength(60, {
-    message: 'Name must have a maximum of 60 characters',
-  })
-  @MinLength(6, { message: 'Name must be at least 6 characters long' })
-  @IsString({ message: 'Name must be string' })
-  @IsNotEmpty({ message: 'Name is required' })
+  @MaxLength(60, { message: NameMessage.MAX_LEN })
+  @MinLength(6, { message: NameMessage.MIN_LEN })
+  @IsString({ message: NameMessage.STRING })
+  @IsNotEmpty({ message: NameMessage.REQUIRED })
   name: string;
 
-  @MaxLength(60, {
-    message: 'Email must have a maximum of 60 characters',
-  })
-  @IsEmail({}, { message: 'Invalid email' })
-  @IsString({ message: 'Email must be string' })
-  @IsNotEmpty({ message: 'Email is required' })
+  @MaxLength(60, { message: EmailMessage.MAX_LEN })
+  @IsEmail({}, { message: EmailMessage.INVALID })
+  @IsString({ message: EmailMessage.STRING })
+  @IsNotEmpty({ message: EmailMessage.REQUIRED })
   email: string;
 
   @IsStrongPassword(
@@ -32,16 +31,11 @@ export class CreateUserRequestDTO {
       minSymbols: 1,
       minUppercase: 1,
     },
-    {
-      message:
-        'Password must have lowercase, uppercase, number and special characters',
-    },
+    { message: PasswordMessage.INVALID },
   )
-  @MaxLength(12, {
-    message: 'Password must have a maximum of 12 characters',
-  })
-  @MinLength(6, { message: 'Password must be at least 6 characters long' })
-  @IsString({ message: 'Password must be string' })
-  @IsNotEmpty({ message: 'Password is required' })
+  @MaxLength(12, { message: PasswordMessage.MAX_LEN })
+  @MinLength(6, { message: PasswordMessage.MIN_LEN })
+  @IsString({ message: PasswordMessage.STRING })
+  @IsNotEmpty({ message: PasswordMessage.REQUIRED })
   password: string;
 }

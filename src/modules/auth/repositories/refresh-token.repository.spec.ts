@@ -5,6 +5,8 @@ import { getTestingModule } from '../../../.jest/test-config.module';
 import { UserEntity } from '../../user/models/user/user.entity';
 import { RefreshTokenEntity } from '../models/refresh-token.entity';
 import { RefreshTokenRepository } from './refresh-token.repository';
+import { UserMessage } from '../../user/enums/user-messages.ts/user-messages.enum';
+import { RefreshTokenMessage } from '../enums/refresh-token-messages.ts/refresh-token-messages.enum';
 
 describe('RefreshTokenRepository', () => {
   let module: TestingModule;
@@ -168,19 +170,19 @@ describe('RefreshTokenRepository', () => {
 
     it('should fail when user is null', async () => {
       const fn = async () => refreshTokenRepo.createRefreshToken(null, 1000);
-      expect(fn()).rejects.toThrow('User is required');
+      expect(fn()).rejects.toThrow(UserMessage.REQUIRED);
     });
 
     it('should fail when user is undefined', async () => {
       const fn = async () =>
         refreshTokenRepo.createRefreshToken(undefined, 1000);
-      expect(fn()).rejects.toThrow('User is required');
+      expect(fn()).rejects.toThrow(UserMessage.REQUIRED);
     });
 
     it('should fail when user id is undefined', async () => {
       const fn = async () =>
         refreshTokenRepo.createRefreshToken(new UserEntity(), 1000);
-      expect(fn()).rejects.toThrow('User id is required');
+      expect(fn()).rejects.toThrow(UserMessage.ID_REQUIRED);
     });
 
     it('should fail when ttl is undefined', async () => {
@@ -256,18 +258,18 @@ describe('RefreshTokenRepository', () => {
 
     it('should fail when user id is null', async () => {
       const fn = async () => await refreshTokenRepo.findTokenById(null);
-      await expect(fn()).rejects.toThrow('User id is required');
+      await expect(fn()).rejects.toThrow(UserMessage.ID_REQUIRED);
     });
 
     it('should fail when user id is undefined', async () => {
       const fn = async () => await refreshTokenRepo.findTokenById(undefined);
-      await expect(fn()).rejects.toThrow('User id is required');
+      await expect(fn()).rejects.toThrow(UserMessage.ID_REQUIRED);
     });
 
     it('should fail when token is inexistent', async () => {
       await createUsers(usersData);
       const fn = async () => await refreshTokenRepo.findTokenById(10);
-      await expect(fn()).rejects.toThrow('Refresh token not found');
+      await expect(fn()).rejects.toThrow(RefreshTokenMessage.NOT_FOUND);
     });
   });
 });

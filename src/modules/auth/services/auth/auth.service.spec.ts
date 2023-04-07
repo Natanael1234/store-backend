@@ -1,4 +1,4 @@
-import { JwtModule, JwtService } from '@nestjs/jwt';
+import { JwtService } from '@nestjs/jwt';
 import { TestingModule } from '@nestjs/testing';
 import { getTestingModule } from '../../../../.jest/test-config.module';
 import { UserService } from '../../../user/services/user/user.service';
@@ -11,6 +11,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { UnprocessableEntityException } from '@nestjs/common';
 import {
   BadRequestException,
+  ConflictException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common/exceptions';
@@ -21,6 +22,12 @@ import {
   testRefresh,
   testRegister,
 } from './auth-test-utils';
+import { UserMessage } from '../../../user/enums/user-messages.ts/user-messages.enum';
+import { PasswordMessage } from '../../../user/enums/password-messages/password-messages.enum';
+import { CredentialsMessage } from '../../enums/cretentials-messages.ts/credentials-messages.enum';
+import { RefreshTokenMessage } from '../../enums/refresh-token-messages.ts/refresh-token-messages.enum';
+import { NameMessage } from '../../../user/enums/name-messages/name-messages.enum';
+import { EmailMessage } from '../../../user/enums/email-messages/email-messages.enum';
 
 describe('AuthService', () => {
   let module: TestingModule;
@@ -88,7 +95,7 @@ describe('AuthService', () => {
       'should fail when data is $data',
       async ({ data }) => {
         const fn = async () => await authService.register(data);
-        await expect(fn()).rejects.toThrow('User data is required');
+        await expect(fn()).rejects.toThrow(UserMessage.DATA_REQUIRED);
         await expect(fn()).rejects.toThrow(BadRequestException);
       },
     );
@@ -99,7 +106,7 @@ describe('AuthService', () => {
         async ({ name }) => {
           const fn = async () =>
             await authService.register({ ...registerData[1], name });
-          await expect(fn()).rejects.toThrow('Name is required');
+          await expect(fn()).rejects.toThrow(NameMessage.REQUIRED);
           await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         },
       );
@@ -113,10 +120,8 @@ describe('AuthService', () => {
             ...registerData[1],
             email: registerData[0].email,
           });
-        await expect(fn()).rejects.toThrow(
-          'SQLITE_CONSTRAINT: UNIQUE constraint failed: users.email',
-        );
-        await expect(fn()).rejects.toThrow(QueryFailedError);
+        await expect(fn()).rejects.toThrow(EmailMessage.INVALID);
+        await expect(fn()).rejects.toThrow(ConflictException);
       });
 
       it('should fail when email is already registered for user is soft-deleted', async () => {
@@ -135,7 +140,7 @@ describe('AuthService', () => {
         async ({ email }) => {
           const fn = async () =>
             await authService.register({ ...registerData[1], email });
-          await expect(fn()).rejects.toThrow('Email is required');
+          await expect(fn()).rejects.toThrow(EmailMessage.REQUIRED);
           await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         },
       );
@@ -147,7 +152,7 @@ describe('AuthService', () => {
         async ({ password }) => {
           const fn = async () =>
             await authService.register({ ...registerData[1], password });
-          await expect(fn()).rejects.toThrow('Password is required');
+          await expect(fn()).rejects.toThrow(PasswordMessage.REQUIRED);
           await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         },
       );
@@ -178,7 +183,7 @@ describe('AuthService', () => {
       'should fail when login data is $loginData',
       async ({ loginData }) => {
         const fn = () => authService.login(loginData);
-        await expect(fn()).rejects.toThrow('User credentials is required');
+        await expect(fn()).rejects.toThrow(CredentialsMessage.REQUIRED);
         await expect(fn()).rejects.toThrow(BadRequestException);
       },
     );
@@ -192,7 +197,7 @@ describe('AuthService', () => {
           email: registerData[1].email,
           password: registerData[1].password,
         });
-      await expect(fn()).rejects.toThrow('The login is invalid');
+      await expect(fn()).rejects.toThrow(CredentialsMessage.INVALID);
       await expect(fn()).rejects.toThrow(UnauthorizedException);
     });
 
@@ -203,7 +208,7 @@ describe('AuthService', () => {
         { emailDescription: 'empty', email: '' },
       ])('should fail when email is $emailDescription', async ({ email }) => {
         const fn = () => authService.login({ email, password: '123' });
-        await expect(fn()).rejects.toThrow('Email is required');
+        await expect(fn()).rejects.toThrow(EmailMessage.REQUIRED);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
       });
 
@@ -215,7 +220,7 @@ describe('AuthService', () => {
             email: 'inexistentuser@email.com',
             password: '123',
           });
-        await expect(fn()).rejects.toThrow('The login is invalid');
+        await expect(fn()).rejects.toThrow(CredentialsMessage.INVALID);
         await expect(fn()).rejects.toThrow(UnauthorizedException);
       });
     });
@@ -230,7 +235,7 @@ describe('AuthService', () => {
         async ({ password }) => {
           const fn = () =>
             authService.login({ email: registerData[1].email, password });
-          await expect(fn()).rejects.toThrow('Password is required');
+          await expect(fn()).rejects.toThrow(PasswordMessage.REQUIRED);
           await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         },
       );
@@ -244,7 +249,7 @@ describe('AuthService', () => {
           email: registerData[1].email,
           password: 'wrong_password',
         });
-      await expect(fn()).rejects.toThrow('The login is invalid');
+      await expect(fn()).rejects.toThrow(CredentialsMessage.INVALID);
       await expect(fn()).rejects.toThrow(UnauthorizedException);
     });
   });
@@ -265,7 +270,7 @@ describe('AuthService', () => {
       async ({ refreshToken }) => {
         await authService.register(registerData[0]);
         const fn = async () => await authService.refresh(refreshToken);
-        await expect(fn()).rejects.toThrow('Refresh token is required');
+        await expect(fn()).rejects.toThrow(RefreshTokenMessage.REQUIRED);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
       },
     );
@@ -311,7 +316,7 @@ describe('AuthService', () => {
       await userRepo.softDelete(2);
       const fn = () =>
         authService.refresh(registered[1].data.payload.refreshToken);
-      expect(fn()).rejects.toThrow('User not found');
+      expect(fn()).rejects.toThrow(UserMessage.NOT_FOUND);
       expect(fn()).rejects.toThrow(NotFoundException);
     });
   });
@@ -332,7 +337,7 @@ describe('AuthService', () => {
       async ({ refreshToken }) => {
         await authService.register(registerData[0]);
         const fn = async () => authService.logout(refreshToken);
-        await expect(fn).rejects.toThrow('Refresh token is required');
+        await expect(fn).rejects.toThrow(RefreshTokenMessage.REQUIRED);
         await expect(fn).rejects.toThrow(UnprocessableEntityException);
       },
     );
@@ -350,7 +355,7 @@ describe('AuthService', () => {
 
       const fn = async () =>
         authService.logout(registerResponses[1].data.payload.refreshToken);
-      await expect(fn).rejects.toThrow('Invalid refresh token');
+      await expect(fn).rejects.toThrow(RefreshTokenMessage.INVALID);
       await expect(fn).rejects.toThrow(UnauthorizedException);
     });
 
@@ -363,7 +368,7 @@ describe('AuthService', () => {
       await userRepo.softDelete(2);
       const fn = async () =>
         authService.logout(registerResponses[1].data.payload.refreshToken);
-      expect(fn()).rejects.toThrow('User not found');
+      expect(fn()).rejects.toThrow(UserMessage.NOT_FOUND);
       expect(fn()).rejects.toThrow(NotFoundException);
       // TODO: deveria retornar null
     });
@@ -402,7 +407,7 @@ describe('AuthService', () => {
               'refreshToken',
             );
           };
-          await expect(fn()).rejects.toThrow('User is required');
+          await expect(fn()).rejects.toThrow(UserMessage.REQUIRED);
           await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         },
       );
@@ -415,7 +420,7 @@ describe('AuthService', () => {
             'refreshToken',
           );
         };
-        await expect(fn()).rejects.toThrow('User id is required');
+        await expect(fn()).rejects.toThrow(UserMessage.ID_REQUIRED);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
       });
     });
@@ -435,7 +440,7 @@ describe('AuthService', () => {
               'refreshToken',
             );
           };
-          await expect(fn()).rejects.toThrow('User id is required');
+          await expect(fn()).rejects.toThrow(UserMessage.ID_REQUIRED);
           await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         },
       );

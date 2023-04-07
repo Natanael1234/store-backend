@@ -15,6 +15,13 @@ import { RefreshResponseDto } from '../../dtos/responses/refresh.response.dto';
 import { RegisterResponseDto } from '../../dtos/responses/register.response.dto';
 import { TokenService } from '../token/token.service';
 import { LogoutResponseDto } from '../../dtos/responses/logout.response.dto';
+import { UserMessage } from '../../../user/enums/user-messages.ts/user-messages.enum';
+import { PasswordMessage } from '../../../user/enums/password-messages/password-messages.enum';
+import { CredentialsMessage } from '../../enums/cretentials-messages.ts/credentials-messages.enum';
+import { AccessTokenMessage } from '../../enums/access-token-messages.ts/access-token-messages.enum';
+import { RefreshTokenMessage } from '../../enums/refresh-token-messages.ts/refresh-token-messages.enum';
+import { EmailMessage } from '../../../user/enums/email-messages/email-messages.enum';
+import { NameMessage } from '../../../user/enums/name-messages/name-messages.enum';
 
 @Injectable()
 export class AuthService {
@@ -27,15 +34,15 @@ export class AuthService {
     registerRequestDto: RegisterRequestDto,
   ): Promise<RegisterResponseDto> {
     if (!registerRequestDto)
-      throw new BadRequestException('User data is required');
+      throw new BadRequestException(UserMessage.DATA_REQUIRED);
     if (!registerRequestDto.password)
-      throw new UnprocessableEntityException('Password is required');
+      throw new UnprocessableEntityException(PasswordMessage.REQUIRED);
     if (!registerRequestDto.email)
-      throw new UnprocessableEntityException('Email is required');
+      throw new UnprocessableEntityException(EmailMessage.REQUIRED);
     if (!registerRequestDto.name)
-      throw new UnprocessableEntityException('Name is required');
+      throw new UnprocessableEntityException(NameMessage.REQUIRED);
     if (!registerRequestDto.password)
-      throw new UnprocessableEntityException('Password is required');
+      throw new UnprocessableEntityException(PasswordMessage.REQUIRED);
 
     const user = await this.userService.create(registerRequestDto);
     const token = await this.tokenService.generateAccessToken(user);
@@ -51,17 +58,17 @@ export class AuthService {
     loginRequestDto: LoginRequestDto,
   ): Promise<LoginResponseDto> {
     if (!loginRequestDto)
-      throw new BadRequestException('User credentials is required');
+      throw new BadRequestException(CredentialsMessage.REQUIRED);
     if (!loginRequestDto.email)
-      throw new UnprocessableEntityException('Email is required');
+      throw new UnprocessableEntityException(EmailMessage.REQUIRED);
     if (!loginRequestDto.password)
-      throw new UnprocessableEntityException('Password is required');
+      throw new UnprocessableEntityException(PasswordMessage.REQUIRED);
     const user = await this.userService.validateCredentials(
       loginRequestDto.email,
       loginRequestDto.password,
     );
     if (!user) {
-      throw new UnauthorizedException('The login is invalid');
+      throw new UnauthorizedException(CredentialsMessage.INVALID);
     }
 
     const token = await this.tokenService.generateAccessToken(user);
@@ -87,7 +94,7 @@ export class AuthService {
 
   public async logout(refreshToken: string): Promise<LogoutResponseDto> {
     // TODO: pegar os dados de refresh token da sessão.
-    if (refreshToken) new ForbiddenException('No refresh token provided');
+    if (refreshToken) new ForbiddenException(RefreshTokenMessage.REQUIRED);
 
     // TODO: schedule revoked tokens removal
     await this.tokenService.revokeRefreshToken(refreshToken);
@@ -104,10 +111,11 @@ export class AuthService {
     accessToken: string,
     refreshToken?: string,
   ): AuthenticationPayloadDto {
-    if (!user) throw new UnprocessableEntityException('User is required');
-    if (!user.id) throw new UnprocessableEntityException('User id is required');
+    if (!user) throw new UnprocessableEntityException(UserMessage.REQUIRED);
+    if (!user.id)
+      throw new UnprocessableEntityException(UserMessage.ID_REQUIRED);
     if (!accessToken)
-      throw new UnprocessableEntityException('Access token is not defined');
+      throw new UnprocessableEntityException(AccessTokenMessage.REQUIRED);
     return {
       // hides hash/password
       user: { ...user, hash: undefined },
