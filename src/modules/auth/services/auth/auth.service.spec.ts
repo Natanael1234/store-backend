@@ -17,6 +17,7 @@ import {
 } from '@nestjs/common/exceptions';
 import { JsonWebTokenError } from 'jsonwebtoken';
 import {
+  registerData,
   testLogin,
   testLogout,
   testRefresh,
@@ -37,27 +38,6 @@ describe('AuthService', () => {
   let refreshTokenRepo: RefreshTokenRepository;
   let userRepo: Repository<UserEntity>;
   let tokenService: TokenService;
-
-  const registerData = [
-    {
-      name: 'User 1',
-      password: '123',
-      email: 'user1@email.com',
-      acceptTerms: true,
-    },
-    {
-      name: 'User 2',
-      password: '1234',
-      email: 'user2@email.com',
-      acceptTerms: true,
-    },
-    {
-      name: 'User 3',
-      password: '12345',
-      email: 'user3@email.com',
-      acceptTerms: true,
-    },
-  ];
 
   beforeEach(async () => {
     module = await getTestingModule();

@@ -5,6 +5,7 @@ import { getTestingModule } from '../src/.jest/test-config.module';
 import { UserService } from '../src/modules/user/services/user/user.service';
 import { AuthService } from '../src/modules/auth/services/auth/auth.service';
 import {
+  registerData,
   testLogin,
   testLogout,
   testRefresh,
@@ -27,27 +28,6 @@ const registerEndpoint = '/auth/register';
 const loginEndpoint = '/auth/login';
 const refreshEndpoint = '/auth/refresh';
 const logoutEndpoint = '/auth/logout';
-
-const registerData = [
-  {
-    name: 'User 1',
-    password: 'Abc12*',
-    email: 'user1@email.com',
-    acceptTerms: true,
-  },
-  {
-    name: 'User 2',
-    password: 'Zyz12*',
-    email: 'user2@email.com',
-    acceptTerms: true,
-  },
-  {
-    name: 'User 3',
-    password: 'Cbd12*',
-    email: 'user3@email.com',
-    acceptTerms: true,
-  },
-];
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
