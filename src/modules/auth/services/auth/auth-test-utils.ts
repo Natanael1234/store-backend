@@ -1,13 +1,13 @@
 import { JwtService } from '@nestjs/jwt';
-import { RegisterResponseDto } from '../../dtos/responses/register.response.dto';
-import { UserService } from '../../../user/services/user/user.service';
-import { RefreshTokenRepository } from '../../repositories/refresh-token.repository';
 import { Repository } from 'typeorm';
 import { UserEntity } from '../../../user/models/user/user.entity';
-import { AuthService } from './auth.service';
-import { RefreshResponseDto } from '../../dtos/responses/refresh.response.dto';
+import { UserService } from '../../../user/services/user/user.service';
 import { LoginResponseDto } from '../../dtos/responses/login.response.dto';
 import { LogoutResponseDto } from '../../dtos/responses/logout.response.dto';
+import { RefreshResponseDto } from '../../dtos/responses/refresh.response.dto';
+import { RegisterResponseDto } from '../../dtos/responses/register.response.dto';
+import { RefreshTokenRepository } from '../../repositories/refresh-token.repository';
+import { AuthService } from './auth.service';
 
 export function testDecodedAccessToken(decodedAccessToken, userId) {
   expect(decodedAccessToken).toBeDefined();

@@ -1,13 +1,3 @@
-import { JwtService } from '@nestjs/jwt';
-import { TestingModule } from '@nestjs/testing';
-import { getTestingModule } from '../../../../.jest/test-config.module';
-import { UserService } from '../../../user/services/user/user.service';
-import { RefreshTokenRepository } from '../../repositories/refresh-token.repository';
-import { TokenService } from '../token/token.service';
-import { AuthService } from './auth.service';
-import { UserEntity } from '../../../user/models/user/user.entity';
-import { QueryFailedError, Repository } from 'typeorm';
-import { getRepositoryToken } from '@nestjs/typeorm';
 import { UnprocessableEntityException } from '@nestjs/common';
 import {
   BadRequestException,
@@ -15,7 +5,22 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common/exceptions';
+import { JwtService } from '@nestjs/jwt';
+import { TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { JsonWebTokenError } from 'jsonwebtoken';
+import { QueryFailedError, Repository } from 'typeorm';
+import { getTestingModule } from '../../../../.jest/test-config.module';
+import { EmailMessage } from '../../../user/enums/email-messages/email-messages.enum';
+import { NameMessage } from '../../../user/enums/name-messages/name-messages.enum';
+import { PasswordMessage } from '../../../user/enums/password-messages/password-messages.enum';
+import { UserMessage } from '../../../user/enums/user-messages.ts/user-messages.enum';
+import { UserEntity } from '../../../user/models/user/user.entity';
+import { UserService } from '../../../user/services/user/user.service';
+import { CredentialsMessage } from '../../enums/cretentials-messages.ts/credentials-messages.enum';
+import { RefreshTokenMessage } from '../../enums/refresh-token-messages.ts/refresh-token-messages.enum';
+import { RefreshTokenRepository } from '../../repositories/refresh-token.repository';
+import { TokenService } from '../token/token.service';
 import {
   registerData,
   testLogin,
@@ -23,12 +28,7 @@ import {
   testRefresh,
   testRegister,
 } from './auth-test-utils';
-import { UserMessage } from '../../../user/enums/user-messages.ts/user-messages.enum';
-import { PasswordMessage } from '../../../user/enums/password-messages/password-messages.enum';
-import { CredentialsMessage } from '../../enums/cretentials-messages.ts/credentials-messages.enum';
-import { RefreshTokenMessage } from '../../enums/refresh-token-messages.ts/refresh-token-messages.enum';
-import { NameMessage } from '../../../user/enums/name-messages/name-messages.enum';
-import { EmailMessage } from '../../../user/enums/email-messages/email-messages.enum';
+import { AuthService } from './auth.service';
 
 describe('AuthService', () => {
   let module: TestingModule;

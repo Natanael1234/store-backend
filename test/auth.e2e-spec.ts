@@ -1,9 +1,13 @@
-import { TestingModule } from '@nestjs/testing';
 import { HttpStatus, INestApplication } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import * as request from 'supertest';
+import { Repository } from 'typeorm';
 import { getTestingModule } from '../src/.jest/test-config.module';
-import { UserService } from '../src/modules/user/services/user/user.service';
-import { AuthService } from '../src/modules/auth/services/auth/auth.service';
+import { CredentialsMessage } from '../src/modules/auth/enums/cretentials-messages.ts/credentials-messages.enum';
+import { RefreshTokenMessage } from '../src/modules/auth/enums/refresh-token-messages.ts/refresh-token-messages.enum';
+import { RefreshTokenRepository } from '../src/modules/auth/repositories/refresh-token.repository';
 import {
   registerData,
   testLogin,
@@ -11,18 +15,14 @@ import {
   testRefresh,
   testRegister,
 } from '../src/modules/auth/services/auth/auth-test-utils';
-import { JwtService } from '@nestjs/jwt';
-import { RefreshTokenRepository } from '../src/modules/auth/repositories/refresh-token.repository';
-import { Repository } from 'typeorm';
-import { UserEntity } from '../src/modules/user/models/user/user.entity';
-import { getRepositoryToken } from '@nestjs/typeorm';
+import { AuthService } from '../src/modules/auth/services/auth/auth.service';
 import { ValidationPipe } from '../src/modules/pipes/custom-validation.pipe';
-import { usersData } from '../src/modules/user/test-user-utils';
-import { CredentialsMessage } from '../src/modules/auth/enums/cretentials-messages.ts/credentials-messages.enum';
-import { RefreshTokenMessage } from '../src/modules/auth/enums/refresh-token-messages.ts/refresh-token-messages.enum';
-import { PasswordMessage } from '../src/modules/user/enums/password-messages/password-messages.enum';
 import { EmailMessage } from '../src/modules/user/enums/email-messages/email-messages.enum';
 import { NameMessage } from '../src/modules/user/enums/name-messages/name-messages.enum';
+import { PasswordMessage } from '../src/modules/user/enums/password-messages/password-messages.enum';
+import { UserEntity } from '../src/modules/user/models/user/user.entity';
+import { UserService } from '../src/modules/user/services/user/user.service';
+import { usersData } from '../src/modules/user/test-user-utils';
 
 const registerEndpoint = '/auth/register';
 const loginEndpoint = '/auth/login';

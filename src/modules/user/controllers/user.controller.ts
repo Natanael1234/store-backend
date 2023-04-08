@@ -1,9 +1,9 @@
-import { Controller, Post, Get, Body } from '@nestjs/common';
-import { Delete, Param, Patch } from '@nestjs/common/decorators';
+import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Param, Patch } from '@nestjs/common/decorators';
+import { CreateUserRequestDTO } from '../dtos/create-user/create-user.request.dto';
 import { UpdateUserRequestDTO } from '../dtos/update-user/update-user.request.dto';
 import { UserEntity } from '../models/user/user.entity';
 import { UserService } from '../services/user/user.service';
-import { CreateUserRequestDTO } from '../dtos/create-user/create-user.request.dto';
 
 @Controller('users')
 export class UserController {
