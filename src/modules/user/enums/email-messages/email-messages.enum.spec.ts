@@ -1,7 +1,7 @@
 import { EmailMessage } from './email-messages.enum';
 
 describe('EmailMessage', () => {
-  it.skip('should be defined', () => {
+  it('should be defined', () => {
     expect(EmailMessage).toBeDefined();
   });
 

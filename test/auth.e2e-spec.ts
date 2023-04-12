@@ -5,11 +5,10 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import * as request from 'supertest';
 import { Repository } from 'typeorm';
 import { getTestingModule } from '../src/.jest/test-config.module';
+import { AcceptTermsMessage } from '../src/modules/auth/enums/accept-terms-messages.ts/accept-terms-messages.enum';
 import { CredentialsMessage } from '../src/modules/auth/enums/cretentials-messages.ts/credentials-messages.enum';
-import { RefreshTokenMessage } from '../src/modules/auth/enums/refresh-token-messages.ts/refresh-token-messages.enum';
 import { RefreshTokenRepository } from '../src/modules/auth/repositories/refresh-token.repository';
 import {
-  registerData,
   testLogin,
   testLogout,
   testRefresh,
@@ -22,7 +21,10 @@ import { NameMessage } from '../src/modules/user/enums/name-messages/name-messag
 import { PasswordMessage } from '../src/modules/user/enums/password-messages/password-messages.enum';
 import { UserEntity } from '../src/modules/user/models/user/user.entity';
 import { UserService } from '../src/modules/user/services/user/user.service';
-import { usersData } from '../src/modules/user/test-user-utils';
+import { TestUserData } from '../src/test/test-user-data';
+
+const usersData = TestUserData.usersData;
+const registerData = TestUserData.registerData;
 
 const registerEndpoint = '/auth/register';
 const loginEndpoint = '/auth/login';
@@ -391,7 +393,7 @@ describe('AuthController (e2e)', () => {
           const data = { ...registerData[0], acceptTerms };
           const expectedData = {
             statusCode: 422,
-            message: { acceptTerms: RefreshTokenMessage.REQUIRED },
+            message: { acceptTerms: AcceptTermsMessage.REQUIRED },
             error: 'UnprocessableEntityException',
           };
           await httpPostError(registerEndpoint, data, expectedData);

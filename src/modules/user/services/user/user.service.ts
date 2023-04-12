@@ -1,23 +1,24 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { EncryptionService } from '../../../system/encryption/services/encryption/encryption.service';
-import { Repository } from 'typeorm';
-import { UpdateUserRequestDTO } from '../../dtos/update-user/update-user.request.dto';
-import { UserEntity } from '../../models/user/user.entity';
 import {
   BadRequestException,
+  ConflictException,
   NotFoundException,
   UnprocessableEntityException,
-  ConflictException,
 } from '@nestjs/common/exceptions';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Validator } from 'class-validator';
+import { Repository } from 'typeorm';
+import { EncryptionService } from '../../../system/encryption/services/encryption/encryption.service';
+import { validateAndThrows } from '../../../system/utils/validation';
 import { CreateUserRequestDTO } from '../../dtos/create-user/create-user.request.dto';
-import { UserMessage } from '../../enums/user-messages.ts/user-messages.enum';
-import { PasswordMessage } from '../../enums/password-messages/password-messages.enum';
+import { UpdateUserRequestDTO } from '../../dtos/update-user/update-user.request.dto';
 import { EmailMessage } from '../../enums/email-messages/email-messages.enum';
-import { NameMessage } from '../../enums/name-messages/name-messages.enum';
+import { UserMessage } from '../../enums/user-messages.ts/user-messages.enum';
+import { UserEntity } from '../../models/user/user.entity';
 
 @Injectable()
 export class UserService {
+  readonly validator = new Validator();
   constructor(
     @InjectRepository(UserEntity)
     private userRepository: Repository<UserEntity>,
@@ -26,23 +27,15 @@ export class UserService {
 
   public async create(userDto: CreateUserRequestDTO): Promise<UserEntity> {
     if (!userDto) throw new BadRequestException(UserMessage.DATA_REQUIRED);
-    if (!userDto.email)
-      throw new UnprocessableEntityException(EmailMessage.REQUIRED);
-    if (!userDto.name)
-      throw new UnprocessableEntityException(NameMessage.REQUIRED);
-    if (!userDto.password)
-      throw new UnprocessableEntityException(PasswordMessage.REQUIRED);
-
-    const existentUser = await this.findForEmail(userDto.email);
-    if (existentUser) throw new ConflictException(EmailMessage.INVALID);
-
+    await validateAndThrows(userDto, CreateUserRequestDTO);
+    if (await this.checkIfEmailAlreadyInUse(userDto.email))
+      throw new ConflictException(EmailMessage.INVALID);
     const user = new UserEntity();
     user.email = userDto.email;
     user.name = userDto.name;
     user.hash = await this.encryptionService.encrypt(userDto.password);
-
     await this.userRepository.save(user);
-    return this.userRepository.findOne({ where: { id: user.id } });
+    return this.findForId(user.id);
   }
 
   public async update(
@@ -53,22 +46,25 @@ export class UserService {
       throw new UnprocessableEntityException(UserMessage.DATA_REQUIRED);
     if (!userId)
       throw new UnprocessableEntityException(UserMessage.ID_REQUIRED);
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-    });
-    if (!user) throw new NotFoundException(UserMessage.NOT_FOUND);
+    await validateAndThrows(userDto, UpdateUserRequestDTO);
+    const existentUser = await this.findForId(userId);
+    if (existentUser && userDto.email) {
+      if (existentUser.email != userDto.email) {
+        if (await this.checkIfEmailAlreadyInUse(userDto.email)) {
+          throw new ConflictException(EmailMessage.INVALID);
+        }
+      }
+    }
+    if (!existentUser) throw new NotFoundException(UserMessage.NOT_FOUND);
     // TODO: melhorar
-    if (userDto.name) user.name = userDto.name;
-    if (userDto.email) user.email = userDto.email;
-
-    await this.userRepository.save(user);
-    return this.userRepository.findOne({ where: { id: user.id } });
+    if (userDto.name) existentUser.name = userDto.name;
+    if (userDto.email) existentUser.email = userDto.email;
+    await this.userRepository.save(existentUser);
+    return this.findForId(userId);
   }
 
   public async findForId(userId: number): Promise<UserEntity> {
-    if (!userId) {
-      throw new BadRequestException(UserMessage.ID_REQUIRED);
-    }
+    if (!userId) throw new BadRequestException(UserMessage.ID_REQUIRED);
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException(UserMessage.NOT_FOUND);
     return user;
@@ -84,6 +80,11 @@ export class UserService {
 
   public async findAll(): Promise<UserEntity[]> {
     return this.userRepository.find(); // TODO: paginação
+  }
+
+  // TODO: test
+  async checkIfEmailAlreadyInUse(email: string): Promise<boolean> {
+    return !!(await this.findForEmail(email));
   }
 
   public async validateCredentials(

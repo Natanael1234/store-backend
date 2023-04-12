@@ -6,9 +6,9 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { PasswordMessage } from '../../enums/password-messages/password-messages.enum';
-import { NameMessage } from '../../enums/name-messages/name-messages.enum';
 import { EmailMessage } from '../../enums/email-messages/email-messages.enum';
+import { NameMessage } from '../../enums/name-messages/name-messages.enum';
+import { PasswordMessage } from '../../enums/password-messages/password-messages.enum';
 
 export class CreateUserRequestDTO {
   @MaxLength(60, { message: NameMessage.MAX_LEN })

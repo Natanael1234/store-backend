@@ -11,6 +11,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { JsonWebTokenError } from 'jsonwebtoken';
 import { QueryFailedError, Repository } from 'typeorm';
 import { getTestingModule } from '../../../../.jest/test-config.module';
+import { TestUserData } from '../../../../test/test-user-data';
 import { EmailMessage } from '../../../user/enums/email-messages/email-messages.enum';
 import { NameMessage } from '../../../user/enums/name-messages/name-messages.enum';
 import { PasswordMessage } from '../../../user/enums/password-messages/password-messages.enum';
@@ -22,13 +23,14 @@ import { RefreshTokenMessage } from '../../enums/refresh-token-messages.ts/refre
 import { RefreshTokenRepository } from '../../repositories/refresh-token.repository';
 import { TokenService } from '../token/token.service';
 import {
-  registerData,
   testLogin,
   testLogout,
   testRefresh,
   testRegister,
 } from './auth-test-utils';
 import { AuthService } from './auth.service';
+
+const registerData = TestUserData.registerData;
 
 describe('AuthService', () => {
   let module: TestingModule;

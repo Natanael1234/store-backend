@@ -1,5 +1,6 @@
 import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
+import { TestUserData } from '../../../../test/test-user-data';
 import { UserEntity } from '../../../user/models/user/user.entity';
 import { UserService } from '../../../user/services/user/user.service';
 import { LoginResponseDto } from '../../dtos/responses/login.response.dto';
@@ -80,27 +81,6 @@ export function testDistinctTokens(payload1, payload2) {
   expect(payload1.refreshToken).not.toEqual(payload2.refreshToken);
 }
 
-export const registerData = [
-  {
-    name: 'User 1',
-    password: 'Abc12*',
-    email: 'user1@email.com',
-    acceptTerms: true,
-  },
-  {
-    name: 'User 2',
-    password: 'Xyz12*',
-    email: 'user2@email.com',
-    acceptTerms: true,
-  },
-  {
-    name: 'User 3',
-    password: 'Cba12*',
-    email: 'user3@email.com',
-    acceptTerms: true,
-  },
-];
-
 export async function testRegister(
   userService: UserService,
   userRepo: Repository<UserEntity>,
@@ -108,6 +88,7 @@ export async function testRegister(
   jwtService: JwtService,
   registerCallback: (data: any) => Promise<RegisterResponseDto>,
 ) {
+  const registerData = TestUserData.registerData;
   const response1 = await registerCallback(registerData[0]);
   const response2 = await registerCallback(registerData[1]);
 
@@ -151,6 +132,7 @@ export async function testLogin(
   jwtService: JwtService,
   loginCallback: (data: any) => Promise<LoginResponseDto>,
 ) {
+  const registerData = TestUserData.registerData;
   await authService.register(registerData[0]);
   await authService.register(registerData[1]);
   const createUserData = {
@@ -208,6 +190,7 @@ export async function testRefresh(
   jwtService: JwtService,
   refreshCallback: (data: any) => Promise<RefreshResponseDto>,
 ) {
+  const registerData = TestUserData.registerData;
   const registerResponses = [
     await authService.register(registerData[0]),
     await authService.register(registerData[1]),
@@ -236,6 +219,7 @@ export async function testLogout(
   refreshTokenRepo: RefreshTokenRepository,
   logoutCallback: (data: any) => Promise<LogoutResponseDto>,
 ) {
+  const registerData = TestUserData.registerData;
   const registered = [
     await authService.register(registerData[0]),
     await authService.register(registerData[1]),

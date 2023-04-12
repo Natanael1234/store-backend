@@ -1,29 +1,8 @@
 import { Repository } from 'typeorm';
-import { UserEntity } from './models/user/user.entity';
-
-export const usersData = [
-  {
-    name: 'User 1',
-    email: 'user1@email.com',
-    password: 'Ab123*',
-    hash: { iv: '', encryptedData: '' },
-  },
-  {
-    name: 'User 2',
-    email: 'user2@email.com',
-    password: '123Ab*',
-    hash: { iv: '', encryptedData: '' },
-  },
-  {
-    name: 'User 3',
-    email: 'user3@email.com',
-    password: 'xyz98#',
-    hash: { iv: '', encryptedData: '' },
-  },
-];
+import { UserEntity } from '../modules/user/models/user/user.entity';
+import { TestUserData } from './test-user-data';
 
 export function testValidateUser(user, expectedData) {
-  expect(user).toBeDefined();
   expect(user).toBeDefined();
   // expect(user).toBeInstanceOf(UserEntity);
   expect(user.id).toEqual(expectedData.id);
@@ -48,6 +27,7 @@ export async function testCreateUser(
   userRepo: Repository<UserEntity>,
   createCallback: (userDada: any) => Promise<UserEntity>,
 ) {
+  const usersData = TestUserData.usersData;
   const createdUsersData = [
     await createCallback({
       name: usersData[0].name,
@@ -88,6 +68,7 @@ export async function testUpdateUser(
   userRepo: Repository<UserEntity>,
   updateCallback: (userId: number, userDada: any) => Promise<UserEntity>,
 ) {
+  const usersData = TestUserData.usersData;
   let newName = 'New Name';
   let newEmail = 'newname@email.com';
   let updateData = { name: newName, email: newEmail };
@@ -134,6 +115,7 @@ export async function testFindUsers(
   userRepo: Repository<UserEntity>,
   findCallback: () => Promise<UserEntity[]>,
 ) {
+  const usersData = TestUserData.usersData;
   const createdUSers = [
     userRepo.create(usersData[0]),
     userRepo.create(usersData[1]),
@@ -160,6 +142,7 @@ export async function testFindUserForId(
   userRepo: Repository<UserEntity>,
   findForIdCallback: (userId: number) => Promise<UserEntity>,
 ) {
+  const usersData = TestUserData.usersData;
   const createdUsers = [
     userRepo.create(usersData[0]),
     userRepo.create(usersData[1]),

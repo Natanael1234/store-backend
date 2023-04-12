@@ -1,33 +1,29 @@
 import {
-  ValidationError,
   ValidationPipe as NestValidationPipe,
+  ValidationError,
 } from '@nestjs/common';
 import { HttpErrorByCode } from '@nestjs/common/utils/http-error-by-code.util';
+import { convertValidationErrorsToMessage } from '../system/utils/validation';
 
 export class ValidationPipe extends NestValidationPipe {
   public createExceptionFactory() {
     return (validationErrors: ValidationError[] = []) => {
+      super.createExceptionFactory();
       if (this.isDetailedOutputDisabled) {
         return new HttpErrorByCode[this.errorHttpStatusCode]();
       }
 
       const code = this.errorHttpStatusCode;
       const HttpError = new HttpErrorByCode[this.errorHttpStatusCode]();
+
       const error = {
         error: HttpError['name'],
-        message: {},
+        message: convertValidationErrorsToMessage(validationErrors),
         statusCode: code,
       };
 
-      for (const validationError of validationErrors) {
-        // validationError.constraints = {};
-        error.message[validationError.property] = Object.values(
-          validationError.constraints,
-        )[0];
-        // TODO: handler children
-      }
-
-      return new HttpErrorByCode[this.errorHttpStatusCode](error);
+      const httpError = new HttpErrorByCode[this.errorHttpStatusCode](error);
+      return httpError;
     };
   }
 }

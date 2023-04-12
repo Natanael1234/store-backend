@@ -5,23 +5,23 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { UnprocessableEntityException } from '@nestjs/common/exceptions';
+import { EmailMessage } from '../../../user/enums/email-messages/email-messages.enum';
+import { NameMessage } from '../../../user/enums/name-messages/name-messages.enum';
+import { PasswordMessage } from '../../../user/enums/password-messages/password-messages.enum';
+import { UserMessage } from '../../../user/enums/user-messages.ts/user-messages.enum';
 import { UserEntity } from '../../../user/models/user/user.entity';
 import { UserService } from '../../../user/services/user/user.service';
 import { LoginRequestDto } from '../../dtos/requests/login/login.request.dto';
 import { RegisterRequestDto } from '../../dtos/requests/register/register.request.dto';
 import { AuthenticationPayloadDto } from '../../dtos/responses/authenticationPayload.dto';
 import { LoginResponseDto } from '../../dtos/responses/login.response.dto';
+import { LogoutResponseDto } from '../../dtos/responses/logout.response.dto';
 import { RefreshResponseDto } from '../../dtos/responses/refresh.response.dto';
 import { RegisterResponseDto } from '../../dtos/responses/register.response.dto';
-import { TokenService } from '../token/token.service';
-import { LogoutResponseDto } from '../../dtos/responses/logout.response.dto';
-import { UserMessage } from '../../../user/enums/user-messages.ts/user-messages.enum';
-import { PasswordMessage } from '../../../user/enums/password-messages/password-messages.enum';
-import { CredentialsMessage } from '../../enums/cretentials-messages.ts/credentials-messages.enum';
 import { AccessTokenMessage } from '../../enums/access-token-messages.ts/access-token-messages.enum';
+import { CredentialsMessage } from '../../enums/cretentials-messages.ts/credentials-messages.enum';
 import { RefreshTokenMessage } from '../../enums/refresh-token-messages.ts/refresh-token-messages.enum';
-import { EmailMessage } from '../../../user/enums/email-messages/email-messages.enum';
-import { NameMessage } from '../../../user/enums/name-messages/name-messages.enum';
+import { TokenService } from '../token/token.service';
 
 @Injectable()
 export class AuthService {
@@ -44,7 +44,11 @@ export class AuthService {
     if (!registerRequestDto.password)
       throw new UnprocessableEntityException(PasswordMessage.REQUIRED);
 
-    const user = await this.userService.create(registerRequestDto);
+    const user = await this.userService.create({
+      name: registerRequestDto.name,
+      email: registerRequestDto.email,
+      password: registerRequestDto.password,
+    });
     const token = await this.tokenService.generateAccessToken(user);
     const refresh = await this.tokenService.generateRefreshToken(user);
     const payload = this.buildResponsePayload(user, token, refresh);

@@ -1,16 +1,16 @@
 import { TestingModule } from '@nestjs/testing';
-import { UserController } from './user.controller';
 import { getTestingModule } from '../../../.jest/test-config.module';
+import { UserController } from './user.controller';
 
-import { Repository } from 'typeorm';
-import { UserEntity } from '../models/user/user.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import {
   testCreateUser,
   testFindUserForId,
   testFindUsers,
   testUpdateUser,
-} from '../test-user-utils';
+} from '../../../test/test-user-utils';
+import { UserEntity } from '../models/user/user.entity';
 
 describe('UserController', () => {
   let module: TestingModule;
