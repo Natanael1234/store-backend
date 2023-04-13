@@ -1,18 +1,15 @@
 import { HttpStatus, INestApplication } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import * as request from 'supertest';
 import { Repository } from 'typeorm';
 import { getTestingModule } from '../src/.jest/test-config.module';
-import { RefreshTokenRepository } from '../src/modules/auth/repositories/refresh-token.repository';
 
 import { AuthService } from '../src/modules/auth/services/auth/auth.service';
 import { ValidationPipe } from '../src/modules/pipes/custom-validation.pipe';
 import { EmailMessage } from '../src/modules/user/enums/email-messages/email-messages.enum';
 import { UserMessage } from '../src/modules/user/enums/user-messages.ts/user-messages.enum';
 import { UserEntity } from '../src/modules/user/models/user/user.entity';
-import { UserService } from '../src/modules/user/services/user/user.service';
 import { TestUserData } from '../src/test/test-user-data';
 import { testValidateUser } from '../src/test/test-user-utils';
 
@@ -25,10 +22,7 @@ const endpoint = '/users';
 describe('UserController (e2e)', () => {
   let app: INestApplication;
   let moduleFixture: TestingModule;
-  let userService: UserService;
   let authService: AuthService;
-  let jwtService: JwtService;
-  let refreshTokenRepo: RefreshTokenRepository;
   let userRepo: Repository<UserEntity>;
 
   async function httpGet(
@@ -79,10 +73,7 @@ describe('UserController (e2e)', () => {
   beforeEach(async () => {
     moduleFixture = await getTestingModule();
     app = moduleFixture.createNestApplication();
-    userService = app.get<UserService>(UserService);
     authService = app.get<AuthService>(AuthService);
-    jwtService = app.get<JwtService>(JwtService);
-    refreshTokenRepo = app.get<RefreshTokenRepository>(RefreshTokenRepository);
     userRepo = app.get<Repository<UserEntity>>(getRepositoryToken(UserEntity));
     // app.setGlobalPrefix('api');
     app.useGlobalPipes(
@@ -124,6 +115,7 @@ describe('UserController (e2e)', () => {
     });
 
     it('should fail if not authenticated', async () => {
+      const usersBefore = await userRepo.find();
       const body = await httpPost(
         endpoint,
         createUserData[1],
@@ -132,6 +124,70 @@ describe('UserController (e2e)', () => {
       expect(body).toEqual({
         message: 'Unauthorized',
         statusCode: HttpStatus.UNAUTHORIZED,
+      });
+      expect(await userRepo.find()).toEqual(usersBefore);
+    });
+
+    describe('name', () => {
+      it.each(TestUserData.getNameErrorDataList('create'))(
+        'should fail if name is $description',
+        async ({ data, statusCode, response }) => {
+          const registeredUSer = await authService.register(registerData[0]);
+          const token = registeredUSer.data.payload.token;
+          const usersBefore = await userRepo.find();
+
+          const body = await httpPost(endpoint, data, statusCode, token);
+
+          await expect(body).toEqual(response);
+          expect(await userRepo.find()).toEqual(usersBefore);
+        },
+      );
+
+      it('should validate when name length is valid', async () => {
+        const shortName = 'x'.repeat(6);
+        const longName = 'x'.repeat(60);
+        const registeredUSer = await authService.register(registerData[0]);
+        const token = registeredUSer.data.payload.token;
+
+        const data = [
+          {
+            ...createUserData[1],
+            name: shortName,
+          },
+          {
+            ...createUserData[2],
+            name: longName,
+          },
+        ];
+
+        const createdUsers = [
+          await httpPost(endpoint, data[0], HttpStatus.CREATED, token),
+          await httpPost(endpoint, data[1], HttpStatus.CREATED, token),
+        ];
+        const usersAfter = await userRepo.find();
+
+        testValidateUser(createdUsers[0], {
+          id: 2,
+          name: data[0].name,
+          email: data[0].email,
+        });
+        testValidateUser(createdUsers[1], {
+          id: 3,
+          name: data[1].name,
+          email: data[1].email,
+        });
+        expect(usersAfter).toHaveLength(3);
+        testValidateUser(usersAfter[0], { id: 1, ...registerData[0] });
+        testValidateUser(usersAfter[1], {
+          id: 2,
+          ...registerData[1],
+          name: shortName,
+        });
+        testValidateUser(usersAfter[2], {
+          id: 3,
+          ...registerData[2],
+          name: longName,
+        });
       });
     });
 
@@ -143,9 +199,11 @@ describe('UserController (e2e)', () => {
         ];
         const data = { ...registerData[2], email: registerData[1].email };
         const token = registeredUsers[0].data.payload.token;
+        const usersBefore = await userRepo.find();
 
         const body = await httpPost(endpoint, data, HttpStatus.CONFLICT, token);
 
+        expect(await userRepo.find()).toEqual(usersBefore);
         expect(body).toEqual({
           error: 'Conflict',
           message: EmailMessage.INVALID,
@@ -158,24 +216,36 @@ describe('UserController (e2e)', () => {
         async ({ data, statusCode, response }) => {
           const registeredUSer = await authService.register(registerData[0]);
           const token = registeredUSer.data.payload.token;
+          const usersBefore = await userRepo.find();
 
           const body = await httpPost(endpoint, data, statusCode, token);
 
           await expect(body).toEqual(response);
+          expect(await userRepo.find()).toEqual(usersBefore);
         },
       );
 
       it('should validate when email length is valid', async () => {
+        const longEmail = 'x'.repeat(50) + '@email.com';
         const registeredUSer = await authService.register(registerData[0]);
         const token = registeredUSer.data.payload.token;
         const data = {
           ...createUserData[1],
-          email: 'x'.repeat(50) + '@email.com',
+          email: longEmail,
         };
 
         const body = await httpPost(endpoint, data, HttpStatus.CREATED, token);
+        const usersAfter = await userRepo.find();
 
         testValidateUser(body, { id: 2, name: data.name, email: data.email });
+
+        expect(usersAfter).toHaveLength(2);
+        testValidateUser(usersAfter[0], { id: 1, ...registerData[0] });
+        testValidateUser(usersAfter[1], {
+          id: 2,
+          ...registerData[1],
+          email: longEmail,
+        });
       });
 
       it('should fail when email is already in use', async () => {
@@ -189,6 +259,7 @@ describe('UserController (e2e)', () => {
           password: 'Acb123*',
         };
         const token = registeredUsers[0].data.payload.token;
+        const usersBefore = await userRepo.find();
 
         const body = await httpPost(endpoint, data, HttpStatus.CONFLICT, token);
 
@@ -196,6 +267,68 @@ describe('UserController (e2e)', () => {
           error: 'Conflict',
           message: EmailMessage.INVALID,
           statusCode: HttpStatus.CONFLICT,
+        });
+        expect(await userRepo.find()).toEqual(usersBefore);
+      });
+    });
+
+    describe('password', () => {
+      it.each(TestUserData.getPasswordErrorDataList('create'))(
+        'should fail when password is $description',
+        async ({ data, statusCode, response }) => {
+          const registeredUSer = await authService.register(registerData[0]);
+          const token = registeredUSer.data.payload.token;
+          const usersBefore = await userRepo.find();
+
+          const body = await httpPost(endpoint, data, statusCode, token);
+
+          await expect(body).toEqual(response);
+          expect(await userRepo.find()).toEqual(usersBefore);
+        },
+      );
+
+      it('should validate when password length is valid', async () => {
+        const shortPassword = 'Abc12*';
+        const longPassword = 'Abc12*******';
+        const registeredUSer = await authService.register(registerData[0]);
+        const token = registeredUSer.data.payload.token;
+
+        const data = [
+          {
+            ...createUserData[1],
+            password: shortPassword,
+          },
+          {
+            ...createUserData[2],
+            password: longPassword,
+          },
+        ];
+
+        const createdUsers = [
+          await httpPost(endpoint, data[0], HttpStatus.CREATED, token),
+          await httpPost(endpoint, data[1], HttpStatus.CREATED, token),
+        ];
+        const usersAfter = await userRepo.find();
+
+        testValidateUser(createdUsers[0], {
+          id: 2,
+          name: data[0].name,
+          email: data[0].email,
+        });
+        testValidateUser(createdUsers[1], {
+          id: 3,
+          name: data[1].name,
+          email: data[1].email,
+        });
+        expect(usersAfter).toHaveLength(3);
+        testValidateUser(usersAfter[0], { id: 1, ...registerData[0] });
+        testValidateUser(usersAfter[1], {
+          id: 2,
+          ...registerData[1],
+        });
+        testValidateUser(usersAfter[2], {
+          id: 3,
+          ...registerData[2],
         });
       });
     });
@@ -251,8 +384,9 @@ describe('UserController (e2e)', () => {
         await authService.register(registerData[1]),
         await authService.register(registerData[2]),
       ];
-      const token = registeredUSer[0].data.payload.token;
       const data = { email: 'invalid', name: 'a' };
+      const token = registeredUSer[0].data.payload.token;
+      const usersBefore = await userRepo.find();
 
       const body = await httpPatch(
         endpoint + '/2',
@@ -269,6 +403,7 @@ describe('UserController (e2e)', () => {
         },
         statusCode: 422,
       });
+      expect(await userRepo.find()).toEqual(usersBefore);
     });
 
     describe('name', () => {
@@ -281,6 +416,7 @@ describe('UserController (e2e)', () => {
             await authService.register(registerData[2]),
           ];
           const token = registeredUSer[0].data.payload.token;
+          const usersBefore = await userRepo.find();
 
           const body = await httpPatch(
             endpoint + '/2',
@@ -290,21 +426,22 @@ describe('UserController (e2e)', () => {
           );
 
           await expect(body).toEqual(response);
+          expect(await userRepo.find()).toEqual(usersBefore);
         },
       );
 
       it.each([
         { description: 'null', value: null },
         { description: 'undefined', value: undefined },
-      ])('ahould validate when name is $description', async ({ value }) => {
+      ])('should validate when name is $description', async ({ value }) => {
         const newEmail = 'new@email.com';
         const registeredUSer = [
           await authService.register(registerData[0]),
           await authService.register(registerData[1]),
           await authService.register(registerData[2]),
         ];
-        const token = registeredUSer[0].data.payload.token;
         const data = { name: value, email: newEmail };
+        const token = registeredUSer[0].data.payload.token;
 
         const body = await httpPatch(
           endpoint + '/2',
@@ -356,6 +493,7 @@ describe('UserController (e2e)', () => {
             await authService.register(registerData[2]),
           ];
           const token = registeredUSer[0].data.payload.token;
+          const usersBefore = await userRepo.find();
 
           const body = await httpPatch(
             endpoint + '/2',
@@ -365,6 +503,7 @@ describe('UserController (e2e)', () => {
           );
 
           await expect(body).toEqual(response);
+          expect(await userRepo.find()).toEqual(usersBefore);
         },
       );
 
@@ -398,8 +537,9 @@ describe('UserController (e2e)', () => {
           await authService.register(registerData[1]),
           await authService.register(registerData[2]),
         ];
-        const token = registeredUSer[0].data.payload.token;
         const data = { email: registerData[2].email };
+        const token = registeredUSer[0].data.payload.token;
+        const usersBefore = await userRepo.find();
 
         const body = await httpPatch(
           endpoint + '/2',
@@ -413,6 +553,7 @@ describe('UserController (e2e)', () => {
           message: 'Invalid email',
           statusCode: 409,
         });
+        expect(await userRepo.find()).toEqual(usersBefore);
       });
     });
 
@@ -423,15 +564,19 @@ describe('UserController (e2e)', () => {
       await authService.register(registerData[0]);
       await authService.register(registerData[1]);
       await authService.register(registerData[2]);
+      const usersBefore = await userRepo.find();
+
       const body = await httpPatch(
         endpoint + '/2',
         updateData,
         HttpStatus.UNAUTHORIZED,
       );
+
       expect(body).toEqual({
         message: 'Unauthorized',
         statusCode: HttpStatus.UNAUTHORIZED,
       });
+      expect(await userRepo.find()).toEqual(usersBefore);
     });
   });
 
@@ -448,6 +593,7 @@ describe('UserController (e2e)', () => {
         { id: 3, name: registerData[2].name, email: registerData[2].email },
       ];
       const token = registeredUsers[1].data.payload.token;
+      const usersBefore = await userRepo.find();
 
       const users = await httpGet(endpoint, {}, HttpStatus.OK, token);
 
@@ -456,17 +602,22 @@ describe('UserController (e2e)', () => {
       testValidateUser(users[0], expectedData[0]);
       testValidateUser(users[1], expectedData[1]);
       testValidateUser(users[2], expectedData[2]);
+
+      expect(await userRepo.find()).toEqual(usersBefore);
     });
 
     it('should fail if not authenticated', async () => {
       await authService.register(registerData[0]);
       await authService.register(registerData[1]);
       await authService.register(registerData[2]);
+      const usersBefore = await userRepo.find();
+
       const body = await httpGet(endpoint, {}, HttpStatus.UNAUTHORIZED);
       expect(body).toEqual({
         message: 'Unauthorized',
         statusCode: HttpStatus.UNAUTHORIZED,
       });
+      expect(await userRepo.find()).toEqual(usersBefore);
     });
   });
 
@@ -483,10 +634,12 @@ describe('UserController (e2e)', () => {
         email: registerData[1].email,
       };
       const token = registeredUsers[1].data.payload.token;
+      const usersBefore = await userRepo.find();
 
       const user = await httpGet(endpoint + '/2', {}, HttpStatus.OK, token);
 
       testValidateUser(user, expectedData);
+      expect(await userRepo.find()).toEqual(usersBefore);
     });
 
     it('should fail if not authenticated', async () => {
@@ -494,10 +647,13 @@ describe('UserController (e2e)', () => {
       await authService.register(registerData[1]);
       await authService.register(registerData[2]);
       const body = await httpGet(endpoint + '/2', {}, 401);
+      const usersBefore = await userRepo.find();
+
       expect(body).toEqual({
         message: 'Unauthorized',
         statusCode: HttpStatus.UNAUTHORIZED,
       });
+      expect(await userRepo.find()).toEqual(usersBefore);
     });
 
     it('should fail if user does not exists', async () => {
@@ -507,6 +663,7 @@ describe('UserController (e2e)', () => {
         await authService.register(registerData[2]),
       ];
       const token = registeredUsers[1].data.payload.token;
+      const usersBefore = await userRepo.find();
 
       const body = await httpGet(
         endpoint + '/100',
@@ -520,6 +677,7 @@ describe('UserController (e2e)', () => {
         message: UserMessage.NOT_FOUND,
         statusCode: HttpStatus.NOT_FOUND,
       });
+      expect(await userRepo.find()).toEqual(usersBefore);
     });
   });
 });
