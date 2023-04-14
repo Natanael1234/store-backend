@@ -1,21 +1,23 @@
-import { TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { getTestingModule } from '../src/.jest/test-config.module';
+import { AuthenticationService } from '../src/modules/authentication/services/authentication/authentication.service';
 import { UserService } from '../src/modules/user/services/user/user.service';
-import { AuthService } from '../src/modules/auth/services/auth/auth.service';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
   let moduleFixture: TestingModule;
   let userService: UserService;
-  let authService: AuthService;
+  let authenticationService: AuthenticationService;
 
   beforeEach(async () => {
     moduleFixture = await getTestingModule();
     app = moduleFixture.createNestApplication();
     userService = app.get<UserService>(UserService);
-    authService = app.get<AuthService>(AuthService);
+    authenticationService = app.get<AuthenticationService>(
+      AuthenticationService,
+    );
     await app.init();
     // TODO: https://github.com/nestjs/nest/issues/5264
   });
@@ -33,13 +35,13 @@ describe('AppController (e2e)', () => {
     });
 
     if (authenticated) {
-      const authRet = await authService.login({
+      const authenticationRet = await authenticationService.login({
         email: 'user1@email.com',
         password: 'Abc12*',
       });
       return {
-        refreshToken: authRet.data.payload.token,
-        token: authRet.data.payload.refreshToken,
+        refreshToken: authenticationRet.data.payload.token,
+        token: authenticationRet.data.payload.refreshToken,
       };
     }
   }

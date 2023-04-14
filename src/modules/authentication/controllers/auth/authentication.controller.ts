@@ -1,26 +1,19 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Request,
-  UseFilters,
-} from '@nestjs/common';
-import { SkipAuth } from '../../guards/skip-auth';
-import { RegisterRequestDto } from '../../dtos/requests/register/register.request.dto';
-import { AuthService } from '../../services/auth/auth.service';
+import { Body, Controller, Post } from '@nestjs/common';
 import { LoginRequestDto } from '../../dtos/requests/login/login.request.dto';
-import { RegisterResponseDto } from '../../dtos/responses/register.response.dto';
-import { LoginResponseDto } from '../../dtos/responses/login.response.dto';
-import { RefreshRequestDto } from '../../dtos/requests/refresh/refresh.request.dto';
-import { RefreshResponseDto } from '../../dtos/responses/refresh.response.dto';
 import { LogoutRequestDto } from '../../dtos/requests/logout/logout.request.dto';
+import { RefreshRequestDto } from '../../dtos/requests/refresh/refresh.request.dto';
+import { RegisterRequestDto } from '../../dtos/requests/register/register.request.dto';
+import { LoginResponseDto } from '../../dtos/responses/login.response.dto';
+import { RefreshResponseDto } from '../../dtos/responses/refresh.response.dto';
+import { RegisterResponseDto } from '../../dtos/responses/register.response.dto';
+import { SkipAuthentication } from '../../guards/skip-authentication';
+import { AuthenticationService } from '../../services/authentication/authentication.service';
 
-@Controller('auth')
-export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+@Controller('authentication')
+export class AuthenticationController {
+  constructor(private readonly authService: AuthenticationService) {}
 
-  @SkipAuth()
+  @SkipAuthentication()
   @Post('register')
   public register(
     @Body() registerRequestDto: RegisterRequestDto,
@@ -28,7 +21,7 @@ export class AuthController {
     return this.authService.register(registerRequestDto);
   }
 
-  @SkipAuth()
+  @SkipAuthentication()
   // @UseGuards(LocalAuthGuard) // TODO:
   @Post('login')
   public login(
@@ -37,7 +30,7 @@ export class AuthController {
     return this.authService.login(loginRequestDto);
   }
 
-  @SkipAuth()
+  @SkipAuthentication()
   @Post('refresh')
   public refresh(
     @Body() refreshRequestDto: RefreshRequestDto,
@@ -45,7 +38,7 @@ export class AuthController {
     return this.authService.refresh(refreshRequestDto.refreshToken);
   }
 
-  @SkipAuth()
+  @SkipAuthentication()
   @Post('logout')
   public async logout(@Body() logoutRequestDto: LogoutRequestDto) {
     return this.authService.logout(logoutRequestDto.refreshToken);

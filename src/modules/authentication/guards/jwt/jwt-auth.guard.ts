@@ -5,10 +5,10 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
-import { IS_PUBLIC_KEY } from '../skip-auth';
+import { IS_PUBLIC_KEY } from '../skip-authentication';
 
 @Injectable()
-export class JwtAuthGuard extends AuthGuard('jwt') {
+export class JwtAuthenticationGuard extends AuthGuard('jwt') {
   constructor(private reflector: Reflector) {
     super();
   }

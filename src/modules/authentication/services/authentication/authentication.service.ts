@@ -24,7 +24,7 @@ import { RefreshTokenMessage } from '../../enums/refresh-token-messages.ts/refre
 import { TokenService } from '../token/token.service';
 
 @Injectable()
-export class AuthService {
+export class AuthenticationService {
   constructor(
     private userService: UserService,
     private tokenService: TokenService,

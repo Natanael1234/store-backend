@@ -1,20 +1,20 @@
-import { Reflector } from '@nestjs/core';
-import { JwtAuthGuard } from './jwt-auth.guard';
+import { createMock } from '@golevelup/ts-jest';
 import {
   ExecutionContext,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { createMock } from '@golevelup/ts-jest';
+import { Reflector } from '@nestjs/core';
 import { UserEntity } from '../../../user/models/user/user.entity';
+import { JwtAuthenticationGuard } from './jwt-auth.guard';
 
 describe('JwtAutthGuard', () => {
-  let guard: JwtAuthGuard;
+  let guard: JwtAuthenticationGuard;
   let reflector: Reflector;
 
   beforeEach(() => {
     reflector = new Reflector();
-    guard = new JwtAuthGuard(reflector);
+    guard = new JwtAuthenticationGuard(reflector);
   });
 
   describe('canActivate', () => {

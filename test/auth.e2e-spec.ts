@@ -5,16 +5,16 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import * as request from 'supertest';
 import { Repository } from 'typeorm';
 import { getTestingModule } from '../src/.jest/test-config.module';
-import { AcceptTermsMessage } from '../src/modules/auth/enums/accept-terms-messages.ts/accept-terms-messages.enum';
-import { CredentialsMessage } from '../src/modules/auth/enums/cretentials-messages.ts/credentials-messages.enum';
-import { RefreshTokenRepository } from '../src/modules/auth/repositories/refresh-token.repository';
+import { AcceptTermsMessage } from '../src/modules/authentication/enums/accept-terms-messages.ts/accept-terms-messages.enum';
+import { CredentialsMessage } from '../src/modules/authentication/enums/cretentials-messages.ts/credentials-messages.enum';
+import { RefreshTokenRepository } from '../src/modules/authentication/repositories/refresh-token.repository';
 import {
   testLogin,
   testLogout,
   testRefresh,
   testRegister,
-} from '../src/modules/auth/services/auth/auth-test-utils';
-import { AuthService } from '../src/modules/auth/services/auth/auth.service';
+} from '../src/modules/authentication/services/authentication/authentication-test-utils';
+import { AuthenticationService } from '../src/modules/authentication/services/authentication/authentication.service';
 import { ValidationPipe } from '../src/modules/pipes/custom-validation.pipe';
 import { EmailMessage } from '../src/modules/user/enums/email-messages/email-messages.enum';
 import { NameMessage } from '../src/modules/user/enums/name-messages/name-messages.enum';
@@ -26,16 +26,16 @@ import { TestUserData } from '../src/test/test-user-data';
 const usersData = TestUserData.usersData;
 const registerData = TestUserData.registerData;
 
-const registerEndpoint = '/auth/register';
-const loginEndpoint = '/auth/login';
-const refreshEndpoint = '/auth/refresh';
-const logoutEndpoint = '/auth/logout';
+const registerEndpoint = '/authentication/register';
+const loginEndpoint = '/authentication/login';
+const refreshEndpoint = '/authentication/refresh';
+const logoutEndpoint = '/authentication/logout';
 
-describe('AuthController (e2e)', () => {
+describe('AuthenticationController (e2e)', () => {
   let app: INestApplication;
   let moduleFixture: TestingModule;
   let userService: UserService;
-  let authService: AuthService;
+  let authenticationService: AuthenticationService;
   let jwtService: JwtService;
   let refreshTokenRepo: RefreshTokenRepository;
   let userRepo: Repository<UserEntity>;
@@ -65,7 +65,9 @@ describe('AuthController (e2e)', () => {
     moduleFixture = await getTestingModule();
     app = moduleFixture.createNestApplication();
     userService = app.get<UserService>(UserService);
-    authService = app.get<AuthService>(AuthService);
+    authenticationService = app.get<AuthenticationService>(
+      AuthenticationService,
+    );
     jwtService = app.get<JwtService>(JwtService);
     refreshTokenRepo = app.get<RefreshTokenRepository>(RefreshTokenRepository);
     userRepo = app.get<Repository<UserEntity>>(getRepositoryToken(UserEntity));
@@ -87,7 +89,7 @@ describe('AuthController (e2e)', () => {
     await moduleFixture.close();
   });
 
-  describe('/auth/register (POST)', () => {
+  describe('/authentication/register (POST)', () => {
     it('should register users', async () => {
       await testRegister(
         userService,
@@ -402,9 +404,9 @@ describe('AuthController (e2e)', () => {
     });
   });
 
-  describe('/auth/login (POST)', () => {
+  describe('/authentication/login (POST)', () => {
     it('should login', async () => {
-      await testLogin(userService, authService, jwtService, (data) =>
+      await testLogin(userService, authenticationService, jwtService, (data) =>
         httpPost(loginEndpoint, data, 201),
       );
     });
@@ -580,18 +582,20 @@ describe('AuthController (e2e)', () => {
     });
   });
 
-  describe('/auth/refresh (POST)', () => {
+  describe('/authentication/refresh (POST)', () => {
     it('should refresh', async () => {
-      await testRefresh(authService, jwtService, (refreshToken) =>
+      await testRefresh(authenticationService, jwtService, (refreshToken) =>
         httpPost(refreshEndpoint, { refreshToken }, 201),
       );
     });
   });
 
-  describe('/auth/logout (POST)', () => {
+  describe('/authentication/logout (POST)', () => {
     it('should logout', async () => {
-      await testLogout(authService, refreshTokenRepo, (refreshToken) =>
-        httpPost(logoutEndpoint, { refreshToken }, 201),
+      await testLogout(
+        authenticationService,
+        refreshTokenRepo,
+        (refreshToken) => httpPost(logoutEndpoint, { refreshToken }, 201),
       );
     });
   });

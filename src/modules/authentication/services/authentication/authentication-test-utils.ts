@@ -8,7 +8,7 @@ import { LogoutResponseDto } from '../../dtos/responses/logout.response.dto';
 import { RefreshResponseDto } from '../../dtos/responses/refresh.response.dto';
 import { RegisterResponseDto } from '../../dtos/responses/register.response.dto';
 import { RefreshTokenRepository } from '../../repositories/refresh-token.repository';
-import { AuthService } from './auth.service';
+import { AuthenticationService } from './authentication.service';
 
 export function testDecodedAccessToken(decodedAccessToken, userId) {
   expect(decodedAccessToken).toBeDefined();
@@ -55,7 +55,7 @@ export function testDecodedTokenUser(user, expectedUserData) {
   expect(user.deletedAt).toBeNull();
 }
 
-export function testAuthResponse(
+export function testAuthenticationResponse(
   jwtService: JwtService,
   response,
   expectedUserData: { id: number; name: string; email: string },
@@ -105,17 +105,17 @@ export async function testRegister(
   expect(refreshTokens).toHaveLength(3);
   expect(users).toHaveLength(4);
 
-  testAuthResponse(jwtService, response1, {
+  testAuthenticationResponse(jwtService, response1, {
     id: 1,
     name: registerData[0].name,
     email: 'user1@email.com',
   });
-  testAuthResponse(jwtService, response2, {
+  testAuthenticationResponse(jwtService, response2, {
     id: 2,
     name: registerData[1].name,
     email: 'user2@email.com',
   });
-  testAuthResponse(jwtService, response3, {
+  testAuthenticationResponse(jwtService, response3, {
     id: 4,
     name: registerData[2].name,
     email: 'user3@email.com',
@@ -128,13 +128,13 @@ export async function testRegister(
 
 export async function testLogin(
   userService: UserService,
-  authService: AuthService,
+  authenticationService: AuthenticationService,
   jwtService: JwtService,
   loginCallback: (data: any) => Promise<LoginResponseDto>,
 ) {
   const registerData = TestUserData.registerData;
-  await authService.register(registerData[0]);
-  await authService.register(registerData[1]);
+  await authenticationService.register(registerData[0]);
+  await authenticationService.register(registerData[1]);
   const createUserData = {
     name: 'Another user',
     email: 'anotheruser@email.com',
@@ -142,7 +142,7 @@ export async function testLogin(
     acceptTerms: true,
   };
   await userService.create(createUserData);
-  await authService.register(registerData[2]);
+  await authenticationService.register(registerData[2]);
 
   const loginRet1 = await loginCallback({
     email: registerData[1].email,
@@ -162,19 +162,19 @@ export async function testLogin(
     password: createUserData.password,
   });
 
-  testAuthResponse(jwtService, loginRet1, {
+  testAuthenticationResponse(jwtService, loginRet1, {
     id: 2,
     name: registerData[1].name,
     email: registerData[1].email,
   });
 
-  testAuthResponse(jwtService, loginRet2, {
+  testAuthenticationResponse(jwtService, loginRet2, {
     id: 3,
     name: createUserData.name,
     email: createUserData.email,
   });
 
-  testAuthResponse(jwtService, loginRet3, {
+  testAuthenticationResponse(jwtService, loginRet3, {
     id: 3,
     name: createUserData.name,
     email: createUserData.email,
@@ -186,15 +186,15 @@ export async function testLogin(
 }
 
 export async function testRefresh(
-  authService: AuthService,
+  authenticationService: AuthenticationService,
   jwtService: JwtService,
   refreshCallback: (data: any) => Promise<RefreshResponseDto>,
 ) {
   const registerData = TestUserData.registerData;
   const registerResponses = [
-    await authService.register(registerData[0]),
-    await authService.register(registerData[1]),
-    await authService.register(registerData[2]),
+    await authenticationService.register(registerData[0]),
+    await authenticationService.register(registerData[1]),
+    await authenticationService.register(registerData[2]),
   ];
 
   const refreshResponses = [
@@ -215,15 +215,15 @@ export async function testRefresh(
 }
 
 export async function testLogout(
-  authService: AuthService,
+  authenticationService: AuthenticationService,
   refreshTokenRepo: RefreshTokenRepository,
   logoutCallback: (data: any) => Promise<LogoutResponseDto>,
 ) {
   const registerData = TestUserData.registerData;
   const registered = [
-    await authService.register(registerData[0]),
-    await authService.register(registerData[1]),
-    await authService.register(registerData[2]),
+    await authenticationService.register(registerData[0]),
+    await authenticationService.register(registerData[1]),
+    await authenticationService.register(registerData[2]),
   ];
 
   const logoutsResults = [

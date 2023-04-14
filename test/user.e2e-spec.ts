@@ -5,7 +5,7 @@ import * as request from 'supertest';
 import { Repository } from 'typeorm';
 import { getTestingModule } from '../src/.jest/test-config.module';
 
-import { AuthService } from '../src/modules/auth/services/auth/auth.service';
+import { AuthenticationService } from '../src/modules/authentication/services/authentication/authentication.service';
 import { ValidationPipe } from '../src/modules/pipes/custom-validation.pipe';
 import { EmailMessage } from '../src/modules/user/enums/email-messages/email-messages.enum';
 import { UserMessage } from '../src/modules/user/enums/user-messages.ts/user-messages.enum';
@@ -22,7 +22,7 @@ const endpoint = '/users';
 describe('UserController (e2e)', () => {
   let app: INestApplication;
   let moduleFixture: TestingModule;
-  let authService: AuthService;
+  let authenticationService: AuthenticationService;
   let userRepo: Repository<UserEntity>;
 
   async function httpGet(
@@ -73,7 +73,9 @@ describe('UserController (e2e)', () => {
   beforeEach(async () => {
     moduleFixture = await getTestingModule();
     app = moduleFixture.createNestApplication();
-    authService = app.get<AuthService>(AuthService);
+    authenticationService = app.get<AuthenticationService>(
+      AuthenticationService,
+    );
     userRepo = app.get<Repository<UserEntity>>(getRepositoryToken(UserEntity));
     // app.setGlobalPrefix('api');
     app.useGlobalPipes(
@@ -97,7 +99,9 @@ describe('UserController (e2e)', () => {
         { id: 2, name: usersData[1].name, email: usersData[1].email },
         { id: 3, name: usersData[2].name, email: usersData[2].email },
       ];
-      const registeredUser = await authService.register(registerData[0]);
+      const registeredUser = await authenticationService.register(
+        registerData[0],
+      );
       const token = registeredUser.data.payload.token;
 
       const createdUsers = [
@@ -132,7 +136,9 @@ describe('UserController (e2e)', () => {
       it.each(TestUserData.getNameErrorDataList('create'))(
         'should fail if name is $description',
         async ({ data, statusCode, response }) => {
-          const registeredUSer = await authService.register(registerData[0]);
+          const registeredUSer = await authenticationService.register(
+            registerData[0],
+          );
           const token = registeredUSer.data.payload.token;
           const usersBefore = await userRepo.find();
 
@@ -146,7 +152,9 @@ describe('UserController (e2e)', () => {
       it('should validate when name length is valid', async () => {
         const shortName = 'x'.repeat(6);
         const longName = 'x'.repeat(60);
-        const registeredUSer = await authService.register(registerData[0]);
+        const registeredUSer = await authenticationService.register(
+          registerData[0],
+        );
         const token = registeredUSer.data.payload.token;
 
         const data = [
@@ -194,8 +202,8 @@ describe('UserController (e2e)', () => {
     describe('email', () => {
       it('should fail if email is already in use', async () => {
         const registeredUsers = [
-          await authService.register(registerData[0]),
-          await authService.register(registerData[1]),
+          await authenticationService.register(registerData[0]),
+          await authenticationService.register(registerData[1]),
         ];
         const data = { ...registerData[2], email: registerData[1].email };
         const token = registeredUsers[0].data.payload.token;
@@ -214,7 +222,9 @@ describe('UserController (e2e)', () => {
       it.each(TestUserData.getEmailErrorDataList('create'))(
         'should fail if email is $description',
         async ({ data, statusCode, response }) => {
-          const registeredUSer = await authService.register(registerData[0]);
+          const registeredUSer = await authenticationService.register(
+            registerData[0],
+          );
           const token = registeredUSer.data.payload.token;
           const usersBefore = await userRepo.find();
 
@@ -227,7 +237,9 @@ describe('UserController (e2e)', () => {
 
       it('should validate when email length is valid', async () => {
         const longEmail = 'x'.repeat(50) + '@email.com';
-        const registeredUSer = await authService.register(registerData[0]);
+        const registeredUSer = await authenticationService.register(
+          registerData[0],
+        );
         const token = registeredUSer.data.payload.token;
         const data = {
           ...createUserData[1],
@@ -250,8 +262,8 @@ describe('UserController (e2e)', () => {
 
       it('should fail when email is already in use', async () => {
         const registeredUsers = [
-          await authService.register(registerData[0]),
-          await authService.register(registerData[1]),
+          await authenticationService.register(registerData[0]),
+          await authenticationService.register(registerData[1]),
         ];
         const data = {
           name: 'User 3',
@@ -276,7 +288,9 @@ describe('UserController (e2e)', () => {
       it.each(TestUserData.getPasswordErrorDataList('create'))(
         'should fail when password is $description',
         async ({ data, statusCode, response }) => {
-          const registeredUSer = await authService.register(registerData[0]);
+          const registeredUSer = await authenticationService.register(
+            registerData[0],
+          );
           const token = registeredUSer.data.payload.token;
           const usersBefore = await userRepo.find();
 
@@ -290,7 +304,9 @@ describe('UserController (e2e)', () => {
       it('should validate when password length is valid', async () => {
         const shortPassword = 'Abc12*';
         const longPassword = 'Abc12*******';
-        const registeredUSer = await authService.register(registerData[0]);
+        const registeredUSer = await authenticationService.register(
+          registerData[0],
+        );
         const token = registeredUSer.data.payload.token;
 
         const data = [
@@ -357,9 +373,9 @@ describe('UserController (e2e)', () => {
         },
       ];
       const registeredUsers = [
-        await authService.register(registerData[0]),
-        await authService.register(registerData[1]),
-        await authService.register(registerData[2]),
+        await authenticationService.register(registerData[0]),
+        await authenticationService.register(registerData[1]),
+        await authenticationService.register(registerData[2]),
       ];
       const token = registeredUsers[1].data.payload.token;
 
@@ -380,9 +396,9 @@ describe('UserController (e2e)', () => {
 
     it('Should fail in multiple fields', async () => {
       const registeredUSer = [
-        await authService.register(registerData[0]),
-        await authService.register(registerData[1]),
-        await authService.register(registerData[2]),
+        await authenticationService.register(registerData[0]),
+        await authenticationService.register(registerData[1]),
+        await authenticationService.register(registerData[2]),
       ];
       const data = { email: 'invalid', name: 'a' };
       const token = registeredUSer[0].data.payload.token;
@@ -411,9 +427,9 @@ describe('UserController (e2e)', () => {
         'should fail if name is $description',
         async ({ data, statusCode, response }) => {
           const registeredUSer = [
-            await authService.register(registerData[0]),
-            await authService.register(registerData[1]),
-            await authService.register(registerData[2]),
+            await authenticationService.register(registerData[0]),
+            await authenticationService.register(registerData[1]),
+            await authenticationService.register(registerData[2]),
           ];
           const token = registeredUSer[0].data.payload.token;
           const usersBefore = await userRepo.find();
@@ -436,9 +452,9 @@ describe('UserController (e2e)', () => {
       ])('should validate when name is $description', async ({ value }) => {
         const newEmail = 'new@email.com';
         const registeredUSer = [
-          await authService.register(registerData[0]),
-          await authService.register(registerData[1]),
-          await authService.register(registerData[2]),
+          await authenticationService.register(registerData[0]),
+          await authenticationService.register(registerData[1]),
+          await authenticationService.register(registerData[2]),
         ];
         const data = { name: value, email: newEmail };
         const token = registeredUSer[0].data.payload.token;
@@ -461,9 +477,9 @@ describe('UserController (e2e)', () => {
         const newName = 'x'.repeat(60);
 
         const registeredUSer = [
-          await authService.register(registerData[0]),
-          await authService.register(registerData[1]),
-          await authService.register(registerData[2]),
+          await authenticationService.register(registerData[0]),
+          await authenticationService.register(registerData[1]),
+          await authenticationService.register(registerData[2]),
         ];
         const token = registeredUSer[0].data.payload.token;
         const data = { name: newName };
@@ -488,9 +504,9 @@ describe('UserController (e2e)', () => {
         'should fail if email is $description',
         async ({ data, statusCode, response }) => {
           const registeredUSer = [
-            await authService.register(registerData[0]),
-            await authService.register(registerData[1]),
-            await authService.register(registerData[2]),
+            await authenticationService.register(registerData[0]),
+            await authenticationService.register(registerData[1]),
+            await authenticationService.register(registerData[2]),
           ];
           const token = registeredUSer[0].data.payload.token;
           const usersBefore = await userRepo.find();
@@ -513,9 +529,9 @@ describe('UserController (e2e)', () => {
         let updateData = { name: newName, email: newEmail };
 
         const registeredUsers = [
-          await authService.register(registerData[0]),
-          await authService.register(registerData[1]),
-          await authService.register(registerData[2]),
+          await authenticationService.register(registerData[0]),
+          await authenticationService.register(registerData[1]),
+          await authenticationService.register(registerData[2]),
         ];
         const body = await httpPatch(
           endpoint + '/100',
@@ -533,9 +549,9 @@ describe('UserController (e2e)', () => {
 
       it('should fail if email is already in use', async () => {
         const registeredUSer = [
-          await authService.register(registerData[0]),
-          await authService.register(registerData[1]),
-          await authService.register(registerData[2]),
+          await authenticationService.register(registerData[0]),
+          await authenticationService.register(registerData[1]),
+          await authenticationService.register(registerData[2]),
         ];
         const data = { email: registerData[2].email };
         const token = registeredUSer[0].data.payload.token;
@@ -561,9 +577,9 @@ describe('UserController (e2e)', () => {
       let newName = 'New Name';
       let newEmail = 'newname@email.com';
       let updateData = { name: newName, email: newEmail };
-      await authService.register(registerData[0]);
-      await authService.register(registerData[1]);
-      await authService.register(registerData[2]);
+      await authenticationService.register(registerData[0]);
+      await authenticationService.register(registerData[1]);
+      await authenticationService.register(registerData[2]);
       const usersBefore = await userRepo.find();
 
       const body = await httpPatch(
@@ -583,9 +599,9 @@ describe('UserController (e2e)', () => {
   describe('/users (GET)', () => {
     it('should find users', async () => {
       const registeredUsers = [
-        await authService.register(registerData[0]),
-        await authService.register(registerData[1]),
-        await authService.register(registerData[2]),
+        await authenticationService.register(registerData[0]),
+        await authenticationService.register(registerData[1]),
+        await authenticationService.register(registerData[2]),
       ];
       const expectedData = [
         { id: 1, name: registerData[0].name, email: registerData[0].email },
@@ -607,9 +623,9 @@ describe('UserController (e2e)', () => {
     });
 
     it('should fail if not authenticated', async () => {
-      await authService.register(registerData[0]);
-      await authService.register(registerData[1]);
-      await authService.register(registerData[2]);
+      await authenticationService.register(registerData[0]);
+      await authenticationService.register(registerData[1]);
+      await authenticationService.register(registerData[2]);
       const usersBefore = await userRepo.find();
 
       const body = await httpGet(endpoint, {}, HttpStatus.UNAUTHORIZED);
@@ -624,9 +640,9 @@ describe('UserController (e2e)', () => {
   describe('/users/:userId (GET)', () => {
     it('should find one user', async () => {
       const registeredUsers = [
-        await authService.register(registerData[0]),
-        await authService.register(registerData[1]),
-        await authService.register(registerData[2]),
+        await authenticationService.register(registerData[0]),
+        await authenticationService.register(registerData[1]),
+        await authenticationService.register(registerData[2]),
       ];
       const expectedData = {
         id: 2,
@@ -643,9 +659,9 @@ describe('UserController (e2e)', () => {
     });
 
     it('should fail if not authenticated', async () => {
-      await authService.register(registerData[0]);
-      await authService.register(registerData[1]);
-      await authService.register(registerData[2]);
+      await authenticationService.register(registerData[0]);
+      await authenticationService.register(registerData[1]);
+      await authenticationService.register(registerData[2]);
       const body = await httpGet(endpoint + '/2', {}, 401);
       const usersBefore = await userRepo.find();
 
@@ -658,9 +674,9 @@ describe('UserController (e2e)', () => {
 
     it('should fail if user does not exists', async () => {
       const registeredUsers = [
-        await authService.register(registerData[0]),
-        await authService.register(registerData[1]),
-        await authService.register(registerData[2]),
+        await authenticationService.register(registerData[0]),
+        await authenticationService.register(registerData[1]),
+        await authenticationService.register(registerData[2]),
       ];
       const token = registeredUsers[1].data.payload.token;
       const usersBefore = await userRepo.find();
