@@ -1,24 +1,26 @@
-import { JwtService } from '@nestjs/jwt';
-import { TestingModule } from '@nestjs/testing';
-import { getTestingModule } from '../../../../.jest/test-config.module';
-import { UserEntity } from '../../../user/models/user/user.entity';
-import { RefreshTokenRepository } from '../../repositories/refresh-token.repository';
-import { TokenService } from './token.service';
-import { JsonWebTokenError } from 'jsonwebtoken';
-import { Repository } from 'typeorm';
-import { getRepositoryToken } from '@nestjs/typeorm';
 import {
   NotFoundException,
   UnprocessableEntityException,
-} from '@nestjs/common/exceptions';
-import { RefreshTokenEntity } from '../../models/refresh-token.entity';
+} from '@nestjs/common';
 import { UnauthorizedException } from '@nestjs/common/exceptions/unauthorized.exception';
-import { RefreshTokenMessage } from '../../enums/refresh-token-messages.ts/refresh-token-messages.enum';
+import { JwtService } from '@nestjs/jwt';
+import { TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { JsonWebTokenError } from 'jsonwebtoken';
+import { Repository } from 'typeorm';
+import { getTestingModule } from '../../../../.jest/test-config.module';
 import { UserMessage } from '../../../user/enums/user-messages.ts/user-messages.enum';
+import { UserEntity } from '../../../user/models/user/user.entity';
+import { RefreshTokenMessage } from '../../enums/refresh-token-messages.ts/refresh-token-messages.enum';
+import { Role } from '../../enums/role/role.enum';
+import { RefreshTokenEntity } from '../../models/refresh-token.entity';
+import { RefreshTokenRepository } from '../../repositories/refresh-token.repository';
+import { TokenService } from './token.service';
 
 const userData1 = {
   name: 'User 1',
   email: 'user1@email.com',
+  roles: [Role.ROOT],
   hash: {
     iv: 'iv1',
     encryptedData: 'ed1',
@@ -27,6 +29,7 @@ const userData1 = {
 const userData2 = {
   name: 'User 2',
   email: 'user2@email.com',
+  roles: [Role.ADMIN],
   hash: {
     iv: 'iv2',
     encryptedData: 'ed2',
@@ -35,6 +38,7 @@ const userData2 = {
 const userData3 = {
   name: 'User 3',
   email: 'user3@email.com',
+  roles: [Role.USER],
   hash: {
     iv: 'iv3',
     encryptedData: 'ed3',

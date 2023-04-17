@@ -257,17 +257,16 @@ describe('RegisterRequestDto', () => {
         acceptTerms: false,
       };
       const errors = await validate(data);
-
-      expect(errors[0].constraints).toEqual({
-        equals: AcceptTermsMessage.REQUIRED,
-      });
       expect(errors).toHaveLength(4);
-      expect(errors[1].constraints).toEqual({
+      expect(errors[0].constraints).toEqual({
         minLength: NameMessage.MIN_LEN,
       });
-      expect(errors[2].constraints).toEqual({ isEmail: EmailMessage.INVALID });
-      expect(errors[3].constraints).toEqual({
+      expect(errors[1].constraints).toEqual({ isEmail: EmailMessage.INVALID });
+      expect(errors[2].constraints).toEqual({
         isStrongPassword: PasswordMessage.INVALID,
+      });
+      expect(errors[3].constraints).toEqual({
+        equals: AcceptTermsMessage.REQUIRED,
       });
     });
   });

@@ -1,13 +1,18 @@
 import {
+  ArrayMinSize,
+  IsArray,
   IsEmail,
+  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { Role } from '../../../authentication/enums/role/role.enum';
 import { EmailMessage } from '../../enums/email-messages/email-messages.enum';
 import { NameMessage } from '../../enums/name-messages/name-messages.enum';
+import { RoleMessage } from '../../enums/role-messages/role-messages.enum';
 
 export class UpdateUserRequestDTO {
   @MaxLength(60, { message: NameMessage.MAX_LEN })
@@ -23,4 +28,11 @@ export class UpdateUserRequestDTO {
   @IsNotEmpty({ message: EmailMessage.REQUIRED })
   @IsOptional()
   email?: string;
+
+  @IsEnum(Role, { each: true, message: RoleMessage.INVALID })
+  @ArrayMinSize(1, { message: RoleMessage.MIN_LEN })
+  @IsArray({ message: RoleMessage.INVALID })
+  @IsNotEmpty({ message: RoleMessage.REQUIRED })
+  @IsOptional()
+  roles?: Role[];
 }

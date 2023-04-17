@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { getTestingModule } from '../src/.jest/test-config.module';
+import { Role } from '../src/modules/authentication/enums/role/role.enum';
 import { AuthenticationService } from '../src/modules/authentication/services/authentication/authentication.service';
 import { UserService } from '../src/modules/user/services/user/user.service';
 
@@ -27,11 +28,13 @@ describe('AppController (e2e)', () => {
       name: 'User 1',
       email: 'user1@email.com',
       password: 'Abc12*',
+      roles: [Role.ADMIN],
     });
     await userService.create({
       name: 'User 2',
       email: 'user2@email.com',
       password: 'Xyz789*',
+      roles: [Role.ADMIN],
     });
 
     if (authenticated) {

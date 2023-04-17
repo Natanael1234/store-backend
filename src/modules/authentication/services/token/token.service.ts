@@ -3,19 +3,19 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { JwtService, JwtSignOptions } from '@nestjs/jwt';
-import { RefreshTokenEntity } from '../../models/refresh-token.entity';
-import { RefreshTokenRepository } from '../../repositories/refresh-token.repository';
-import { SignOptions, TokenExpiredError } from 'jsonwebtoken';
-import { BASE_OPTIONS } from './dtos/jwt-signin-base-options.';
-import { RefreshTokenPayload } from './dtos/refresh-token-payload';
 import { UnauthorizedException } from '@nestjs/common/exceptions';
-import { JWTConfigs } from '../../configs/jwt.config';
-import { UserService } from '../../../user/services/user/user.service';
-import { UserEntity } from '../../../user/models/user/user.entity';
+import { JwtService, JwtSignOptions } from '@nestjs/jwt';
+import { SignOptions, TokenExpiredError } from 'jsonwebtoken';
 import ms, { StringValue } from '../../../system/utils/time/ms/ms';
 import { UserMessage } from '../../../user/enums/user-messages.ts/user-messages.enum';
+import { UserEntity } from '../../../user/models/user/user.entity';
+import { UserService } from '../../../user/services/user/user.service';
+import { JWTConfigs } from '../../configs/jwt.config';
 import { RefreshTokenMessage } from '../../enums/refresh-token-messages.ts/refresh-token-messages.enum';
+import { RefreshTokenEntity } from '../../models/refresh-token.entity';
+import { RefreshTokenRepository } from '../../repositories/refresh-token.repository';
+import { BASE_OPTIONS } from './dtos/jwt-signin-base-options.';
+import { RefreshTokenPayload } from './dtos/refresh-token-payload';
 
 @Injectable()
 export class TokenService {

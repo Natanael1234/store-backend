@@ -7,6 +7,7 @@ import { LoginResponseDto } from '../../dtos/responses/login.response.dto';
 import { LogoutResponseDto } from '../../dtos/responses/logout.response.dto';
 import { RefreshResponseDto } from '../../dtos/responses/refresh.response.dto';
 import { RegisterResponseDto } from '../../dtos/responses/register.response.dto';
+import { Role } from '../../enums/role/role.enum';
 import { RefreshTokenRepository } from '../../repositories/refresh-token.repository';
 import { AuthenticationService } from './authentication.service';
 
@@ -64,6 +65,7 @@ export function testAuthenticationResponse(
   expect(response.status).toEqual('success');
   expect(response.data).toBeDefined();
   testDecodedTokenUser(response.data.user, expectedUserData);
+  // TODO: test roles
   testDecodedTokenPayload(
     jwtService,
     response.data.payload,
@@ -96,6 +98,7 @@ export async function testRegister(
     name: 'Another user',
     email: 'anotheruser@email.com',
     password: 'A123df*',
+    roles: [Role.ADMIN],
   });
   const response3 = await registerCallback(registerData[2]);
 
@@ -124,6 +127,12 @@ export async function testRegister(
   testDistinctTokens(response1.data.payload, response2.data.payload);
   testDistinctTokens(response1.data.payload, response3.data.payload);
   testDistinctTokens(response2.data.payload, response3.data.payload);
+
+  // first registered user must be root.
+  expect(users[0].roles).toEqual([Role.ROOT]);
+  expect(users[1].roles).toEqual([Role.USER]);
+  expect(users[2].roles).toEqual([Role.ADMIN]);
+  expect(users[3].roles).toEqual([Role.USER]);
 }
 
 export async function testLogin(
@@ -139,6 +148,7 @@ export async function testLogin(
     name: 'Another user',
     email: 'anotheruser@email.com',
     password: '123Acb*',
+    roles: [Role.ADMIN],
     acceptTerms: true,
   };
   await userService.create(createUserData);

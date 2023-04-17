@@ -23,7 +23,7 @@ import { UserEntity } from '../src/modules/user/models/user/user.entity';
 import { UserService } from '../src/modules/user/services/user/user.service';
 import { TestUserData } from '../src/test/test-user-data';
 
-const usersData = TestUserData.usersData;
+const usersData = TestUserData.usersData();
 const registerData = TestUserData.registerData;
 
 const registerEndpoint = '/authentication/register';

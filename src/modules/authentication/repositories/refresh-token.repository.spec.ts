@@ -2,11 +2,12 @@ import { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { getTestingModule } from '../../../.jest/test-config.module';
+import { UserMessage } from '../../user/enums/user-messages.ts/user-messages.enum';
 import { UserEntity } from '../../user/models/user/user.entity';
+import { RefreshTokenMessage } from '../enums/refresh-token-messages.ts/refresh-token-messages.enum';
+import { Role } from '../enums/role/role.enum';
 import { RefreshTokenEntity } from '../models/refresh-token.entity';
 import { RefreshTokenRepository } from './refresh-token.repository';
-import { UserMessage } from '../../user/enums/user-messages.ts/user-messages.enum';
-import { RefreshTokenMessage } from '../enums/refresh-token-messages.ts/refresh-token-messages.enum';
 
 describe('RefreshTokenRepository', () => {
   let module: TestingModule;
@@ -16,16 +17,19 @@ describe('RefreshTokenRepository', () => {
   const userData1 = {
     name: 'User 1',
     email: 'user1@email.com',
+    roles: [Role.ROOT],
     hash: { iv: 'bla', encryptedData: 'blabla' },
   };
   const userData2 = {
     name: 'User 2',
     email: 'user2@email.com',
+    roles: [Role.ADMIN],
     hash: { iv: 'bla', encryptedData: 'blabla' },
   };
   const userData3 = {
     name: 'User 3',
     email: 'user3@email.com',
+    roles: [Role.USER],
     hash: { iv: 'bla', encryptedData: 'blabla' },
   };
   const usersData = [userData1, userData2, userData3];

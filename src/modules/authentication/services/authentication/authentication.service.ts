@@ -21,6 +21,7 @@ import { RegisterResponseDto } from '../../dtos/responses/register.response.dto'
 import { AccessTokenMessage } from '../../enums/access-token-messages.ts/access-token-messages.enum';
 import { CredentialsMessage } from '../../enums/cretentials-messages.ts/credentials-messages.enum';
 import { RefreshTokenMessage } from '../../enums/refresh-token-messages.ts/refresh-token-messages.enum';
+import { Role } from '../../enums/role/role.enum';
 import { TokenService } from '../token/token.service';
 
 @Injectable()
@@ -44,18 +45,19 @@ export class AuthenticationService {
     if (!registerRequestDto.password)
       throw new UnprocessableEntityException(PasswordMessage.REQUIRED);
 
+    // TODO: criar uma tabela de configurações para saber se é o cadastro incial ou um método diferente para o cadastro inicial
+    const firstUser = !(await this.userService.count());
+
     const user = await this.userService.create({
       name: registerRequestDto.name,
       email: registerRequestDto.email,
       password: registerRequestDto.password,
+      roles: [firstUser ? Role.ROOT : Role.USER],
     });
     const token = await this.tokenService.generateAccessToken(user);
     const refresh = await this.tokenService.generateRefreshToken(user);
     const payload = this.buildResponsePayload(user, token, refresh);
-    return {
-      status: 'success',
-      data: payload,
-    };
+    return { status: 'success', data: payload };
   }
 
   public async login(
@@ -80,20 +82,14 @@ export class AuthenticationService {
 
     const payload = this.buildResponsePayload(user, token, refreshToken);
 
-    return {
-      status: 'success',
-      data: payload,
-    };
+    return { status: 'success', data: payload };
   }
 
   public async refresh(refreshToken: string): Promise<RefreshResponseDto> {
     const { user, token } =
       await this.tokenService.createAccessTokenFromRefreshToken(refreshToken);
     const payload = this.buildResponsePayload(user, token);
-    return {
-      status: 'success',
-      data: payload,
-    };
+    return { status: 'success', data: payload };
   }
 
   public async logout(refreshToken: string): Promise<LogoutResponseDto> {
@@ -105,9 +101,7 @@ export class AuthenticationService {
 
     // add bearer token to blacklist
     // await this.cachingService.setValue(bearerToken, token); // TODO: add ttl
-    return {
-      status: 'success',
-    };
+    return { status: 'success' };
   }
 
   private buildResponsePayload(

@@ -33,6 +33,7 @@ export class UserService {
     const user = new UserEntity();
     user.email = userDto.email;
     user.name = userDto.name;
+    user.roles = userDto.roles;
     user.hash = await this.encryptionService.encrypt(userDto.password);
     await this.userRepository.save(user);
     return this.findForId(user.id);
@@ -42,8 +43,7 @@ export class UserService {
     userId: number,
     userDto: UpdateUserRequestDTO,
   ): Promise<UserEntity> {
-    if (!userDto)
-      throw new UnprocessableEntityException(UserMessage.DATA_REQUIRED);
+    if (!userDto) throw new BadRequestException(UserMessage.DATA_REQUIRED);
     if (!userId)
       throw new UnprocessableEntityException(UserMessage.ID_REQUIRED);
     await validateAndThrows(userDto, UpdateUserRequestDTO);
@@ -59,6 +59,7 @@ export class UserService {
     // TODO: melhorar
     if (userDto.name) existentUser.name = userDto.name;
     if (userDto.email) existentUser.email = userDto.email;
+    if (userDto.roles) existentUser.roles = userDto.roles;
     await this.userRepository.save(existentUser);
     return this.findForId(userId);
   }
@@ -80,6 +81,10 @@ export class UserService {
 
   public async findAll(): Promise<UserEntity[]> {
     return this.userRepository.find(); // TODO: paginação
+  }
+
+  public async count(): Promise<number> {
+    return await this.userRepository.count({});
   }
 
   // TODO: test

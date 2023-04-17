@@ -1,42 +1,29 @@
-import { UserEntity } from './user.entity';
-import { getTestingModule } from '../../../../.jest/test-config.module';
 import { TestingModule } from '@nestjs/testing';
-import { QueryFailedError, Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
+import { getTestingModule } from '../../../../.jest/test-config.module';
+import { Role } from '../../../authentication/enums/role/role.enum';
+import { UserEntity } from './user.entity';
 
 const userData1 = {
   name: 'User 1',
   email: 'user1@email.com',
-  hash: {
-    iv: 'iv1',
-    encryptedData: 'ed1',
-  },
+  hash: { iv: 'iv1', encryptedData: 'ed1' },
+  roles: [Role.ADMIN, Role.ROOT],
 };
 const userData2 = {
   name: 'User 2',
   email: 'user2@email.com',
-  hash: {
-    iv: 'iv2',
-    encryptedData: 'ed2',
-  },
+  hash: { iv: 'iv2', encryptedData: 'ed2' },
+  roles: [Role.USER],
 };
 const userData3 = {
   name: 'User 3',
   email: 'user3@email.com',
-  hash: {
-    iv: 'iv3',
-    encryptedData: 'ed3',
-  },
+  hash: { iv: 'iv3', encryptedData: 'ed3' },
+  roles: [Role.ADMIN],
 };
 const userArray = [userData1, userData2, userData3];
-
-const id = 2;
-const name = 'John';
-const email = 'john@email.com';
-const hash = { iv: 'testIv', encryptedData: 'testData' };
-const created = new Date(2023, 2, 14);
-const updated = new Date(2023, 2, 15);
-const deletedAt = new Date(2023, 2, 16);
 
 describe('UserEntity', () => {
   let module: TestingModule;
@@ -56,6 +43,7 @@ describe('UserEntity', () => {
       name: string;
       email: string;
       hash: { iv: string; encryptedData: string };
+      roles?: Role[];
     },
     user: UserEntity,
     options?: {
@@ -74,6 +62,7 @@ describe('UserEntity', () => {
     } else {
       expect(user.deletedAt).toBeNull();
     }
+    expect(user.roles).toEqual(userData.roles);
   }
 
   describe('create', () => {
@@ -104,10 +93,8 @@ describe('UserEntity', () => {
         await repo.insert(
           repo.create({
             email: 'user@email.com',
-            hash: {
-              iv: 'new iv',
-              encryptedData: 'new encrypted data',
-            },
+            hash: { iv: 'new iv', encryptedData: 'new encrypted data' },
+            roles: [Role.ADMIN],
           }),
         );
       };
@@ -122,10 +109,8 @@ describe('UserEntity', () => {
         await repo.insert(
           repo.create({
             name: 'User',
-            hash: {
-              iv: 'new iv',
-              encryptedData: 'new encrypted data',
-            },
+            hash: { iv: 'new iv', encryptedData: 'new encrypted data' },
+            roles: [Role.ADMIN],
           }),
         );
       };
@@ -141,6 +126,7 @@ describe('UserEntity', () => {
           repo.create({
             name: 'User',
             email: 'user@email.com',
+            roles: [Role.ADMIN],
           }),
         );
       };
@@ -158,14 +144,39 @@ describe('UserEntity', () => {
           repo.create({
             name: 'User',
             email: userData1.email,
+            roles: [Role.ADMIN],
           }),
         );
       };
+
       expect(fn()).rejects.toThrow(QueryFailedError);
       expect(fn()).rejects.toThrow(
         'SQLITE_CONSTRAINT: NOT NULL constraint failed: users.hash',
       );
     });
+
+    it.each([
+      { description: 'null', value: null },
+      { description: 'undefined', value: undefined },
+    ])(
+      'should not insert an user with $description role',
+      async ({ value }) => {
+        const fn = async () => {
+          await repo.insert(
+            repo.create({
+              name: 'User',
+              email: userData1.email,
+              hash: { iv: 'iv3', encryptedData: 'ed3' },
+              roles: value,
+            }),
+          );
+        };
+        expect(fn()).rejects.toThrow(QueryFailedError);
+        expect(fn()).rejects.toThrow(
+          'SQLITE_CONSTRAINT: NOT NULL constraint failed: users.role',
+        );
+      },
+    );
   });
 
   describe('find', () => {
@@ -227,23 +238,24 @@ describe('UserEntity', () => {
       const updateData = {
         name: 'User 2 updated',
         email: 'user2updated@gmail.com',
-        hash: {
-          iv: 'new iv',
-          encryptedData: 'new encrypted data',
-        },
+        hash: { iv: 'new iv', encryptedData: 'new encrypted data' },
+        roles: [Role.ADMIN],
       };
-      const usersData = [userData1, updateData, userData3];
-      const updatedUser = await repo.findOne({ where: { id: 2 } });
-      updatedUser.name = updateData.name;
-      updatedUser.email = updateData.email;
-      updatedUser.hash = updateData.hash;
-      await repo.save(updatedUser);
+
+      const updateUser = await repo.findOne({ where: { id: 2 } });
+      updateUser.name = updateData.name;
+      updateUser.email = updateData.email;
+      updateUser.hash = updateData.hash;
+      updateUser.roles = [Role.ADMIN];
+
+      await repo.save(updateUser);
       const users = await repo.find();
+
       expect(users).toHaveLength(3);
-      expect(updatedUser).toBeInstanceOf(UserEntity);
-      for (let i = 0, userId = 1; i < 3; i++, userId++) {
-        validateUser(usersData[i], users[i], { userId });
-      }
+      expect(updateUser).toBeInstanceOf(UserEntity);
+      validateUser(userArray[0], users[0], { userId: 1 });
+      validateUser(updateData, users[1], { userId: 2 });
+      validateUser(userArray[2], users[2], { userId: 3 });
     });
 
     it('should update an user with empty name', async () => {
@@ -251,10 +263,8 @@ describe('UserEntity', () => {
       const fn = async () => {
         await repo.update(1, {
           email: 'user@email.com',
-          hash: {
-            iv: 'new iv',
-            encryptedData: 'new encrypted data',
-          },
+          hash: { iv: 'new iv', encryptedData: 'new encrypted data' },
+          roles: [Role.ADMIN],
         });
       };
       expect(fn()).resolves.not.toThrowError();
@@ -265,10 +275,8 @@ describe('UserEntity', () => {
       const fn = async () => {
         await repo.update(1, {
           name: 'User',
-          hash: {
-            iv: 'new iv',
-            encryptedData: 'new encrypted data',
-          },
+          hash: { iv: 'new iv', encryptedData: 'new encrypted data' },
+          roles: [Role.ADMIN],
         });
       };
       await expect(fn()).resolves.not.toThrowError();
@@ -277,7 +285,11 @@ describe('UserEntity', () => {
     it('should update an user with empty hash', async () => {
       await repo.insert(repo.create(userData1));
       const fn = async () => {
-        await repo.update(1, { name: 'User', email: 'user@email.com' });
+        await repo.update(1, {
+          name: 'User',
+          email: 'user@email.com',
+          roles: [Role.ADMIN],
+        });
       };
       await expect(fn()).resolves.not.toThrowError();
     });
