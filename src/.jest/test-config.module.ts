@@ -19,6 +19,7 @@ import { LocalStrategy } from '../modules/authentication/strategies/local/local.
 import { CachingService } from '../modules/system/caching/services/caching.service';
 import { EncryptionService } from '../modules/system/encryption/services/encryption/encryption.service';
 import { UserController } from '../modules/user/controllers/user.controller';
+import { RolesGuard } from '../modules/user/guards/roles/roles.guard';
 import { UserEntity } from '../modules/user/models/user/user.entity';
 import { UserService } from '../modules/user/services/user/user.service';
 import { sqlitDatabaseOptions } from './sqlite-database-options';
@@ -56,6 +57,10 @@ export async function getTestingModule(
       AppService,
       ...(additionalMetadata?.providers || []),
       CachingService, // TODO: verificar se não dará conflito com o de produção
+      {
+        provide: APP_GUARD,
+        useClass: RolesGuard,
+      },
     ],
     controllers: [
       UserController,
