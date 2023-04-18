@@ -62,196 +62,198 @@ describe('UserService', () => {
       },
     );
 
-    describe('name', () => {
-      it.each(TestUserData.getNameErrorDataList('create'))(
-        'should fail when name is $description',
-        async ({ data, exception: expectedException }) => {
-          const usersBefore = await userRepo.find();
-          try {
-            await userService.create(data as CreateUserRequestDTO);
-          } catch (ex) {
-            expect(usersBefore).toEqual(await userRepo.find());
-            expect(ex).toBeInstanceOf(UnprocessableEntityException);
-            expect(ex.getResponse()).toEqual(expectedException.getResponse());
-          }
-        },
-      );
+    describe('fields', () => {
+      describe('name', () => {
+        it.each(TestUserData.getNameErrorDataList('create'))(
+          'should fail when name is $description',
+          async ({ data, exception: expectedException }) => {
+            const usersBefore = await userRepo.find();
+            try {
+              await userService.create(data as CreateUserRequestDTO);
+            } catch (ex) {
+              expect(usersBefore).toEqual(await userRepo.find());
+              expect(ex).toBeInstanceOf(UnprocessableEntityException);
+              expect(ex.getResponse()).toEqual(expectedException.getResponse());
+            }
+          },
+        );
 
-      it('should validate if name lenght is valid', async () => {
-        const shortName = 'x'.repeat(6);
-        const longName = 'x'.repeat(60);
-        const creationData = TestUserData.userCreationData;
-        const expectedData = [
-          { id: 1, ...creationData[0], name: shortName },
-          { id: 2, ...creationData[1], name: longName },
-        ];
-        expectedData.forEach((data) => delete data.password);
+        it('should validate if name length is valid', async () => {
+          const shortName = 'x'.repeat(6);
+          const longName = 'x'.repeat(60);
+          const creationData = TestUserData.userCreationData;
+          const expectedData = [
+            { id: 1, ...creationData[0], name: shortName },
+            { id: 2, ...creationData[1], name: longName },
+          ];
+          expectedData.forEach((data) => delete data.password);
 
-        const createdUsers = [
-          await userService.create({ ...creationData[0], name: shortName }),
-          await userService.create({ ...creationData[1], name: longName }),
-        ];
+          const createdUsers = [
+            await userService.create({ ...creationData[0], name: shortName }),
+            await userService.create({ ...creationData[1], name: longName }),
+          ];
 
-        const users = await userRepo.find();
+          const users = await userRepo.find();
 
-        expect(users).toHaveLength(2);
-        testValidateUser(users[0], expectedData[0]);
-        testValidateUser(users[1], expectedData[1]);
-        testValidateUser(createdUsers[0], expectedData[0]);
-        testValidateUser(createdUsers[1], expectedData[1]);
-      });
-    });
-
-    describe('email', () => {
-      it.each(TestUserData.getEmailErrorDataList('create'))(
-        'should fail when email is $description',
-        async ({ data, exception: expectedException }) => {
-          const usersBefore = await userRepo.find();
-          const fn = () => userService.create(data as CreateUserRequestDTO);
-          expect(fn()).rejects.toThrow(UnprocessableEntityException);
-          try {
-            await fn();
-          } catch (ex) {
-            expect(ex.getResponse()).toEqual(expectedException.getResponse());
-            expect(await userRepo.find()).toEqual(usersBefore);
-          }
-        },
-      );
-
-      it('should fail if email is already in use', async () => {
-        const userData = TestUserData.userCreationData;
-        const createdUsers = [
-          await userService.create(userData[0]),
-          await userService.create(userData[1]),
-        ];
-        const usersBefore = await userRepo.find();
-        const fn = () =>
-          userService.create({
-            ...userData[2],
-            email: userData[0].email,
-          });
-
-        // const users = await userRepo.findOne({where:{updated: }})
-        expect(fn()).rejects.toThrow(ConflictException);
-        try {
-          await fn();
-        } catch (ex) {
-          expect(ex.getResponse()).toEqual({
-            error: 'Conflict',
-            message: EmailMessage.INVALID,
-            statusCode: HttpStatus.CONFLICT,
-          });
-          expect(await userRepo.find()).toEqual(usersBefore);
-        }
-      });
-
-      it('should validate if email lenght is valid', async () => {
-        const email = 'x'.repeat(50) + '@email.com';
-        const createData = TestUserData.userCreationData;
-        const expectedData = { id: 1, ...usersData[0], email };
-        delete expectedData.password;
-
-        const createdUser = await userService.create({
-          ...createData[0],
-          email,
+          expect(users).toHaveLength(2);
+          testValidateUser(users[0], expectedData[0]);
+          testValidateUser(users[1], expectedData[1]);
+          testValidateUser(createdUsers[0], expectedData[0]);
+          testValidateUser(createdUsers[1], expectedData[1]);
         });
-        const users = await userRepo.find();
-
-        expect(users).toHaveLength(1);
-        testValidateUser(createdUser, expectedData);
-        testValidateUser(users[0], expectedData);
       });
-    });
 
-    describe('password', () => {
-      it.each(TestUserData.getPasswordErrorDataList('create'))(
-        'should fail when name is $description',
-        async ({ data, exception }) => {
+      describe('email', () => {
+        it.each(TestUserData.getEmailErrorDataList('create'))(
+          'should fail when email is $description',
+          async ({ data, exception: expectedException }) => {
+            const usersBefore = await userRepo.find();
+            const fn = () => userService.create(data as CreateUserRequestDTO);
+            expect(fn()).rejects.toThrow(UnprocessableEntityException);
+            try {
+              await fn();
+            } catch (ex) {
+              expect(ex.getResponse()).toEqual(expectedException.getResponse());
+              expect(await userRepo.find()).toEqual(usersBefore);
+            }
+          },
+        );
+
+        it('should fail if email is already in use', async () => {
+          const userData = TestUserData.userCreationData;
+          const createdUsers = [
+            await userService.create(userData[0]),
+            await userService.create(userData[1]),
+          ];
           const usersBefore = await userRepo.find();
-          const fn = () => userService.create(data as CreateUserRequestDTO);
-          expect(fn()).rejects.toThrow(UnprocessableEntityException);
+          const fn = () =>
+            userService.create({
+              ...userData[2],
+              email: userData[0].email,
+            });
+
+          // const users = await userRepo.findOne({where:{updated: }})
+          expect(fn()).rejects.toThrow(ConflictException);
           try {
             await fn();
           } catch (ex) {
-            expect(ex.getResponse()).toEqual(exception.getResponse());
+            expect(ex.getResponse()).toEqual({
+              error: 'Conflict',
+              message: EmailMessage.INVALID,
+              statusCode: HttpStatus.CONFLICT,
+            });
             expect(await userRepo.find()).toEqual(usersBefore);
           }
-        },
-      );
+        });
 
-      it('should validate if password lenght is valid', async () => {
-        const password = 'Abc124***###';
-        const creationData = TestUserData.userCreationData;
-        const expectedData = [
-          { id: 1, ...usersData[0] },
-          { id: 2, ...usersData[1], password },
-        ];
-        const createdUsers = [
-          await userService.create(creationData[0]),
-          await userService.create({ ...creationData[1], password }),
-        ];
+        it('should validate if email length is valid', async () => {
+          const email = 'x'.repeat(50) + '@email.com';
+          const createData = TestUserData.userCreationData;
+          const expectedData = { id: 1, ...usersData[0], email };
+          delete expectedData.password;
 
-        const usersAfter = await userRepo.find();
+          const createdUser = await userService.create({
+            ...createData[0],
+            email,
+          });
+          const users = await userRepo.find();
 
-        expect(usersAfter).toHaveLength(2);
-        testValidateUser(createdUsers[0], expectedData[0]);
-        testValidateUser(createdUsers[1], expectedData[1]);
-        testValidateUser(usersAfter[0], expectedData[0]);
-        testValidateUser(usersAfter[1], expectedData[1]);
+          expect(users).toHaveLength(1);
+          testValidateUser(createdUser, expectedData);
+          testValidateUser(users[0], expectedData);
+        });
       });
-    });
 
-    describe('roles', () => {
-      it.each(TestUserData.getRolesErrorDataList('create'))(
-        'should fail when roles is $description',
-        async ({ data, exception }) => {
-          const usersBefore = await userRepo.find();
-          const fn = () => userService.create(data as CreateUserRequestDTO);
-          expect(fn()).rejects.toThrow(UnprocessableEntityException);
+      describe('password', () => {
+        it.each(TestUserData.getPasswordErrorDataList('create'))(
+          'should fail when name is $description',
+          async ({ data, exception }) => {
+            const usersBefore = await userRepo.find();
+            const fn = () => userService.create(data as CreateUserRequestDTO);
+            expect(fn()).rejects.toThrow(UnprocessableEntityException);
+            try {
+              await fn();
+            } catch (ex) {
+              expect(ex.getResponse()).toEqual(exception.getResponse());
+              expect(await userRepo.find()).toEqual(usersBefore);
+            }
+          },
+        );
+
+        it('should validate if password length is valid', async () => {
+          const password = 'Abc124***###';
+          const creationData = TestUserData.userCreationData;
+          const expectedData = [
+            { id: 1, ...usersData[0] },
+            { id: 2, ...usersData[1], password },
+          ];
+          const createdUsers = [
+            await userService.create(creationData[0]),
+            await userService.create({ ...creationData[1], password }),
+          ];
+
+          const usersAfter = await userRepo.find();
+
+          expect(usersAfter).toHaveLength(2);
+          testValidateUser(createdUsers[0], expectedData[0]);
+          testValidateUser(createdUsers[1], expectedData[1]);
+          testValidateUser(usersAfter[0], expectedData[0]);
+          testValidateUser(usersAfter[1], expectedData[1]);
+        });
+      });
+
+      describe('roles', () => {
+        it.each(TestUserData.getRolesErrorDataList('create'))(
+          'should fail when roles is $description',
+          async ({ data, exception }) => {
+            const usersBefore = await userRepo.find();
+            const fn = () => userService.create(data as CreateUserRequestDTO);
+            expect(fn()).rejects.toThrow(UnprocessableEntityException);
+            try {
+              await fn();
+            } catch (ex) {
+              expect(ex.getResponse()).toEqual(exception.getResponse());
+              expect(await userRepo.find()).toEqual(usersBefore);
+            }
+          },
+        );
+      });
+
+      describe('multiple errors', () => {
+        it('should fail when there are multiple invalid fields', async () => {
+          const invalidName = 'A';
+          const invalidEmail = 'B';
+          const invalidPassword = 'C';
+          await userService.create(usersData[0]);
+          await userService.create(usersData[1]);
+
+          const usersBefore = await userService.findAll();
+          async function fn() {
+            await userService.create({
+              name: invalidName,
+              email: invalidEmail,
+              password: invalidPassword,
+              roles: null,
+            });
+          }
+          await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+          expect(usersBefore).toEqual(await userService.findAll());
+          await expect(fn()).rejects.toThrow('Unprocessable Entity Exception');
           try {
             await fn();
-          } catch (ex) {
-            expect(ex.getResponse()).toEqual(exception.getResponse());
-            expect(await userRepo.find()).toEqual(usersBefore);
+          } catch (error) {
+            expect(error.response).toEqual({
+              error: UnprocessableEntityException.name,
+              message: {
+                name: NameMessage.MIN_LEN,
+                email: EmailMessage.INVALID,
+                password: PasswordMessage.MIN_LEN,
+                roles: RoleMessage.REQUIRED,
+              },
+              statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+            });
           }
-        },
-      );
-    });
-
-    describe('multiple errors', () => {
-      it('should fail when there are multiple invalid fields', async () => {
-        const invalidName = 'A';
-        const invalidEmail = 'B';
-        const invalidPassword = 'C';
-        await userService.create(usersData[0]);
-        await userService.create(usersData[1]);
-
-        const usersBefore = await userService.findAll();
-        async function fn() {
-          await userService.create({
-            name: invalidName,
-            email: invalidEmail,
-            password: invalidPassword,
-            roles: null,
-          });
-        }
-        await expect(fn()).rejects.toThrow(UnprocessableEntityException);
-        expect(usersBefore).toEqual(await userService.findAll());
-        await expect(fn()).rejects.toThrow('Unprocessable Entity Exception');
-        try {
-          await fn();
-        } catch (error) {
-          expect(error.response).toEqual({
-            error: UnprocessableEntityException.name,
-            message: {
-              name: NameMessage.MIN_LEN,
-              email: EmailMessage.INVALID,
-              password: PasswordMessage.MIN_LEN,
-              roles: RoleMessage.REQUIRED,
-            },
-            statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-          });
-        }
+        });
       });
     });
   });
@@ -339,179 +341,184 @@ describe('UserService', () => {
       await expect(fn).rejects.toThrow(UserMessage.DATA_REQUIRED);
     });
 
-    describe('id', () => {
-      it.each([{ userId: null }, { userId: undefined }])(
-        'should fail when user id is $userId',
-        async ({ userId }) => {
+    describe('fields', () => {
+      describe('id', () => {
+        it.each([{ userId: null }, { userId: undefined }])(
+          'should fail when user id is $userId',
+          async ({ userId }) => {
+            await userService.create(usersData[0]);
+            await userService.create(usersData[1]);
+            await userService.create(usersData[2]);
+            const usersBefore = await userService.findAll();
+            async function fn() {
+              await userService.findForId(userId);
+            }
+
+            await expect(fn()).rejects.toThrow(BadRequestException);
+            expect(usersBefore).toEqual(await userService.findAll());
+            await expect(fn()).rejects.toThrow(UserMessage.ID_REQUIRED);
+          },
+        );
+      });
+
+      describe('name', () => {
+        it.each(TestUserData.getNameErrorDataList('update'))(
+          'sould fail when name is $description',
+          async ({ data, ExceptionClass, response }) => {
+            const createdUsers = [
+              await userService.create(usersData[0]),
+              await userService.create(usersData[1]),
+              await userService.create(usersData[2]),
+            ];
+            const usersBefore = await userRepo.find();
+
+            const fn = async () => {
+              await userService.update(2, data);
+            };
+
+            await expect(fn()).rejects.toThrow(ExceptionClass);
+            expect(usersBefore).toEqual(await userService.findAll());
+            expect(await userRepo.find()).toEqual(usersBefore);
+            try {
+              await fn();
+            } catch (ex) {
+              expect(ex.response).toEqual(response);
+            }
+          },
+        );
+
+        it('should validate if name length is valid', async () => {
+          const shortName = 'x'.repeat(6);
+          const longName = 'x'.repeat(60);
+          const creationData = TestUserData.userCreationData;
+          const expectedData = [
+            { id: 1, ...usersData[0], name: shortName },
+            { id: 2, ...usersData[1], name: longName },
+            { id: 3, ...usersData[2] },
+          ];
+
+          await userService.create(creationData[0]);
+          await userService.create(creationData[1]);
+          await userService.create(creationData[2]);
+
+          const updatedUsers = [
+            await userService.update(1, {
+              ...creationData[0],
+              name: shortName,
+            }),
+            await userService.update(2, { ...creationData[1], name: longName }),
+          ];
+          const users = await userRepo.find();
+          expect(users).toHaveLength(3);
+
+          testValidateUser(updatedUsers[0], expectedData[0]);
+          testValidateUser(updatedUsers[1], expectedData[1]);
+
+          testValidateUser(users[0], expectedData[0]);
+          testValidateUser(users[1], expectedData[1]);
+          testValidateUser(users[2], expectedData[2]);
+        });
+      });
+
+      describe('email', () => {
+        it.each(TestUserData.getEmailErrorDataList('update'))(
+          'should fail when email is $description',
+          async ({ data, ExceptionClass, response }) => {
+            const createdUsers = [
+              await userService.create(usersData[0]),
+              await userService.create(usersData[1]),
+              await userService.create(usersData[2]),
+            ];
+            const usersBefore = await userRepo.find();
+            const fn = async () => await userService.update(2, data);
+
+            await expect(fn()).rejects.toThrow(ExceptionClass);
+            expect(usersBefore).toEqual(await userService.findAll());
+            expect(await userRepo.find()).toEqual(usersBefore);
+            try {
+              await fn();
+            } catch (ex) {
+              expect(ex.response).toEqual(response);
+            }
+          },
+        );
+
+        it('should validate if email length is valid', async () => {
+          const userCreationData = TestUserData.userCreationData;
+          const email = 'x'.repeat(50) + '@email.com';
+          const expectedData = [
+            { id: 1, ...usersData[0] },
+            { id: 2, ...usersData[1], email },
+          ];
+          await userService.create(userCreationData[0]);
+          await userService.create(userCreationData[1]);
+
+          const updatedUsers = [await userService.update(2, { email })];
+          const users = await userRepo.find();
+
+          expect(users).toHaveLength(2);
+          testValidateUser(updatedUsers[0], expectedData[1]);
+          testValidateUser(users[0], expectedData[0]);
+          testValidateUser(users[1], expectedData[1]);
+        });
+      });
+
+      describe('roles', () => {
+        it.each(TestUserData.getRolesErrorDataList('update'))(
+          'should fail when roles is $description',
+          async ({ data, ExceptionClass, response }) => {
+            const createdUsers = [
+              await userService.create(usersData[0]),
+              await userService.create(usersData[1]),
+              await userService.create(usersData[2]),
+            ];
+            const usersBefore = await userRepo.find();
+            const fn = async () => await userService.update(3, data);
+
+            await expect(fn()).rejects.toThrow(ExceptionClass);
+            expect(usersBefore).toEqual(await userService.findAll());
+            expect(await userRepo.find()).toEqual(usersBefore);
+            try {
+              await fn();
+            } catch (ex) {
+              expect(ex.response).toEqual(response);
+            }
+          },
+        );
+      });
+
+      describe('multiple errors', () => {
+        it('should fail when thre are multiple invalid fields', async () => {
+          const newName = 'A';
+          const newEmail = 'B';
           await userService.create(usersData[0]);
           await userService.create(usersData[1]);
           await userService.create(usersData[2]);
           const usersBefore = await userService.findAll();
           async function fn() {
-            await userService.findForId(userId);
+            await userService.update(2, {
+              name: newName,
+              email: newEmail,
+              roles: [],
+            });
           }
-
-          await expect(fn()).rejects.toThrow(BadRequestException);
+          await expect(fn()).rejects.toThrow(UnprocessableEntityException);
           expect(usersBefore).toEqual(await userService.findAll());
-          await expect(fn()).rejects.toThrow(UserMessage.ID_REQUIRED);
-        },
-      );
-    });
-
-    describe('name', () => {
-      it.each(TestUserData.getNameErrorDataList('update'))(
-        'sould fail when name is $description',
-        async ({ data, ExceptionClass, response }) => {
-          const createdUsers = [
-            await userService.create(usersData[0]),
-            await userService.create(usersData[1]),
-            await userService.create(usersData[2]),
-          ];
-          const usersBefore = await userRepo.find();
-
-          const fn = async () => {
-            await userService.update(2, data);
-          };
-
-          await expect(fn()).rejects.toThrow(ExceptionClass);
-          expect(usersBefore).toEqual(await userService.findAll());
-          expect(await userRepo.find()).toEqual(usersBefore);
+          await expect(fn()).rejects.toThrow('Unprocessable Entity Exception');
           try {
             await fn();
-          } catch (ex) {
-            expect(ex.response).toEqual(response);
+          } catch (error) {
+            expect(error.response).toEqual({
+              error: UnprocessableEntityException.name,
+              message: {
+                name: NameMessage.MIN_LEN,
+                email: EmailMessage.INVALID,
+                roles: RoleMessage.MIN_LEN,
+              },
+              statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+            });
           }
-        },
-      );
-
-      it('should validate if name lenght is valid', async () => {
-        const shortName = 'x'.repeat(6);
-        const longName = 'x'.repeat(60);
-        const creationData = TestUserData.userCreationData;
-        const expectedData = [
-          { id: 1, ...usersData[0], name: shortName },
-          { id: 2, ...usersData[1], name: longName },
-          { id: 3, ...usersData[2] },
-        ];
-
-        await userService.create(creationData[0]);
-        await userService.create(creationData[1]);
-        await userService.create(creationData[2]);
-
-        const updatedUsers = [
-          await userService.update(1, { ...creationData[0], name: shortName }),
-          await userService.update(2, { ...creationData[1], name: longName }),
-        ];
-        const users = await userRepo.find();
-        expect(users).toHaveLength(3);
-
-        testValidateUser(updatedUsers[0], expectedData[0]);
-        testValidateUser(updatedUsers[1], expectedData[1]);
-
-        testValidateUser(users[0], expectedData[0]);
-        testValidateUser(users[1], expectedData[1]);
-        testValidateUser(users[2], expectedData[2]);
-      });
-    });
-
-    describe('email', () => {
-      it.each(TestUserData.getEmailErrorDataList('update'))(
-        'should fail when email is $description',
-        async ({ data, ExceptionClass, response }) => {
-          const createdUsers = [
-            await userService.create(usersData[0]),
-            await userService.create(usersData[1]),
-            await userService.create(usersData[2]),
-          ];
-          const usersBefore = await userRepo.find();
-          const fn = async () => await userService.update(2, data);
-
-          await expect(fn()).rejects.toThrow(ExceptionClass);
-          expect(usersBefore).toEqual(await userService.findAll());
-          expect(await userRepo.find()).toEqual(usersBefore);
-          try {
-            await fn();
-          } catch (ex) {
-            expect(ex.response).toEqual(response);
-          }
-        },
-      );
-
-      it('should validate if email lenght is valid', async () => {
-        const userCreationData = TestUserData.userCreationData;
-        const email = 'x'.repeat(50) + '@email.com';
-        const expectedData = [
-          { id: 1, ...usersData[0] },
-          { id: 2, ...usersData[1], email },
-        ];
-        await userService.create(userCreationData[0]);
-        await userService.create(userCreationData[1]);
-
-        const updatedUsers = [await userService.update(2, { email })];
-        const users = await userRepo.find();
-
-        expect(users).toHaveLength(2);
-        testValidateUser(updatedUsers[0], expectedData[1]);
-        testValidateUser(users[0], expectedData[0]);
-        testValidateUser(users[1], expectedData[1]);
-      });
-    });
-
-    describe('roles', () => {
-      it.each(TestUserData.getRolesErrorDataList('update'))(
-        'should fail when roles is $description',
-        async ({ data, ExceptionClass, response }) => {
-          const createdUsers = [
-            await userService.create(usersData[0]),
-            await userService.create(usersData[1]),
-            await userService.create(usersData[2]),
-          ];
-          const usersBefore = await userRepo.find();
-          const fn = async () => await userService.update(3, data);
-
-          await expect(fn()).rejects.toThrow(ExceptionClass);
-          expect(usersBefore).toEqual(await userService.findAll());
-          expect(await userRepo.find()).toEqual(usersBefore);
-          try {
-            await fn();
-          } catch (ex) {
-            expect(ex.response).toEqual(response);
-          }
-        },
-      );
-    });
-
-    describe('multiple errors', () => {
-      it('should fail when thre are multiple invalid fields', async () => {
-        const newName = 'A';
-        const newEmail = 'B';
-        await userService.create(usersData[0]);
-        await userService.create(usersData[1]);
-        await userService.create(usersData[2]);
-        const usersBefore = await userService.findAll();
-        async function fn() {
-          await userService.update(2, {
-            name: newName,
-            email: newEmail,
-            roles: [],
-          });
-        }
-        await expect(fn()).rejects.toThrow(UnprocessableEntityException);
-        expect(usersBefore).toEqual(await userService.findAll());
-        await expect(fn()).rejects.toThrow('Unprocessable Entity Exception');
-        try {
-          await fn();
-        } catch (error) {
-          expect(error.response).toEqual({
-            error: UnprocessableEntityException.name,
-            message: {
-              name: NameMessage.MIN_LEN,
-              email: EmailMessage.INVALID,
-              roles: RoleMessage.MIN_LEN,
-            },
-            statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-          });
-        }
+        });
       });
     });
   });

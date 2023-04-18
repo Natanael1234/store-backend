@@ -94,7 +94,7 @@ describe('CreateUserRequestDto', () => {
       },
     );
 
-    it('Should validate passwords wwith valid lenght', async () => {
+    it('Should validate passwords wwith valid length', async () => {
       const data = [
         {
           name: 'User 1',

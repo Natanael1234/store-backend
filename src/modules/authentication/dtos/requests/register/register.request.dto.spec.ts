@@ -103,7 +103,7 @@ describe('RegisterRequestDto', () => {
       },
     );
 
-    it('Should validate passwords with valid lenght', async () => {
+    it('Should validate passwords with valid length', async () => {
       const data = [
         {
           name: 'User 1',

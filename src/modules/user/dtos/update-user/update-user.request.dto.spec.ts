@@ -31,7 +31,7 @@ describe('UpdateUserRequestDto', () => {
       },
     );
 
-    it('Should validate when name lenght is valid', async () => {
+    it('Should validate when name length is valid', async () => {
       const data = [
         {
           name: 'User 2',
