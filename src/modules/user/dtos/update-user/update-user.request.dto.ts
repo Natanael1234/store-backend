@@ -23,4 +23,11 @@ export class UpdateUserRequestDTO {
   @IsNotEmpty({ message: EmailMessage.REQUIRED })
   @IsOptional()
   email?: string;
+
+  // @IsEnum(Role, { each: true, message: RoleMessage.INVALID })
+  // @ArrayMinSize(1, { message: RoleMessage.MIN_LEN })
+  // @IsArray({ message: RoleMessage.INVALID })
+  // @IsNotEmpty({ message: RoleMessage.REQUIRED })
+  // @IsOptional()
+  // roles?: Role[];
 }

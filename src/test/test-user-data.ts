@@ -1,7 +1,9 @@
 import { HttpStatus, UnprocessableEntityException } from '@nestjs/common';
+import { Role } from '../modules/authentication/enums/role/role.enum';
 import { EmailMessage } from '../modules/user/enums/email-messages/email-messages.enum';
 import { NameMessage } from '../modules/user/enums/name-messages/name-messages.enum';
 import { PasswordMessage } from '../modules/user/enums/password-messages/password-messages.enum';
+import { RoleMessage } from '../modules/user/enums/role-messages/role-messages.enum';
 
 export class TestUserData {
   /** service/api */
@@ -11,16 +13,19 @@ export class TestUserData {
         name: 'User 1',
         password: 'Abc12*',
         email: 'user1@email.com',
+        roles: [Role.ROOT],
       },
       {
         name: 'User 2',
         password: 'Xyz12*',
         email: 'user2@email.com',
+        roles: [Role.USER],
       },
       {
         name: 'User 3',
         password: 'Cba12*',
         email: 'user3@email.com',
+        roles: [Role.ADMIN],
       },
     ];
   }
@@ -33,16 +38,28 @@ export class TestUserData {
   }
 
   /** service/api */
-  static get registerData() {
+  static get registerData(): {
+    name: string;
+    email: string;
+    password: string;
+    acceptTerms: true;
+  }[] {
     return TestUserData.userCreationData.map((createUserData) => {
-      return { ...createUserData, acceptTerms: true };
+      const { name, email, password } = createUserData;
+      return { name, email, password, acceptTerms: true };
     });
   }
 
   /** repository */
-  static get usersData() {
+  static usersData(options?: { passwords: boolean }) {
     return TestUserData.userCreationData.map((createUserData) => {
-      return { ...createUserData, hash: { iv: '', encryptedData: '' } };
+      if (options?.passwords === false) {
+        delete options.passwords;
+      }
+      return {
+        ...createUserData,
+        hash: { iv: 'x', encryptedData: 'y' },
+      };
     });
   }
 
@@ -295,6 +312,66 @@ export class TestUserData {
           data: { ...dtoData, password: undefined },
           errors: { isNotEmpty: PasswordMessage.REQUIRED },
           message: { password: PasswordMessage.REQUIRED },
+        }),
+      );
+    }
+    return list;
+  }
+
+  static getRolesErrorDataList(purpose: 'create' | 'register' | 'update') {
+    let dtoData = TestUserData.getUsersData(purpose)[2];
+    const list = [
+      TestUserData.buildErrorData({
+        description: 'number',
+        data: { ...dtoData, roles: 2323232 },
+        errors: { isArray: RoleMessage.INVALID },
+        message: { roles: RoleMessage.INVALID },
+      }),
+      TestUserData.buildErrorData({
+        description: 'boolean',
+        data: { ...dtoData, roles: true },
+        errors: { isArray: RoleMessage.INVALID },
+        message: { roles: RoleMessage.INVALID },
+      }),
+      TestUserData.buildErrorData({
+        description: 'object',
+        data: { ...dtoData, roles: {} },
+        errors: { isArray: RoleMessage.INVALID },
+        message: { roles: RoleMessage.INVALID },
+      }),
+      TestUserData.buildErrorData({
+        description: 'string',
+        data: { ...dtoData, roles: 'string' },
+        errors: { isArray: RoleMessage.INVALID },
+        message: { roles: RoleMessage.INVALID },
+      }),
+      TestUserData.buildErrorData({
+        description: 'array containing invalid item',
+        data: { ...dtoData, roles: ['invalid'] },
+        errors: { isEnum: RoleMessage.INVALID },
+        message: { roles: RoleMessage.INVALID },
+      }),
+      TestUserData.buildErrorData({
+        description: 'empty array',
+        data: { ...dtoData, roles: [] },
+        errors: { arrayMinSize: RoleMessage.MIN_LEN },
+        message: { roles: RoleMessage.MIN_LEN },
+      }),
+    ];
+    if (purpose != 'update') {
+      list.push(
+        TestUserData.buildErrorData({
+          // TODO: deveria ser testado na atualização?
+          description: 'null',
+          data: { ...dtoData, roles: null },
+          errors: { isNotEmpty: RoleMessage.REQUIRED },
+          message: { roles: RoleMessage.REQUIRED },
+        }),
+        TestUserData.buildErrorData({
+          description: 'undefined',
+          data: { ...dtoData, roles: undefined },
+          errors: { isNotEmpty: RoleMessage.REQUIRED },
+          message: { roles: RoleMessage.REQUIRED },
         }),
       );
     }

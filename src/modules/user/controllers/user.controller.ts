@@ -1,5 +1,7 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { Param, Patch } from '@nestjs/common/decorators';
+import { Role } from '../../authentication/enums/role/role.enum';
+import { Roles } from '../decorators/roles/roles.decorator';
 import { CreateUserRequestDTO } from '../dtos/create-user/create-user.request.dto';
 import { UpdateUserRequestDTO } from '../dtos/update-user/update-user.request.dto';
 import { UserEntity } from '../models/user/user.entity';
@@ -10,11 +12,13 @@ export class UserController {
   constructor(private userService: UserService) {}
 
   @Post()
+  @Roles(Role.ROOT)
   create(@Body() user: CreateUserRequestDTO): Promise<UserEntity> {
     return this.userService.create(user);
   }
 
   @Patch('/:userId')
+  @Roles(Role.ROOT)
   update(
     @Param() params: { userId: number },
     @Body() user: UpdateUserRequestDTO,
@@ -23,11 +27,13 @@ export class UserController {
   }
 
   @Get()
+  @Roles(Role.ROOT, Role.ADMIN)
   findAll(): Promise<UserEntity[]> {
     return this.userService.findAll();
   }
 
   @Get('/:userId')
+  @Roles(Role.ROOT, Role.ADMIN)
   findForId(@Param() params: { userId: number }): Promise<UserEntity> {
     return this.userService.findForId(params.userId);
   }

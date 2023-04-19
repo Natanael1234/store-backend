@@ -92,8 +92,10 @@ npm run typeorm -- -d ./typeOrm.config.ts migration:revert
 
 # Debugging
 
-# 1 - With Docker Desktop running type:
+1 - With Docker Desktop running type in the VS Code terminal:
 
+```bash
 docker-compose up --build -V
+```
 
-# 2 - Run "Debug: NestJS-Store" in VS Code debug tab.
+2 - Run "Debug: NestJS-Store" in VS Code debug tab.

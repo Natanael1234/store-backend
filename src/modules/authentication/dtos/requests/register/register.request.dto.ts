@@ -1,21 +1,19 @@
+import { Transform } from 'class-transformer';
 import {
-  ArrayMinSize,
-  IsArray,
+  Equals,
   IsEmail,
-  IsEnum,
   IsNotEmpty,
   IsString,
   IsStrongPassword,
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { Role } from '../../../authentication/enums/role/role.enum';
-import { EmailMessage } from '../../enums/email-messages/email-messages.enum';
-import { NameMessage } from '../../enums/name-messages/name-messages.enum';
-import { PasswordMessage } from '../../enums/password-messages/password-messages.enum';
-import { RoleMessage } from '../../enums/role-messages/role-messages.enum';
+import { EmailMessage } from '../../../../user/enums/email-messages/email-messages.enum';
+import { NameMessage } from '../../../../user/enums/name-messages/name-messages.enum';
+import { PasswordMessage } from '../../../../user/enums/password-messages/password-messages.enum';
+import { AcceptTermsMessage } from '../../../enums/accept-terms-messages.ts/accept-terms-messages.enum';
 
-export class CreateUserRequestDTO {
+export class RegisterRequestDto {
   @MaxLength(60, { message: NameMessage.MAX_LEN })
   @MinLength(6, { message: NameMessage.MIN_LEN })
   @IsString({ message: NameMessage.STRING })
@@ -44,9 +42,14 @@ export class CreateUserRequestDTO {
   @IsNotEmpty({ message: PasswordMessage.REQUIRED })
   password: string;
 
-  @IsEnum(Role, { each: true, message: RoleMessage.INVALID })
-  @ArrayMinSize(1, { message: RoleMessage.MIN_LEN })
-  @IsArray({ message: RoleMessage.INVALID })
-  @IsNotEmpty({ message: RoleMessage.REQUIRED })
-  roles: Role[];
+  @Equals(true, { message: AcceptTermsMessage.REQUIRED })
+  @Transform(({ value }) => {
+    if (typeof value == 'string') {
+      return value.toLowerCase() === 'true';
+    } else if (value === true) {
+      return true;
+    }
+    return false;
+  })
+  acceptTerms: boolean;
 }
