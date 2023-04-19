@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 import { getTestingModule } from '../../../../.jest/test-config.module';
 import { TestUserData } from '../../../../test/test-user-data';
 import { testValidateUser } from '../../../../test/test-user-utils';
+import { Role } from '../../../authentication/enums/role/role.enum';
 import { CreateUserRequestDTO } from '../../dtos/create-user/create-user.request.dto';
 import { EmailMessage } from '../../enums/email-messages/email-messages.enum';
 import { NameMessage } from '../../enums/name-messages/name-messages.enum';
@@ -41,34 +42,30 @@ describe('UserService', () => {
     it('should create users', async () => {
       const creationData = TestUserData.userCreationData;
 
-      try {
-        const createdUsers = [
-          await userService.create(creationData[0]),
-          await userService.create(creationData[1]),
-          await userService.create(creationData[2]),
-        ];
+      const createdUsers = [
+        await userService.create(creationData[0]),
+        await userService.create(creationData[1]),
+        await userService.create(creationData[2]),
+      ];
 
-        const expectedData = [
-          { id: 1, ...creationData[0] },
-          { id: 2, ...creationData[1] },
-          { id: 3, ...creationData[2] },
-        ];
-        expectedData.forEach((data) => delete data.password);
+      const expectedData = [
+        { id: 1, ...creationData[0] },
+        { id: 2, ...creationData[1] },
+        { id: 3, ...creationData[2] },
+      ];
+      expectedData.forEach((data) => delete data.password);
 
-        const users = await userRepo.find();
+      const users = await userRepo.find();
 
-        expect(users).toHaveLength(3);
+      expect(users).toHaveLength(3);
 
-        testValidateUser(createdUsers[0], expectedData[0]);
-        testValidateUser(createdUsers[1], expectedData[1]);
-        testValidateUser(createdUsers[2], expectedData[2]);
+      testValidateUser(createdUsers[0], expectedData[0]);
+      testValidateUser(createdUsers[1], expectedData[1]);
+      testValidateUser(createdUsers[2], expectedData[2]);
 
-        testValidateUser(users[0], expectedData[0]);
-        testValidateUser(users[1], expectedData[1]);
-        testValidateUser(users[2], expectedData[2]);
-      } catch (error) {
-        throw error;
-      }
+      testValidateUser(users[0], expectedData[0]);
+      testValidateUser(users[1], expectedData[1]);
+      testValidateUser(users[2], expectedData[2]);
     });
 
     it.each([{ user: null }, { user: undefined }])(
@@ -543,14 +540,77 @@ describe('UserService', () => {
           testValidateUser(users[0], expectedData[0]);
           testValidateUser(users[1], expectedData[1]);
         });
+
+        it.skip('should ivalidate refresh tokens if change email', async () => {});
       });
 
       describe('password', () => {
-        it.skip('should not update passwords', async () => {});
+        it('should not update passwords', async () => {
+          const usersData = TestUserData.usersData();
+
+          let updateData = [
+            {
+              name1: undefined,
+              email: undefined,
+              password: 'Xyz987*',
+            },
+            {
+              name: undefined,
+              email: undefined,
+              hash: { iv: 'iv', encryptedData: 'encryptedData' },
+            },
+          ];
+          let expectedUpdateData = [
+            { id: 1, ...usersData[0] },
+            { id: 2, ...usersData[1] },
+            { id: 3, ...usersData[2] },
+          ];
+          await userRepo.insert(userRepo.create(usersData[0]));
+          await userRepo.insert(userRepo.create(usersData[1]));
+          await userRepo.insert(userRepo.create(usersData[2]));
+
+          const updatedUsers = [
+            await userService.update(2, updateData[0]),
+            await userService.update(3, updateData[1]),
+          ];
+
+          const users = await userRepo.find();
+
+          testValidateUser(updatedUsers[0], expectedUpdateData[1]);
+          testValidateUser(updatedUsers[1], expectedUpdateData[2]);
+
+          expect(users).toHaveLength(3);
+          testValidateUser(users[0], expectedUpdateData[0]);
+          testValidateUser(users[1], expectedUpdateData[1]);
+          testValidateUser(users[2], expectedUpdateData[2]);
+        });
       });
 
       describe('roles', () => {
-        it.skip('should not update roles', async () => {});
+        it('should not update roles', async () => {
+          const usersData = TestUserData.usersData();
+          let updateData = [
+            {
+              name1: undefined,
+              email: undefined,
+              roles: [Role.ADMIN],
+            },
+          ];
+          let expectedUpdateData = [
+            { id: 1, ...usersData[0] },
+            { id: 2, ...usersData[1] },
+          ];
+          await userRepo.insert(userRepo.create(usersData[0]));
+          await userRepo.insert(userRepo.create(usersData[1]));
+
+          const updatedUsers = [await userService.update(2, updateData[0])];
+          const users = await userRepo.find();
+
+          testValidateUser(updatedUsers[0], expectedUpdateData[1]);
+          expect(users).toHaveLength(2);
+          testValidateUser(users[0], expectedUpdateData[0]);
+          testValidateUser(users[1], expectedUpdateData[1]);
+        });
       });
 
       describe('multiple errors', () => {

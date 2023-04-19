@@ -679,6 +679,105 @@ describe('UserController (e2e)', () => {
         });
       });
 
+      describe('password', () => {
+        it('should not update passwords', async () => {
+          const usersData = TestUserData.usersData({ passwords: false });
+          const registerData = TestUserData.registerData;
+
+          let updateData = [
+            {
+              name1: undefined,
+              email: undefined,
+              password: 'Xyz987*',
+            },
+            {
+              name: undefined,
+              email: undefined,
+              hash: { iv: 'iv', encryptedData: 'encryptedData' },
+            },
+          ];
+          let expectedUpdateData = [
+            { id: 1, ...usersData[0] },
+            { id: 2, ...usersData[1], roles: [Role.USER] },
+            { id: 3, ...usersData[2], roles: [Role.USER] },
+          ];
+
+          const registeredUsers = [
+            await authenticationService.register(registerData[0]),
+            await authenticationService.register(registerData[1]),
+            await authenticationService.register(registerData[2]),
+          ];
+          const token = registeredUsers[0].data.payload.token;
+
+          const updatedUsers = [
+            await httpPatch(
+              endpoint + '/2',
+              updateData[0],
+              HttpStatus.OK,
+              token,
+            ),
+            await httpPatch(
+              endpoint + '/3',
+              updateData[1],
+              HttpStatus.OK,
+              token,
+            ),
+          ];
+
+          const users = await userRepo.find();
+
+          testValidateUser(updatedUsers[0], expectedUpdateData[1]);
+          testValidateUser(updatedUsers[1], expectedUpdateData[2]);
+
+          expect(users).toHaveLength(3);
+          testValidateUser(users[0], expectedUpdateData[0]);
+          testValidateUser(users[1], expectedUpdateData[1]);
+          testValidateUser(users[2], expectedUpdateData[2]);
+        });
+      });
+
+      describe('roles', () => {
+        it('should not update roles', async () => {
+          const usersData = TestUserData.usersData({ passwords: false });
+          const registerData = TestUserData.registerData;
+
+          let updateData = [
+            {
+              name1: undefined,
+              email: undefined,
+              roles: [Role.ADMIN],
+            },
+          ];
+          let expectedUpdateData = [
+            { id: 1, ...usersData[0] },
+            { id: 2, ...usersData[1] },
+          ];
+
+          const registeredUsers = [
+            await authenticationService.register(registerData[0]),
+            await authenticationService.register(registerData[1]),
+          ];
+          const token = registeredUsers[0].data.payload.token;
+
+          const updatedUsers = [
+            await httpPatch(
+              endpoint + '/2',
+              updateData[0],
+              HttpStatus.OK,
+              token,
+            ),
+          ];
+
+          const users = await userRepo.find();
+
+          testValidateUser(updatedUsers[0], expectedUpdateData[1]);
+
+          expect(users).toHaveLength(2);
+          testValidateUser(users[0], expectedUpdateData[0]);
+          testValidateUser(users[1], expectedUpdateData[1]);
+        });
+      });
+
       describe('multiple fields', () => {
         it('should fail in multiple fields', async () => {
           let registerData = TestUserData.registerData;

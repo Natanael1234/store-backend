@@ -58,7 +58,7 @@ export class TestUserData {
       }
       return {
         ...createUserData,
-        hash: { iv: '', encryptedData: '' },
+        hash: { iv: 'x', encryptedData: 'y' },
       };
     });
   }
