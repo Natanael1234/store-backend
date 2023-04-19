@@ -651,7 +651,42 @@ describe('UserService', () => {
   });
 
   describe('checkIfEmailAlreadyInUse', () => {
-    it.skip('should check if email already in use', async () => {});
+    it('should check if email already in use', async () => {
+      const createData = TestUserData.userCreationData;
+      await userService.create(createData[0]);
+      await userService.create(createData[1]);
+      await userService.create(createData[2]);
+
+      const retExistentEmail = await userService.checkIfEmailAlreadyInUse(
+        createData[1].email,
+      );
+
+      expect(retExistentEmail).toBe(true);
+      const retInexistentEmail = await userService.checkIfEmailAlreadyInUse(
+        'inexistent@email.com',
+      );
+    });
+
+    it('should check if email is not in use', async () => {
+      const createData = TestUserData.userCreationData;
+      await userService.create(createData[0]);
+      await userService.create(createData[1]);
+      await userService.create(createData[2]);
+
+      const ret = await userService.checkIfEmailAlreadyInUse(
+        'notinuse@email.com',
+      );
+
+      expect(ret).toBe(false);
+    });
+
+    it('should not fail when table is empty', async () => {
+      const ret = await userService.checkIfEmailAlreadyInUse(
+        'notinuse@email.com',
+      );
+
+      expect(ret).toBe(false);
+    });
   });
 
   describe('updatePassword', () => {
