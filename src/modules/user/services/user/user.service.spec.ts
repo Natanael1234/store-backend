@@ -10,14 +10,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { getTestingModule } from '../../../../.jest/test-config.module';
 import { TestUserData } from '../../../../test/test-user-data';
-import {
-  testCreateUser,
-  testFindUserForId,
-  testFindUsers,
-  testUpdateUser,
-  testValidateUser,
-} from '../../../../test/test-user-utils';
-import { Role } from '../../../authentication/enums/role/role.enum';
+import { testValidateUser } from '../../../../test/test-user-utils';
 import { CreateUserRequestDTO } from '../../dtos/create-user/create-user.request.dto';
 import { EmailMessage } from '../../enums/email-messages/email-messages.enum';
 import { NameMessage } from '../../enums/name-messages/name-messages.enum';
@@ -26,8 +19,6 @@ import { RoleMessage } from '../../enums/role-messages/role-messages.enum';
 import { UserMessage } from '../../enums/user-messages.ts/user-messages.enum';
 import { UserEntity } from '../../models/user/user.entity';
 import { UserService } from './user.service';
-
-const usersData = TestUserData.userCreationData;
 
 describe('UserService', () => {
   let module: TestingModule;
@@ -48,9 +39,36 @@ describe('UserService', () => {
 
   describe('create', () => {
     it('should create users', async () => {
-      await testCreateUser(userRepo, (userData: any) =>
-        userService.create(userData),
-      );
+      const creationData = TestUserData.userCreationData;
+
+      try {
+        const createdUsers = [
+          await userService.create(creationData[0]),
+          await userService.create(creationData[1]),
+          await userService.create(creationData[2]),
+        ];
+
+        const expectedData = [
+          { id: 1, ...creationData[0] },
+          { id: 2, ...creationData[1] },
+          { id: 3, ...creationData[2] },
+        ];
+        expectedData.forEach((data) => delete data.password);
+
+        const users = await userRepo.find();
+
+        expect(users).toHaveLength(3);
+
+        testValidateUser(createdUsers[0], expectedData[0]);
+        testValidateUser(createdUsers[1], expectedData[1]);
+        testValidateUser(createdUsers[2], expectedData[2]);
+
+        testValidateUser(users[0], expectedData[0]);
+        testValidateUser(users[1], expectedData[1]);
+        testValidateUser(users[2], expectedData[2]);
+      } catch (error) {
+        throw error;
+      }
     });
 
     it.each([{ user: null }, { user: undefined }])(
@@ -120,16 +138,16 @@ describe('UserService', () => {
         );
 
         it('should fail if email is already in use', async () => {
-          const userData = TestUserData.userCreationData;
+          const creationData = TestUserData.userCreationData;
           const createdUsers = [
-            await userService.create(userData[0]),
-            await userService.create(userData[1]),
+            await userService.create(creationData[0]),
+            await userService.create(creationData[1]),
           ];
           const usersBefore = await userRepo.find();
           const fn = () =>
             userService.create({
-              ...userData[2],
-              email: userData[0].email,
+              ...creationData[2],
+              email: creationData[0].email,
             });
 
           // const users = await userRepo.findOne({where:{updated: }})
@@ -148,12 +166,12 @@ describe('UserService', () => {
 
         it('should validate if email length is valid', async () => {
           const email = 'x'.repeat(50) + '@email.com';
-          const createData = TestUserData.userCreationData;
-          const expectedData = { id: 1, ...usersData[0], email };
+          const creationData = TestUserData.userCreationData;
+          const expectedData = { id: 1, ...creationData[0], email };
           delete expectedData.password;
 
           const createdUser = await userService.create({
-            ...createData[0],
+            ...creationData[0],
             email,
           });
           const users = await userRepo.find();
@@ -184,8 +202,8 @@ describe('UserService', () => {
           const password = 'Abc124***###';
           const creationData = TestUserData.userCreationData;
           const expectedData = [
-            { id: 1, ...usersData[0] },
-            { id: 2, ...usersData[1], password },
+            { id: 1, ...creationData[0] },
+            { id: 2, ...creationData[1], password },
           ];
           const createdUsers = [
             await userService.create(creationData[0]),
@@ -221,6 +239,7 @@ describe('UserService', () => {
 
       describe('multiple errors', () => {
         it('should fail when there are multiple invalid fields', async () => {
+          const usersData = TestUserData.userCreationData;
           const invalidName = 'A';
           const invalidEmail = 'B';
           const invalidPassword = 'C';
@@ -266,18 +285,50 @@ describe('UserService', () => {
     });
 
     it('should return an array of users', async () => {
-      await testFindUsers(userRepo, () => userService.findAll());
+      const createData = TestUserData.usersData();
+      const createdUSers = [
+        userRepo.create(createData[0]),
+        userRepo.create(createData[1]),
+        userRepo.create(createData[2]),
+      ];
+      await userRepo.save(createdUSers[0]);
+      await userRepo.save(createdUSers[1]);
+      await userRepo.save(createdUSers[2]);
+      const users = await userService.findAll();
+      expect(Array.isArray(users)).toBe(true);
+      expect(users).toHaveLength(3);
+      const expectedData = [
+        { id: 1, ...createData[0] },
+        { id: 2, ...createData[1] },
+        { id: 3, ...createData[2] },
+      ];
+      expectedData.forEach((data) => delete data.password);
+
+      testValidateUser(users[0], expectedData[0]);
+      testValidateUser(users[1], expectedData[1]);
+      testValidateUser(users[2], expectedData[2]);
     });
   });
 
   describe('findForId', () => {
     it('should get a single user', async () => {
-      await testFindUserForId(userRepo, (userId: number) =>
-        userService.findForId(userId),
-      );
+      const usersData = TestUserData.usersData();
+      const expectedData = { id: 2, ...usersData[1] };
+      const createdUsers = [
+        userRepo.create(usersData[0]),
+        userRepo.create(usersData[1]),
+        userRepo.create(usersData[2]),
+      ];
+      await userRepo.save(createdUsers[0]);
+      await userRepo.save(createdUsers[1]);
+      await userRepo.save(createdUsers[2]);
+      const foundUser = await userService.findForId(2);
+
+      testValidateUser(foundUser, expectedData);
     });
 
     it('should fail when user is not found', async () => {
+      const usersData = TestUserData.userCreationData;
       await userService.create(usersData[0]);
       await userService.create(usersData[1]);
       await userService.create(usersData[2]);
@@ -291,6 +342,7 @@ describe('UserService', () => {
     it.each([{ userId: null }, { userId: undefined }])(
       'should fail when user id parameter is $userId',
       async ({ userId }) => {
+        const usersData = TestUserData.userCreationData;
         await userService.create(usersData[0]);
         await userService.create(usersData[1]);
         await userService.create(usersData[2]);
@@ -305,47 +357,73 @@ describe('UserService', () => {
 
   describe('update', () => {
     it('should update user', async () => {
-      await testUpdateUser(userRepo, (userId, updateData) =>
-        userService.update(userId, updateData),
-      );
+      const usersData = TestUserData.usersData();
+      let name = 'New Name';
+      let email = 'newname@email.com';
+      let updateData = { name, email };
+      let expectedUpdateData = [
+        { id: 1, ...usersData[0] },
+        { id: 2, ...usersData[1], name, email },
+        { id: 3, ...usersData[2] },
+      ];
+      await userRepo.insert(userRepo.create(usersData[0]));
+      await userRepo.insert(userRepo.create(usersData[1]));
+      await userRepo.insert(userRepo.create(usersData[2]));
+
+      const retUpdate = await userService.update(2, updateData);
+      const users = await userRepo.find();
+
+      expect(users).toHaveLength(3);
+      testValidateUser(retUpdate, expectedUpdateData[1]);
+      testValidateUser(users[0], expectedUpdateData[0]);
+      testValidateUser(users[1], expectedUpdateData[1]);
+      testValidateUser(users[2], expectedUpdateData[2]);
     });
 
-    it('should fail when user does not exists', async () => {
-      const newName = 'New Name';
-      const newEmail = 'newname@email.com';
-      await userService.create(usersData[0]);
-      await userService.create(usersData[1]);
-      await userService.create(usersData[2]);
-      const usersBefore = await userService.findAll();
-      async function fn() {
-        await userService.update(12, {
-          name: newName,
-          email: newEmail,
-          roles: [Role.ADMIN],
-        });
-      }
-      await expect(fn()).rejects.toThrow(NotFoundException);
-      expect(usersBefore).toEqual(await userService.findAll());
-      await expect(fn()).rejects.toThrow(UserMessage.NOT_FOUND);
+    describe('userId', () => {
+      it('should fail when user does not exists', async () => {
+        const usersData = TestUserData.userCreationData;
+        const newName = 'New Name';
+        const newEmail = 'newname@email.com';
+        await userService.create(usersData[0]);
+        await userService.create(usersData[1]);
+        await userService.create(usersData[2]);
+        const usersBefore = await userService.findAll();
+
+        async function fn() {
+          await userService.update(12, {
+            name: newName,
+            email: newEmail,
+            // roles: [Role.ADMIN],
+          });
+        }
+        await expect(fn()).rejects.toThrow(NotFoundException);
+        expect(usersBefore).toEqual(await userService.findAll());
+        await expect(fn()).rejects.toThrow(UserMessage.NOT_FOUND);
+      });
+
+      it.each([
+        { description: null, data: null },
+        { description: 'undefined', data: undefined },
+      ])('should fail if data is $description', async ({ data }) => {
+        const usersData = TestUserData.userCreationData;
+        await userService.create(usersData[0]);
+        await userService.create(usersData[1]);
+        const usersBefore = await userService.findAll();
+
+        const fn = userService.update(2, data);
+
+        await expect(fn).rejects.toThrow(BadRequestException);
+        await expect(fn).rejects.toThrow(UserMessage.DATA_REQUIRED);
+      });
     });
 
-    it.each([
-      { description: null, data: null },
-      { description: 'undefined', data: undefined },
-    ])('should fail if data is $description', async ({ data }) => {
-      await userService.create(usersData[0]);
-      await userService.create(usersData[1]);
-      const usersBefore = await userService.findAll();
-      const fn = userService.update(2, data);
-      await expect(fn).rejects.toThrow(BadRequestException);
-      await expect(fn).rejects.toThrow(UserMessage.DATA_REQUIRED);
-    });
-
-    describe('fields', () => {
+    describe('dto fields', () => {
       describe('id', () => {
         it.each([{ userId: null }, { userId: undefined }])(
           'should fail when user id is $userId',
           async ({ userId }) => {
+            const usersData = TestUserData.userCreationData;
             await userService.create(usersData[0]);
             await userService.create(usersData[1]);
             await userService.create(usersData[2]);
@@ -365,10 +443,11 @@ describe('UserService', () => {
         it.each(TestUserData.getNameErrorDataList('update'))(
           'sould fail when name is $description',
           async ({ data, ExceptionClass, response }) => {
+            const creationData = TestUserData.userCreationData;
             const createdUsers = [
-              await userService.create(usersData[0]),
-              await userService.create(usersData[1]),
-              await userService.create(usersData[2]),
+              await userService.create(creationData[0]),
+              await userService.create(creationData[1]),
+              await userService.create(creationData[2]),
             ];
             const usersBefore = await userRepo.find();
 
@@ -388,6 +467,7 @@ describe('UserService', () => {
         );
 
         it('should validate if name length is valid', async () => {
+          const usersData = TestUserData.userCreationData;
           const shortName = 'x'.repeat(6);
           const longName = 'x'.repeat(60);
           const creationData = TestUserData.userCreationData;
@@ -403,10 +483,11 @@ describe('UserService', () => {
 
           const updatedUsers = [
             await userService.update(1, {
-              ...creationData[0],
               name: shortName,
             }),
-            await userService.update(2, { ...creationData[1], name: longName }),
+            await userService.update(2, {
+              name: longName,
+            }),
           ];
           const users = await userRepo.find();
           expect(users).toHaveLength(3);
@@ -424,10 +505,11 @@ describe('UserService', () => {
         it.each(TestUserData.getEmailErrorDataList('update'))(
           'should fail when email is $description',
           async ({ data, ExceptionClass, response }) => {
+            const creationData = TestUserData.userCreationData;
             const createdUsers = [
-              await userService.create(usersData[0]),
-              await userService.create(usersData[1]),
-              await userService.create(usersData[2]),
+              await userService.create(creationData[0]),
+              await userService.create(creationData[1]),
+              await userService.create(creationData[2]),
             ];
             const usersBefore = await userRepo.find();
             const fn = async () => await userService.update(2, data);
@@ -444,14 +526,14 @@ describe('UserService', () => {
         );
 
         it('should validate if email length is valid', async () => {
-          const userCreationData = TestUserData.userCreationData;
+          const creationData = TestUserData.userCreationData;
           const email = 'x'.repeat(50) + '@email.com';
           const expectedData = [
-            { id: 1, ...usersData[0] },
-            { id: 2, ...usersData[1], email },
+            { id: 1, ...creationData[0] },
+            { id: 2, ...creationData[1], email },
           ];
-          await userService.create(userCreationData[0]);
-          await userService.create(userCreationData[1]);
+          await userService.create(creationData[0]);
+          await userService.create(creationData[1]);
 
           const updatedUsers = [await userService.update(2, { email })];
           const users = await userRepo.find();
@@ -463,43 +545,29 @@ describe('UserService', () => {
         });
       });
 
-      describe('roles', () => {
-        it.each(TestUserData.getRolesErrorDataList('update'))(
-          'should fail when roles is $description',
-          async ({ data, ExceptionClass, response }) => {
-            const createdUsers = [
-              await userService.create(usersData[0]),
-              await userService.create(usersData[1]),
-              await userService.create(usersData[2]),
-            ];
-            const usersBefore = await userRepo.find();
-            const fn = async () => await userService.update(3, data);
+      describe('password', () => {
+        it.skip('should not update passwords', async () => {});
+      });
 
-            await expect(fn()).rejects.toThrow(ExceptionClass);
-            expect(usersBefore).toEqual(await userService.findAll());
-            expect(await userRepo.find()).toEqual(usersBefore);
-            try {
-              await fn();
-            } catch (ex) {
-              expect(ex.response).toEqual(response);
-            }
-          },
-        );
+      describe('roles', () => {
+        it.skip('should not update roles', async () => {});
       });
 
       describe('multiple errors', () => {
-        it('should fail when thre are multiple invalid fields', async () => {
+        it('should fail when there are multiple invalid fields', async () => {
           const newName = 'A';
           const newEmail = 'B';
-          await userService.create(usersData[0]);
-          await userService.create(usersData[1]);
-          await userService.create(usersData[2]);
+          const creationData = TestUserData.userCreationData;
+          await userService.create(creationData[0]);
+          await userService.create(creationData[1]);
+          await userService.create(creationData[2]);
           const usersBefore = await userService.findAll();
+
           async function fn() {
             await userService.update(2, {
               name: newName,
               email: newEmail,
-              roles: [],
+              // roles: [],
             });
           }
           await expect(fn()).rejects.toThrow(UnprocessableEntityException);
@@ -513,7 +581,6 @@ describe('UserService', () => {
               message: {
                 name: NameMessage.MIN_LEN,
                 email: EmailMessage.INVALID,
-                roles: RoleMessage.MIN_LEN,
               },
               statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
             });
@@ -523,12 +590,32 @@ describe('UserService', () => {
     });
   });
 
+  describe('checkIfEmailAlreadyInUse', () => {
+    it.skip('should check if email already in use', async () => {});
+  });
+
+  describe('updatePassword', () => {
+    it.skip('should update password', async () => {});
+  });
+
+  describe('resetPassword', () => {
+    it.skip('should reset password', async () => {});
+  });
+
+  describe('recoverPassword', () => {
+    it.skip('should request password recovery link by email password', async () => {});
+  });
+
+  describe('recreatePasswordByLink', () => {
+    it.skip('should recreate password by link', async () => {});
+  });
+
   describe('countUsers', () => {
     it('should count users', async () => {
-      const userCreationData = TestUserData.userCreationData;
-      await userService.create(userCreationData[0]);
-      await userService.create(userCreationData[1]);
-      await userService.create(userCreationData[2]);
+      const creationData = TestUserData.userCreationData;
+      await userService.create(creationData[0]);
+      await userService.create(creationData[1]);
+      await userService.create(creationData[2]);
 
       const count = await userService.count();
 

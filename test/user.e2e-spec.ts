@@ -865,4 +865,20 @@ describe('UserController (e2e)', () => {
       expect(await userRepo.find()).toEqual(usersBefore);
     });
   });
+
+  describe('/users/password/update (PATCH)', () => {
+    it.skip('should update password', async () => {});
+  });
+
+  describe('/users/password/reset  (PATCH)', () => {
+    it.skip('should reset password', async () => {});
+  });
+
+  describe('/users/password/recover (PATCH)', () => {
+    it.skip('should request password recovery link by email password', async () => {});
+  });
+
+  describe('/users/password/recreate (PATCH)', () => {
+    it.skip('should change password by link', async () => {});
+  });
 });

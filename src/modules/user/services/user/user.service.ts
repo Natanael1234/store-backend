@@ -48,18 +48,17 @@ export class UserService {
       throw new UnprocessableEntityException(UserMessage.ID_REQUIRED);
     await validateAndThrows(userDto, UpdateUserRequestDTO);
     const existentUser = await this.findForId(userId);
-    if (existentUser && userDto.email) {
-      if (existentUser.email != userDto.email) {
-        if (await this.checkIfEmailAlreadyInUse(userDto.email)) {
-          throw new ConflictException(EmailMessage.INVALID);
-        }
+    if (!existentUser) throw new NotFoundException(UserMessage.NOT_FOUND);
+    if (userDto.email && existentUser.email != userDto.email) {
+      if (await this.checkIfEmailAlreadyInUse(userDto.email)) {
+        throw new ConflictException(EmailMessage.INVALID);
       }
     }
-    if (!existentUser) throw new NotFoundException(UserMessage.NOT_FOUND);
-    // TODO: melhorar
+
     if (userDto.name) existentUser.name = userDto.name;
     if (userDto.email) existentUser.email = userDto.email;
-    if (userDto.roles) existentUser.roles = userDto.roles;
+    // if (userDto.roles) existentUser.roles = userDto.roles;
+
     await this.userRepository.save(existentUser);
     return this.findForId(userId);
   }
@@ -84,7 +83,7 @@ export class UserService {
   }
 
   public async count(): Promise<number> {
-    return await this.userRepository.count({});
+    return await this.userRepository.count();
   }
 
   // TODO: test

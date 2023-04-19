@@ -32,8 +32,8 @@ export class TestUserData {
 
   static get usersUpdateData() {
     return TestUserData.userCreationData.map((data) => {
-      const { name, email, roles } = data;
-      return { name, email, roles };
+      const { name, email } = data;
+      return { name, email };
     });
   }
 
