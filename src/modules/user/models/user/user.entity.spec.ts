@@ -98,8 +98,8 @@ describe('UserEntity', () => {
           }),
         );
       };
-      expect(fn()).rejects.toThrow(QueryFailedError);
-      expect(fn()).rejects.toThrow(
+      await expect(fn()).rejects.toThrow(QueryFailedError);
+      await expect(fn()).rejects.toThrow(
         'SQLITE_CONSTRAINT: NOT NULL constraint failed: users.name',
       );
     });

@@ -12,6 +12,8 @@ import { getTestingModule } from '../../../../.jest/test-config.module';
 import { TestUserData } from '../../../../test/test-user-data';
 import { testValidateUser } from '../../../../test/test-user-utils';
 import { Role } from '../../../authentication/enums/role/role.enum';
+import { AuthenticationService } from '../../../authentication/services/authentication/authentication.service';
+import { EncryptionService } from '../../../system/encryption/services/encryption/encryption.service';
 import { CreateUserRequestDTO } from '../../dtos/create-user/create-user.request.dto';
 import { EmailMessage } from '../../enums/email-messages/email-messages.enum';
 import { NameMessage } from '../../enums/name-messages/name-messages.enum';
@@ -24,14 +26,20 @@ import { UserService } from './user.service';
 describe('UserService', () => {
   let module: TestingModule;
   let userService: UserService;
+  let authenticationService: AuthenticationService;
+  let encryptionService: EncryptionService;
   let userRepo: Repository<UserEntity>;
 
   beforeEach(async () => {
     module = await getTestingModule();
     userService = module.get<UserService>(UserService);
+    authenticationService = module.get<AuthenticationService>(
+      AuthenticationService,
+    );
     userRepo = module.get<Repository<UserEntity>>(
       getRepositoryToken(UserEntity),
     );
+    encryptionService = module.get<EncryptionService>(EncryptionService);
   });
 
   afterEach(async () => {
@@ -124,7 +132,7 @@ describe('UserService', () => {
           async ({ data, exception: expectedException }) => {
             const usersBefore = await userRepo.find();
             const fn = () => userService.create(data as CreateUserRequestDTO);
-            expect(fn()).rejects.toThrow(UnprocessableEntityException);
+            await expect(fn()).rejects.toThrow(UnprocessableEntityException);
             try {
               await fn();
             } catch (ex) {
@@ -148,7 +156,7 @@ describe('UserService', () => {
             });
 
           // const users = await userRepo.findOne({where:{updated: }})
-          expect(fn()).rejects.toThrow(ConflictException);
+          await expect(fn()).rejects.toThrow(ConflictException);
           try {
             await fn();
           } catch (ex) {
@@ -185,7 +193,7 @@ describe('UserService', () => {
           async ({ data, exception }) => {
             const usersBefore = await userRepo.find();
             const fn = () => userService.create(data as CreateUserRequestDTO);
-            expect(fn()).rejects.toThrow(UnprocessableEntityException);
+            await expect(fn()).rejects.toThrow(UnprocessableEntityException);
             try {
               await fn();
             } catch (ex) {
@@ -223,7 +231,7 @@ describe('UserService', () => {
           async ({ data, exception }) => {
             const usersBefore = await userRepo.find();
             const fn = () => userService.create(data as CreateUserRequestDTO);
-            expect(fn()).rejects.toThrow(UnprocessableEntityException);
+            await expect(fn()).rejects.toThrow(UnprocessableEntityException);
             try {
               await fn();
             } catch (ex) {
@@ -415,7 +423,7 @@ describe('UserService', () => {
       });
     });
 
-    describe('dto fields', () => {
+    describe('dto', () => {
       describe('id', () => {
         it.each([{ userId: null }, { userId: undefined }])(
           'should fail when user id is $userId',
@@ -690,7 +698,173 @@ describe('UserService', () => {
   });
 
   describe('updatePassword', () => {
-    it.skip('should update password', async () => {});
+    it('should update password', async () => {
+      const password = 'NewPass123*';
+      const registerData = TestUserData.registerData;
+
+      await authenticationService.register(registerData[0]);
+      await authenticationService.register(registerData[1]);
+      await authenticationService.register(registerData[2]);
+
+      const usersBefore = await userRepo
+        .createQueryBuilder('user')
+        .addSelect('user.hash')
+        .getMany();
+
+      const ret = await userService.updatePassword(2, { password });
+
+      const usersAfter = await userRepo
+        .createQueryBuilder('user')
+        .addSelect('user.hash')
+        .getMany();
+
+      expect(ret).toEqual({ status: 'success' });
+      expect(usersAfter.length).toEqual(usersBefore.length);
+      expect(usersAfter[0]).toEqual(usersBefore[0]);
+      expect({ ...usersAfter[1], hash: null, updated: null }).toEqual({
+        ...usersBefore[1],
+        hash: null,
+        updated: null,
+      });
+      expect(usersAfter[2]).toEqual(usersBefore[2]);
+      const decryptedPasword = await encryptionService.decrypt(
+        usersAfter[1].hash,
+      );
+      expect(decryptedPasword).toEqual(password);
+    });
+
+    describe('userId', () => {
+      it.each([
+        { description: 'null', userId: null },
+        { description: 'undefined', userId: undefined },
+      ])('should fail if userId is $description', async ({ userId }) => {
+        const registerData = TestUserData.registerData;
+
+        await authenticationService.register(registerData[0]);
+        await authenticationService.register(registerData[1]);
+        await authenticationService.register(registerData[2]);
+
+        const usersBefore = await userRepo
+          .createQueryBuilder('user')
+          .addSelect('user.hash')
+          .getMany();
+
+        const fn = () =>
+          userService.updatePassword(userId, {
+            password: 'New123*',
+          });
+
+        await expect(fn()).rejects.toThrow(BadRequestException);
+        await expect(fn()).rejects.toThrow(UserMessage.ID_REQUIRED);
+
+        const usersAfter = await userRepo
+          .createQueryBuilder('user')
+          .addSelect('user.hash')
+          .getMany();
+
+        expect(usersAfter).toStrictEqual(usersBefore);
+      });
+
+      it('should fail if user does not exists', async () => {
+        const createData = TestUserData.userCreationData;
+        await userService.create(createData[0]);
+        await userService.create(createData[1]);
+        await userService.create(createData[2]);
+
+        const usersBefore = await userRepo
+          .createQueryBuilder('user')
+          .addSelect('user.hash')
+          .getMany();
+
+        const fn = () =>
+          userService.updatePassword(200, { password: 'Abc12*' });
+
+        await expect(fn()).rejects.toThrow(NotFoundException);
+        await expect(fn()).rejects.toThrow(UserMessage.NOT_FOUND);
+
+        const usersAfter = await userRepo
+          .createQueryBuilder('user')
+          .addSelect('user.hash')
+          .getMany();
+
+        expect(usersAfter).toStrictEqual(usersBefore);
+      });
+    });
+
+    describe('dto', () => {
+      describe('password', () => {
+        it.each([
+          { description: 'null', dto: null },
+          { description: 'undefined', dto: undefined },
+        ])('should fail when password is $description', async ({ dto }) => {
+          const registerData = TestUserData.registerData;
+
+          await authenticationService.register(registerData[0]);
+          await authenticationService.register(registerData[1]);
+          await authenticationService.register(registerData[2]);
+
+          const usersBefore = await userRepo
+            .createQueryBuilder('user')
+            .addSelect('user.hash')
+            .getMany();
+
+          const fn = () => userService.updatePassword(2, dto);
+
+          await expect(fn()).rejects.toThrow(BadRequestException);
+          const usersAfter = await userRepo
+            .createQueryBuilder('user')
+            .addSelect('user.hash')
+            .getMany();
+          await expect(fn()).rejects.toThrow('Data is required');
+
+          expect(usersAfter).toStrictEqual(usersBefore);
+        });
+
+        it.each(TestUserData.getPasswordErrorDataList('create'))(
+          'should fail when password is $description',
+          async ({ data }) => {
+            const registerData = TestUserData.registerData;
+
+            await authenticationService.register(registerData[0]);
+            await authenticationService.register(registerData[1]);
+            await authenticationService.register(registerData[2]);
+
+            const usersBefore = await userRepo
+              .createQueryBuilder('user')
+              .addSelect('user.hash')
+              .getMany();
+
+            const fn = () =>
+              userService.updatePassword(2, { password: data.Password });
+
+            await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+
+            const usersAfter = await userRepo
+              .createQueryBuilder('user')
+              .addSelect('user.hash')
+              .getMany();
+
+            await expect(fn()).rejects.toThrow(
+              'Unprocessable Entity Exception',
+            );
+            try {
+              await fn();
+            } catch (ex) {
+              expect(ex.getResponse()).toEqual({
+                error: 'UnprocessableEntityException',
+                message: {
+                  password: PasswordMessage.REQUIRED,
+                },
+                statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+              });
+            }
+            expect(usersAfter).toStrictEqual(usersBefore);
+          },
+        );
+      });
+    });
+
+    it.skip('should ivalidate refresh tokens if change email', async () => {});
   });
 
   describe('resetPassword', () => {

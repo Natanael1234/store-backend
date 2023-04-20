@@ -11,6 +11,8 @@ import { Repository } from 'typeorm';
 import { EncryptionService } from '../../../system/encryption/services/encryption/encryption.service';
 import { validateAndThrows } from '../../../system/utils/validation';
 import { CreateUserRequestDTO } from '../../dtos/create-user/create-user.request.dto';
+import { UpdatePasswordResponseDTO } from '../../dtos/update-password.response.dto';
+import { UpdatePasswordRequestDTO } from '../../dtos/update-password/update-password.request.dto';
 import { UpdateUserRequestDTO } from '../../dtos/update-user/update-user.request.dto';
 import { EmailMessage } from '../../enums/email-messages/email-messages.enum';
 import { UserMessage } from '../../enums/user-messages.ts/user-messages.enum';
@@ -86,7 +88,22 @@ export class UserService {
     return await this.userRepository.count();
   }
 
-  // TODO: test
+  public async updatePassword(
+    userId: number,
+    updatePasswordDto: UpdatePasswordRequestDTO,
+  ): Promise<UpdatePasswordResponseDTO> {
+    if (!userId) throw new BadRequestException(UserMessage.ID_REQUIRED);
+    if (!updatePasswordDto) throw new BadRequestException('Data is required'); // TODO: move message to a enum
+    await validateAndThrows(updatePasswordDto, UpdatePasswordRequestDTO);
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException(UserMessage.NOT_FOUND);
+    user.hash = await this.encryptionService.encrypt(
+      updatePasswordDto.password,
+    );
+    await this.userRepository.save(user);
+    return { status: 'success' };
+  }
+
   async checkIfEmailAlreadyInUse(email: string): Promise<boolean> {
     return !!(await this.findForEmail(email));
   }
