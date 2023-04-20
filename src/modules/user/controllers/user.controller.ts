@@ -1,8 +1,10 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
-import { Param, Patch } from '@nestjs/common/decorators';
+import { Param, Patch, Req } from '@nestjs/common/decorators';
 import { Role } from '../../authentication/enums/role/role.enum';
 import { Roles } from '../decorators/roles/roles.decorator';
 import { CreateUserRequestDTO } from '../dtos/create-user/create-user.request.dto';
+import { UpdatePasswordResponseDTO } from '../dtos/update-password.response.dto';
+import { UpdatePasswordRequestDTO } from '../dtos/update-password/update-password.request.dto';
 import { UpdateUserRequestDTO } from '../dtos/update-user/update-user.request.dto';
 import { UserEntity } from '../models/user/user.entity';
 import { UserService } from '../services/user/user.service';
@@ -15,6 +17,15 @@ export class UserController {
   @Roles(Role.ROOT)
   create(@Body() user: CreateUserRequestDTO): Promise<UserEntity> {
     return this.userService.create(user);
+  }
+
+  @Patch('/password')
+  @Roles(Role.ROOT, Role.ADMIN, Role.USER)
+  changePassword(
+    @Req() request: { user: UserEntity },
+    @Body() passwordDto: UpdatePasswordRequestDTO,
+  ): Promise<UpdatePasswordResponseDTO> {
+    return this.userService.updatePassword(request.user.id, passwordDto);
   }
 
   @Patch('/:userId')

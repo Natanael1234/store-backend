@@ -8,6 +8,7 @@ import { getTestingModule } from '../src/.jest/test-config.module';
 import { Role } from '../src/modules/authentication/enums/role/role.enum';
 import { AuthenticationService } from '../src/modules/authentication/services/authentication/authentication.service';
 import { ValidationPipe } from '../src/modules/pipes/custom-validation.pipe';
+import { EncryptionService } from '../src/modules/system/encryption/services/encryption/encryption.service';
 import { EmailMessage } from '../src/modules/user/enums/email-messages/email-messages.enum';
 import { NameMessage } from '../src/modules/user/enums/name-messages/name-messages.enum';
 import { PasswordMessage } from '../src/modules/user/enums/password-messages/password-messages.enum';
@@ -24,6 +25,7 @@ describe('UserController (e2e)', () => {
   let moduleFixture: TestingModule;
   let authenticationService: AuthenticationService;
   let userRepo: Repository<UserEntity>;
+  let encryptionService: EncryptionService;
 
   async function httpGet(
     endpoint: string,
@@ -77,6 +79,7 @@ describe('UserController (e2e)', () => {
       AuthenticationService,
     );
     userRepo = app.get<Repository<UserEntity>>(getRepositoryToken(UserEntity));
+    encryptionService = app.get<EncryptionService>(EncryptionService);
     // app.setGlobalPrefix('api');
     app.useGlobalPipes(
       new ValidationPipe({
@@ -172,7 +175,7 @@ describe('UserController (e2e)', () => {
       });
     });
 
-    describe('fields', () => {
+    describe('dto', () => {
       describe('name', () => {
         it.each(TestUserData.getNameErrorDataList('create'))(
           'should fail if name is $description',
@@ -524,7 +527,7 @@ describe('UserController (e2e)', () => {
       });
     });
 
-    describe('fields', () => {
+    describe('dto', () => {
       describe('name', () => {
         it.each(TestUserData.getNameErrorDataList('update'))(
           'should fail if name is $description',
@@ -965,11 +968,134 @@ describe('UserController (e2e)', () => {
     });
   });
 
-  describe('/users/password/update (PATCH)', () => {
-    it.skip('should update password', async () => {});
+  describe('/users/password (PATCH)', () => {
+    describe('authentication', () => {
+      it('should fail if not authenticated', async () => {
+        const password = 'Newpass123*';
+        let registerData = TestUserData.registerData;
+        const registeredUsers = [
+          await authenticationService.register(registerData[0]),
+          await authenticationService.register(registerData[1]),
+          await authenticationService.register(registerData[2]),
+        ];
+
+        const usersBefore = await userRepo
+          .createQueryBuilder('user')
+          .addSelect('user.hash')
+          .getMany();
+
+        const body = await httpPatch(
+          endpoint + '/password',
+          { password },
+          HttpStatus.UNAUTHORIZED,
+        );
+
+        const usersAfter = await userRepo
+          .createQueryBuilder('user')
+          .addSelect('user.hash')
+          .getMany();
+
+        expect(body).toEqual({
+          message: 'Unauthorized',
+          statusCode: HttpStatus.UNAUTHORIZED,
+        });
+
+        expect(usersAfter).toStrictEqual(usersBefore);
+      });
+    });
+
+    describe('permissions', () => {
+      it.each([{ role: Role.ROOT }, { role: Role.ADMIN }, { role: Role.USER }])(
+        'should update password when user is $role',
+        async ({ role }) => {
+          const password = 'Newpass123*';
+          let registerData = TestUserData.registerData;
+          const registeredUsers = [
+            await authenticationService.register(registerData[0]),
+            await authenticationService.register(registerData[1]),
+            await authenticationService.register(registerData[2]),
+          ];
+          await userRepo.update(1, { roles: [role] });
+          const token = registeredUsers[0].data.payload.token;
+
+          const usersBefore = await userRepo
+            .createQueryBuilder('user')
+            .addSelect('user.hash')
+            .getMany();
+
+          const body = await httpPatch(
+            endpoint + '/password',
+            { password },
+            HttpStatus.OK,
+            token,
+          );
+
+          expect(body).toEqual({ status: 'success' });
+
+          const usersAfter = await userRepo
+            .createQueryBuilder('user')
+            .addSelect('user.hash')
+            .getMany();
+
+          expect({
+            ...usersAfter[0],
+            hash: undefined,
+            updated: undefined,
+          }).toStrictEqual({
+            ...usersBefore[0],
+            hash: undefined,
+            updated: undefined,
+          });
+          expect(usersAfter[1]).toStrictEqual(usersBefore[1]);
+          expect(usersAfter[2]).toStrictEqual(usersBefore[2]);
+          const decryptedPasword = await encryptionService.decrypt(
+            usersAfter[0].hash,
+          );
+          expect(decryptedPasword).toEqual(password);
+        },
+      );
+    });
+
+    describe('dto', () => {
+      describe('password', () => {
+        it.each(TestUserData.getPasswordErrorDataList('create'))(
+          'should fail when password is $description',
+          async ({ data, response }) => {
+            const registerData = TestUserData.registerData;
+            const registeredUsers = [
+              await authenticationService.register(registerData[0]),
+              await authenticationService.register(registerData[1]),
+              await authenticationService.register(registerData[2]),
+            ];
+            const token = registeredUsers[0].data.payload.token;
+
+            const usersBefore = await userRepo
+              .createQueryBuilder('user')
+              .addSelect('user.hash')
+              .getMany();
+
+            const body = await httpPatch(
+              endpoint + '/password',
+              { password: data.password },
+              HttpStatus.UNPROCESSABLE_ENTITY,
+              token,
+            );
+
+            const usersAfter = await userRepo
+              .createQueryBuilder('user')
+              .addSelect('user.hash')
+              .getMany();
+
+            expect(body).toEqual(response);
+
+            expect(usersAfter).toStrictEqual(usersBefore);
+          },
+        );
+      });
+    });
   });
 
-  describe('/users/password/reset  (PATCH)', () => {
+  describe('/users/password/reset (PATCH)', () => {
     it.skip('should reset password', async () => {});
   });
 
