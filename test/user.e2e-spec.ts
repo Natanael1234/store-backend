@@ -7,8 +7,8 @@ import { getTestingModule } from '../src/.jest/test-config.module';
 
 import { Role } from '../src/modules/authentication/enums/role/role.enum';
 import { AuthenticationService } from '../src/modules/authentication/services/authentication/authentication.service';
-import { ValidationPipe } from '../src/modules/pipes/custom-validation.pipe';
 import { EncryptionService } from '../src/modules/system/encryption/services/encryption/encryption.service';
+import { ValidationPipe } from '../src/modules/system/pipes/custom-validation.pipe';
 import { EmailMessage } from '../src/modules/user/enums/email-messages/email-messages.enum';
 import { NameMessage } from '../src/modules/user/enums/name-messages/name-messages.enum';
 import { PasswordMessage } from '../src/modules/user/enums/password-messages/password-messages.enum';
@@ -98,7 +98,7 @@ describe('UserController (e2e)', () => {
   describe('/users (POST)', () => {
     describe('authentication', () => {
       it('should fail if not authenticated', async () => {
-        const createData = TestUserData.userCreationData;
+        const createData = TestUserData.creationData;
 
         const usersBefore = await userRepo.find();
         const body = await httpPost(
@@ -117,8 +117,8 @@ describe('UserController (e2e)', () => {
     describe('permissions', () => {
       it('should allow root to create users', async () => {
         const registerData = TestUserData.registerData;
-        const usersData = TestUserData.usersData({ passwords: false });
-        const createData = TestUserData.userCreationData;
+        const usersData = TestUserData.dataForRepository({ passwords: false });
+        const createData = TestUserData.creationData;
 
         const expectedData = [
           { id: 1, ...usersData[0] },
@@ -150,7 +150,7 @@ describe('UserController (e2e)', () => {
         { description: 'user', role: Role.USER },
       ])('should not allow $description to create users', async ({ role }) => {
         const registerData = TestUserData.registerData;
-        const createData = TestUserData.userCreationData;
+        const createData = TestUserData.creationData;
         const registeredUsers = [
           await authenticationService.register(registerData[0]),
           await authenticationService.register(registerData[1]),
@@ -196,7 +196,7 @@ describe('UserController (e2e)', () => {
 
         it('should validate when name length is valid', async () => {
           const registerData = TestUserData.registerData;
-          const createData = TestUserData.userCreationData;
+          const createData = TestUserData.creationData;
 
           const shortName = 'x'.repeat(6);
           const longName = 'x'.repeat(60);
@@ -234,7 +234,7 @@ describe('UserController (e2e)', () => {
       describe('email', () => {
         it('should fail if email is already in use', async () => {
           const registerData = TestUserData.registerData;
-          const createData = TestUserData.userCreationData;
+          const createData = TestUserData.creationData;
 
           const registeredUsers = [
             await authenticationService.register(registerData[0]),
@@ -278,7 +278,7 @@ describe('UserController (e2e)', () => {
 
         it('should validate when email length is valid', async () => {
           const registerData = TestUserData.registerData;
-          const createData = TestUserData.userCreationData;
+          const createData = TestUserData.creationData;
 
           const email = 'x'.repeat(50) + '@email.com';
           const registeredUSer = await authenticationService.register(
@@ -358,7 +358,7 @@ describe('UserController (e2e)', () => {
 
         it('should validate when password length is valid', async () => {
           const registerData = TestUserData.registerData;
-          const createData = TestUserData.userCreationData;
+          const createData = TestUserData.creationData;
 
           const shortPassword = 'Abc12*';
           const longPassword = 'Abc12*******';
@@ -461,7 +461,7 @@ describe('UserController (e2e)', () => {
     describe('permission', () => {
       it('should allow root to update users', async () => {
         const registerData = TestUserData.registerData;
-        const createData = TestUserData.userCreationData;
+        const createData = TestUserData.creationData;
 
         let name = 'New Name';
         let email = 'newname@email.com';
@@ -558,7 +558,7 @@ describe('UserController (e2e)', () => {
           { description: 'undefined', name: undefined },
         ])('should validate when name is $description', async ({ name }) => {
           const registerData = TestUserData.registerData;
-          const createData = TestUserData.userCreationData;
+          const createData = TestUserData.creationData;
 
           const email = 'new@email.com';
           const registeredUSer = [
@@ -581,7 +581,7 @@ describe('UserController (e2e)', () => {
 
         it('should validate name length is valid', async () => {
           const registerData = TestUserData.registerData;
-          const createData = TestUserData.userCreationData;
+          const createData = TestUserData.creationData;
           const name = 'x'.repeat(60);
           const registeredUSer = [
             await authenticationService.register(registerData[0]),
@@ -684,7 +684,9 @@ describe('UserController (e2e)', () => {
 
       describe('password', () => {
         it('should not update passwords', async () => {
-          const usersData = TestUserData.usersData({ passwords: false });
+          const usersData = TestUserData.dataForRepository({
+            passwords: false,
+          });
           const registerData = TestUserData.registerData;
 
           let updateData = [
@@ -741,7 +743,9 @@ describe('UserController (e2e)', () => {
 
       describe('roles', () => {
         it('should not update roles', async () => {
-          const usersData = TestUserData.usersData({ passwords: false });
+          const usersData = TestUserData.dataForRepository({
+            passwords: false,
+          });
           const registerData = TestUserData.registerData;
 
           let updateData = [
@@ -817,7 +821,7 @@ describe('UserController (e2e)', () => {
   describe('/users (GET)', () => {
     it('should find users', async () => {
       const registerData = TestUserData.registerData;
-      const createData = TestUserData.userCreationData;
+      const createData = TestUserData.creationData;
 
       const registeredUsers = [
         await authenticationService.register(registerData[0]),
@@ -884,7 +888,7 @@ describe('UserController (e2e)', () => {
   describe('/users/:userId (GET)', () => {
     it('should find one user', async () => {
       const registerData = TestUserData.registerData;
-      const createData = TestUserData.userCreationData;
+      const createData = TestUserData.creationData;
 
       const registeredUsers = [
         await authenticationService.register(registerData[0]),

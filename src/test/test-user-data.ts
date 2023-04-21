@@ -7,7 +7,7 @@ import { RoleMessage } from '../modules/user/enums/role-messages/role-messages.e
 
 export class TestUserData {
   /** service/api */
-  static get userCreationData() {
+  static get creationData() {
     return [
       {
         name: 'User 1',
@@ -30,8 +30,8 @@ export class TestUserData {
     ];
   }
 
-  static get usersUpdateData() {
-    return TestUserData.userCreationData.map((data) => {
+  static get updateData() {
+    return TestUserData.creationData.map((data) => {
       const { name, email } = data;
       return { name, email };
     });
@@ -44,15 +44,15 @@ export class TestUserData {
     password: string;
     acceptTerms: true;
   }[] {
-    return TestUserData.userCreationData.map((createUserData) => {
+    return TestUserData.creationData.map((createUserData) => {
       const { name, email, password } = createUserData;
       return { name, email, password, acceptTerms: true };
     });
   }
 
   /** repository */
-  static usersData(options?: { passwords: boolean }) {
-    return TestUserData.userCreationData.map((createUserData) => {
+  static dataForRepository(options?: { passwords: boolean }) {
+    return TestUserData.creationData.map((createUserData) => {
       if (options?.passwords === false) {
         delete options.passwords;
       }
@@ -95,11 +95,11 @@ export class TestUserData {
 
   private static getUsersData(purpose: 'create' | 'register' | 'update') {
     if (purpose == 'create') {
-      return TestUserData.userCreationData;
+      return TestUserData.creationData;
     } else if (purpose == 'register') {
       return TestUserData.registerData;
     } else {
-      return TestUserData.usersUpdateData;
+      return TestUserData.updateData;
     }
   }
 

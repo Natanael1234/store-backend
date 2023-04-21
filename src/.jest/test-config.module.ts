@@ -16,6 +16,8 @@ import { AuthenticationService } from '../modules/authentication/services/authen
 import { TokenService } from '../modules/authentication/services/token/token.service';
 import { JwtStrategy } from '../modules/authentication/strategies/jwt/jwt.strategy';
 import { LocalStrategy } from '../modules/authentication/strategies/local/local.strategy';
+import { BrandEntity } from '../modules/stock/models/brand/brand.entity';
+import { ProductEntity } from '../modules/stock/models/product/product.entity';
 import { CachingService } from '../modules/system/caching/services/caching.service';
 import { EncryptionService } from '../modules/system/encryption/services/encryption/encryption.service';
 import { UserController } from '../modules/user/controllers/user.controller';
@@ -29,18 +31,19 @@ export async function getTestingModule(
 ): Promise<TestingModule> {
   return await Test.createTestingModule({
     imports: [
-      ConfigModule.forRoot({
-        isGlobal: true,
-      }),
-      TypeOrmModule.forFeature([UserEntity, RefreshTokenEntity]),
+      ConfigModule.forRoot({ isGlobal: true }),
+      TypeOrmModule.forFeature([
+        UserEntity,
+        RefreshTokenEntity,
+        ProductEntity,
+        BrandEntity,
+      ]),
       ConfigModule.forRoot({ isGlobal: true }),
       TypeOrmModule.forRoot(sqlitDatabaseOptions),
       PassportModule,
       JwtModule.register({
         secret: JWTConfigs.ACCESS_TOKEN_SECRET,
-        signOptions: {
-          expiresIn: JWTConfigs.ACCESS_TOKEN_EXPIRATION,
-        },
+        signOptions: { expiresIn: JWTConfigs.ACCESS_TOKEN_EXPIRATION },
       }),
       CacheModule.register(), // TODO: verificar se não dará conflito com o de produção
       ...(additionalMetadata?.imports || []),
@@ -57,10 +60,7 @@ export async function getTestingModule(
       AppService,
       ...(additionalMetadata?.providers || []),
       CachingService, // TODO: verificar se não dará conflito com o de produção
-      {
-        provide: APP_GUARD,
-        useClass: RolesGuard,
-      },
+      { provide: APP_GUARD, useClass: RolesGuard },
     ],
     controllers: [
       UserController,

@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AwuthenticationModule } from './modules/authentication/authentication.module';
+import { StockModule } from './modules/stock/stock.module';
 import { CachingModule } from './modules/system/caching/caching.module';
 import { DatabaseModule } from './modules/system/database/database.module';
 import { UserModule } from './modules/user/user.module';
@@ -16,6 +17,7 @@ import { UserModule } from './modules/user/user.module';
     AwuthenticationModule,
     CachingModule,
     DatabaseModule,
+    StockModule,
   ],
   controllers: [AppController],
   providers: [AppService],
