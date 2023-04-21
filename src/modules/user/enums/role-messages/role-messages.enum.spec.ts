@@ -5,7 +5,7 @@ describe('RoleMessage', () => {
     expect(RoleMessage).toBeDefined();
   });
 
-  it('should have valid keys amd values', () => {
+  it('should have valid keys and values', () => {
     expect({ ...RoleMessage }).toEqual({
       INVALID: 'Roles must be an array of roles',
       REQUIRED: 'Roles is required',

@@ -10,9 +10,9 @@ import {
   MinLength,
 } from 'class-validator';
 import { Role } from '../../../authentication/enums/role/role.enum';
-import { EmailMessage } from '../../enums/email-messages/email-messages.enum';
-import { NameMessage } from '../../enums/name-messages/name-messages.enum';
-import { PasswordMessage } from '../../enums/password-messages/password-messages.enum';
+import { EmailMessage } from '../../../system/enums/email-messages/email-messages.enum';
+import { NameMessage } from '../../../system/enums/name-messages/name-messages.enum';
+import { PasswordMessage } from '../../../system/enums/password-messages/password-messages.enum';
 import { RoleMessage } from '../../enums/role-messages/role-messages.enum';
 
 export class CreateUserRequestDTO {

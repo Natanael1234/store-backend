@@ -5,9 +5,9 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { UnprocessableEntityException } from '@nestjs/common/exceptions';
-import { EmailMessage } from '../../../user/enums/email-messages/email-messages.enum';
-import { NameMessage } from '../../../user/enums/name-messages/name-messages.enum';
-import { PasswordMessage } from '../../../user/enums/password-messages/password-messages.enum';
+import { EmailMessage } from '../../../system/enums/email-messages/email-messages.enum';
+import { NameMessage } from '../../../system/enums/name-messages/name-messages.enum';
+import { PasswordMessage } from '../../../system/enums/password-messages/password-messages.enum';
 import { UserMessage } from '../../../user/enums/user-messages.ts/user-messages.enum';
 import { UserEntity } from '../../../user/models/user/user.entity';
 import { UserService } from '../../../user/services/user/user.service';

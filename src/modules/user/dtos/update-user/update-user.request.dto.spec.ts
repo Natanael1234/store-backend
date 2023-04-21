@@ -1,7 +1,7 @@
 import { TestUserData } from '../../../../test/test-user-data';
+import { EmailMessage } from '../../../system/enums/email-messages/email-messages.enum';
+import { NameMessage } from '../../../system/enums/name-messages/name-messages.enum';
 import { validateFirstError } from '../../../system/utils/validation';
-import { EmailMessage } from '../../enums/email-messages/email-messages.enum';
-import { NameMessage } from '../../enums/name-messages/name-messages.enum';
 import { UpdateUserRequestDTO } from './update-user.request.dto';
 
 const validate = (data) => validateFirstError(data, UpdateUserRequestDTO);

@@ -1,9 +1,9 @@
 import { plainToInstance } from 'class-transformer';
 import { TestUserData } from '../../../../../test/test-user-data';
+import { EmailMessage } from '../../../../system/enums/email-messages/email-messages.enum';
+import { NameMessage } from '../../../../system/enums/name-messages/name-messages.enum';
+import { PasswordMessage } from '../../../../system/enums/password-messages/password-messages.enum';
 import { validateFirstError } from '../../../../system/utils/validation';
-import { EmailMessage } from '../../../../user/enums/email-messages/email-messages.enum';
-import { NameMessage } from '../../../../user/enums/name-messages/name-messages.enum';
-import { PasswordMessage } from '../../../../user/enums/password-messages/password-messages.enum';
 import { AcceptTermsMessage } from '../../../enums/accept-terms-messages.ts/accept-terms-messages.enum';
 import { RegisterRequestDto } from './register.request.dto';
 

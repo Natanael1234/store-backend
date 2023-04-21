@@ -9,12 +9,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Validator } from 'class-validator';
 import { Repository } from 'typeorm';
 import { EncryptionService } from '../../../system/encryption/services/encryption/encryption.service';
+import { EmailMessage } from '../../../system/enums/email-messages/email-messages.enum';
 import { validateAndThrows } from '../../../system/utils/validation';
 import { CreateUserRequestDTO } from '../../dtos/create-user/create-user.request.dto';
 import { UpdatePasswordResponseDTO } from '../../dtos/update-password.response.dto';
 import { UpdatePasswordRequestDTO } from '../../dtos/update-password/update-password.request.dto';
 import { UpdateUserRequestDTO } from '../../dtos/update-user/update-user.request.dto';
-import { EmailMessage } from '../../enums/email-messages/email-messages.enum';
 import { UserMessage } from '../../enums/user-messages.ts/user-messages.enum';
 import { UserEntity } from '../../models/user/user.entity';
 
