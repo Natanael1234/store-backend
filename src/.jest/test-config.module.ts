@@ -18,6 +18,7 @@ import { JwtStrategy } from '../modules/authentication/strategies/jwt/jwt.strate
 import { LocalStrategy } from '../modules/authentication/strategies/local/local.strategy';
 import { BrandEntity } from '../modules/stock/models/brand/brand.entity';
 import { ProductEntity } from '../modules/stock/models/product/product.entity';
+import { StockService } from '../modules/stock/services/stock/stock.service';
 import { CachingService } from '../modules/system/caching/services/caching.service';
 import { EncryptionService } from '../modules/system/encryption/services/encryption/encryption.service';
 import { UserController } from '../modules/user/controllers/user.controller';
@@ -49,23 +50,24 @@ export async function getTestingModule(
       ...(additionalMetadata?.imports || []),
     ],
     providers: [
-      { provide: APP_GUARD, useClass: JwtAuthenticationGuard },
-      LocalStrategy,
-      JwtStrategy,
-      UserService,
-      EncryptionService,
-      RefreshTokenRepository,
-      TokenService,
-      AuthenticationService,
       AppService,
-      ...(additionalMetadata?.providers || []),
+      AuthenticationService,
       CachingService, // TODO: verificar se não dará conflito com o de produção
+      EncryptionService,
+      JwtStrategy,
+      LocalStrategy,
+      RefreshTokenRepository,
+      StockService,
+      TokenService,
+      UserService,
+      ...(additionalMetadata?.providers || []),
+      { provide: APP_GUARD, useClass: JwtAuthenticationGuard },
       { provide: APP_GUARD, useClass: RolesGuard },
     ],
     controllers: [
-      UserController,
-      AuthenticationController,
       AppController,
+      AuthenticationController,
+      UserController,
       ...(additionalMetadata?.controllers || []),
     ],
   }).compile();
