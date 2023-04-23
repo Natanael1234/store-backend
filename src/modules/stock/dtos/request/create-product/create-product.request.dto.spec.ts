@@ -25,7 +25,7 @@ describe('CreateProductRequestDTO', () => {
       },
     );
 
-    it.each(TestProductData.getCodeAcceptableValues())(
+    it.each(TestProductData.getCodeAcceptableValues('create'))(
       'should validate when code is $description',
       async ({ data }) => {
         const errors = await validateFirstError(data, CreateProductRequestDTO);
@@ -46,7 +46,7 @@ describe('CreateProductRequestDTO', () => {
       },
     );
 
-    it.each(TestProductData.getNameAcceptableValues())(
+    it.each(TestProductData.getNameAcceptableValues('create'))(
       'should validate when name is $description',
       async ({ data }) => {
         const errors = await validateFirstError(data, CreateProductRequestDTO);
@@ -67,7 +67,7 @@ describe('CreateProductRequestDTO', () => {
       },
     );
 
-    it.each(TestProductData.getModelAcceptableValues())(
+    it.each(TestProductData.getModelAcceptableValues('create'))(
       'should validate when model is $description',
       async ({ data }) => {
         const errors = await validateFirstError(data, CreateProductRequestDTO);
@@ -88,7 +88,7 @@ describe('CreateProductRequestDTO', () => {
       },
     );
 
-    it.each(TestProductData.getModelAcceptableValues())(
+    it.each(TestProductData.getModelAcceptableValues('create'))(
       'should validate when price is $description',
       async ({ data }) => {
         const errors = await validateFirstError(data, CreateProductRequestDTO);
@@ -109,7 +109,7 @@ describe('CreateProductRequestDTO', () => {
       },
     );
 
-    it.each(TestProductData.getQuantityInStockAcceptableValues())(
+    it.each(TestProductData.getQuantityInStockAcceptableValues('create'))(
       'should validate when quantity in stock is $description',
       async ({ data }) => {
         const errors = await validateFirstError(data, CreateProductRequestDTO);

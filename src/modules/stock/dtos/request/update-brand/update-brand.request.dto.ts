@@ -16,7 +16,7 @@ export class UpdateBrandRequestDTO {
   @IsString({ message: NameMessage.STRING })
   @IsNotEmpty({ message: NameMessage.REQUIRED })
   @IsOptional()
-  name: string;
+  name?: string;
 
   @IsBoolean({ message: ActiveMessage.BOOLEAN })
   @Transform(({ value }) => {
@@ -36,5 +36,5 @@ export class UpdateBrandRequestDTO {
     return value;
   })
   @IsOptional()
-  active: boolean;
+  active?: boolean;
 }

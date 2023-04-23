@@ -1,4 +1,4 @@
-import { CacheModule, ModuleMetadata } from '@nestjs/common';
+import { ModuleMetadata } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
@@ -19,7 +19,6 @@ import { LocalStrategy } from '../modules/authentication/strategies/local/local.
 import { BrandEntity } from '../modules/stock/models/brand/brand.entity';
 import { ProductEntity } from '../modules/stock/models/product/product.entity';
 import { StockService } from '../modules/stock/services/stock/stock.service';
-import { CachingService } from '../modules/system/caching/services/caching.service';
 import { EncryptionService } from '../modules/system/encryption/services/encryption/encryption.service';
 import { UserController } from '../modules/user/controllers/user.controller';
 import { RolesGuard } from '../modules/user/guards/roles/roles.guard';
@@ -46,13 +45,13 @@ export async function getTestingModule(
         secret: JWTConfigs.ACCESS_TOKEN_SECRET,
         signOptions: { expiresIn: JWTConfigs.ACCESS_TOKEN_EXPIRATION },
       }),
-      CacheModule.register(), // TODO: verificar se não dará conflito com o de produção
+      // CacheModule.register(), // TODO: verificar se não dará conflito com o de produção
       ...(additionalMetadata?.imports || []),
     ],
     providers: [
       AppService,
       AuthenticationService,
-      CachingService, // TODO: verificar se não dará conflito com o de produção
+      // CachingService, // TODO: verificar se não dará conflito com o de produção
       EncryptionService,
       JwtStrategy,
       LocalStrategy,

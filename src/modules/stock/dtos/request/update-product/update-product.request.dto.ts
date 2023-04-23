@@ -24,32 +24,31 @@ export class UpdateProductRequestDTO {
   @IsString({ message: CodeMessage.STRING })
   @IsNotEmpty({ message: CodeMessage.REQUIRED })
   @IsOptional()
-  code: string;
+  code?: string;
 
   @MaxLength(60, { message: NameMessage.MAX_LEN })
   @MinLength(6, { message: NameMessage.MIN_LEN })
   @IsString({ message: NameMessage.STRING })
   @IsNotEmpty({ message: NameMessage.REQUIRED })
   @IsOptional()
-  name: string;
+  name?: string;
 
   @MaxLength(60, { message: ModelMessage.MAX_LEN })
   @MinLength(6, { message: ModelMessage.MIN_LEN })
   @IsString({ message: ModelMessage.STRING })
   @IsNotEmpty({ message: ModelMessage.REQUIRED })
   @IsOptional()
-  model: string;
+  model?: string;
 
   @Min(0, { message: PriceMessage.MIN })
   @IsNumber({}, { message: PriceMessage.NUMBER })
-  @IsNotEmpty({ message: PriceMessage.REQUIRED })
   @IsOptional()
-  price: number;
+  price?: number;
 
   @Min(0, { message: ProductQuantityMessage.MIN })
   @IsNumber({}, { message: ProductQuantityMessage.NUMBER })
   @IsOptional()
-  quantityInStock: number;
+  quantityInStock?: number;
 
   @IsBoolean({ message: ActiveMessage.BOOLEAN })
   @Transform(({ value }) => {
@@ -69,10 +68,10 @@ export class UpdateProductRequestDTO {
     return value;
   })
   @IsOptional()
-  active: boolean;
+  active?: boolean;
 
   @Min(1, { message: BrandIdMessage.INVALID })
   @IsInt({ message: BrandIdMessage.INT })
-  @IsNotEmpty({ message: BrandIdMessage.REQUIRED })
-  brandId: number;
+  @IsOptional()
+  brandId?: number;
 }

@@ -25,7 +25,7 @@ describe('CreateBrandRequestDTO', () => {
       },
     );
 
-    it.each(TestBrandData.getNameAcceptableValues())(
+    it.each(TestBrandData.getNameAcceptableValues('create'))(
       'should validate when name is $description',
       async ({ data }) => {
         const errors = await validateFirstError(data, CreateBrandRequestDTO);

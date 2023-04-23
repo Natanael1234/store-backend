@@ -31,7 +31,7 @@ describe('CreateUserRequestDto', () => {
       },
     );
 
-    it.each(TestUserData.getNameAcceptableValues())(
+    it.each(TestUserData.getNameAcceptableValues('create'))(
       'Should validate when name is $description',
       async ({ data }) => {
         const errors = await validateFirstError(data, CreateUserRequestDTO);
@@ -53,7 +53,7 @@ describe('CreateUserRequestDto', () => {
       },
     );
 
-    it.each(TestUserData.getEmailAcceptableValues())(
+    it.each(TestUserData.getEmailAcceptableValues('create'))(
       'Should validate when email is $description',
       async ({ data }) => {
         const errors = await validateFirstError(data, CreateUserRequestDTO);
@@ -74,7 +74,7 @@ describe('CreateUserRequestDto', () => {
       },
     );
 
-    it.each(TestUserData.getPasswordAcceptableValues())(
+    it.each(TestUserData.getPasswordAcceptableValues('create'))(
       'Should validate when password is $description',
       async ({ data }) => {
         const errors = await validateFirstError(data, CreateUserRequestDTO);

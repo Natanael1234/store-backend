@@ -44,8 +44,9 @@ export class CreateProductRequestDTO {
 
   @Min(0, { message: ProductQuantityMessage.MIN })
   @IsNumber({}, { message: ProductQuantityMessage.NUMBER })
+  @Transform(({ value }) => (value == null ? 0 : value))
   @IsOptional()
-  quantityInStock: number;
+  quantityInStock?: number;
 
   @IsBoolean({ message: ActiveMessage.BOOLEAN })
   @Transform(({ value }) => {
@@ -65,7 +66,7 @@ export class CreateProductRequestDTO {
     return value;
   })
   @IsOptional()
-  active: boolean;
+  active?: boolean;
 
   @Min(1, { message: BrandIdMessage.INVALID })
   @IsInt({ message: BrandIdMessage.INT })

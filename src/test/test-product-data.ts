@@ -32,72 +32,74 @@ export class TestProductData {
   }
 
   static getCodeErrorDataList(purpose: 'create' | 'register' | 'update') {
-    let dtoData = this.dataForRepository[2];
+    let dtoData = this.dataForRepository[1];
     return TestData.getCodeErrorDataList(dtoData, purpose);
   }
 
   static getNameErrorDataList(purpose: 'create' | 'register' | 'update') {
-    let dtoData = this.dataForRepository[2];
+    let dtoData = this.dataForRepository[1];
     return TestData.getNameErrorDataList(dtoData, purpose);
   }
 
   static getModelErrorDataList(purpose: 'create' | 'register' | 'update') {
-    let dtoData = this.dataForRepository[2];
+    let dtoData = this.dataForRepository[1];
     return TestData.getModelErrorDataList(dtoData, purpose);
   }
 
   static getActiveErrorDataList() {
-    let dtoData = this.dataForRepository[2];
+    let dtoData = this.dataForRepository[1];
     return TestData.getActiveErrorDataList(dtoData);
   }
 
   static getPriceErrorDataList(purpose: 'create' | 'register' | 'update') {
-    let dtoData = this.dataForRepository[2];
+    let dtoData = this.dataForRepository[1];
     return TestData.getPriceErrorDataList(dtoData, purpose);
   }
 
   static getQuantityInStockErrorDataList() {
-    let dtoData = this.dataForRepository[2];
+    let dtoData = this.dataForRepository[1];
     return TestData.getQuantityInStockErrorDataList(dtoData);
   }
 
   static getBrandIdErrorDataList(purpose: 'create' | 'register' | 'update') {
-    let dtoData = this.dataForRepository[2];
+    let dtoData = this.dataForRepository[1];
     return TestData.getBrandIdErrorDataList(dtoData, purpose);
   }
 
-  static getCodeAcceptableValues() {
-    let dtoData = this.dataForRepository[2];
-    return TestData.getCodeAcceptableValues(dtoData);
+  static getCodeAcceptableValues(purpose: 'create' | 'register' | 'update') {
+    let dtoData = this.dataForRepository[1];
+    return TestData.getCodeAcceptableValues(dtoData, purpose);
   }
 
-  static getNameAcceptableValues() {
-    let dtoData = this.dataForRepository[2];
-    return TestData.getNameAcceptableValues(dtoData);
+  static getNameAcceptableValues(purpose: 'create' | 'register' | 'update') {
+    let dtoData = this.dataForRepository[1];
+    return TestData.getNameAcceptableValues(dtoData, purpose);
   }
 
-  static getModelAcceptableValues() {
-    let dtoData = this.dataForRepository[2];
-    return TestData.getModelAcceptableValues(dtoData);
+  static getModelAcceptableValues(purpose: 'create' | 'register' | 'update') {
+    let dtoData = this.dataForRepository[1];
+    return TestData.getModelAcceptableValues(dtoData, purpose);
   }
 
   static getActiveAcceptableValues() {
-    let dtoData = this.dataForRepository[2];
+    let dtoData = this.dataForRepository[1];
     return TestData.getActiveAcceptableValues(dtoData);
   }
 
-  static getPriceAcceptableValues() {
-    let dtoData = this.dataForRepository[2];
-    return TestData.getPriceAcceptableValues(dtoData);
+  static getPriceAcceptableValues(purpose: 'create' | 'register' | 'update') {
+    let dtoData = this.dataForRepository[1];
+    return TestData.getPriceAcceptableValues(dtoData, purpose);
   }
 
-  static getQuantityInStockAcceptableValues() {
-    let dtoData = this.dataForRepository[2];
-    return TestData.getQuantityInStockAcceptableValues(dtoData);
+  static getQuantityInStockAcceptableValues(
+    purpose: 'create' | 'register' | 'update',
+  ) {
+    let dtoData = this.dataForRepository[1];
+    return TestData.getQuantityInStockAcceptableValues(dtoData, purpose);
   }
 
-  static getBrandIdAcceptableValues() {
-    let dtoData = this.dataForRepository[2];
-    return TestData.getBrandIdAcceptableValues(dtoData);
+  static getBrandIdAcceptableValues(purpose: 'create' | 'register' | 'update') {
+    let dtoData = this.dataForRepository[1];
+    return TestData.getBrandIdAcceptableValues(dtoData, purpose);
   }
 }

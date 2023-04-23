@@ -35,5 +35,5 @@ export class CreateBrandRequestDTO {
     return value;
   })
   @IsOptional()
-  active: boolean;
+  active?: boolean;
 }

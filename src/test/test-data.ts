@@ -12,15 +12,17 @@ import { RoleMessage } from '../modules/user/enums/role-messages/role-messages.e
 
 export class TestData {
   public static buildErrorData(options: {
+    property: string;
+    value: any;
     description: string;
     data: any;
     errors: any;
     message: any;
   }) {
-    const description = options.description;
-    const data = options.data;
-    const message = options.message;
-    const expectedErrors = options.errors;
+    let { property, value, description, data, errors, message } = options;
+    data = { ...data, [property]: value };
+
+    const expectedErrors = errors;
     const statusCode = HttpStatus.UNPROCESSABLE_ENTITY;
     const ExceptionClass = UnprocessableEntityException;
     const error = ExceptionClass.name;
@@ -28,6 +30,7 @@ export class TestData {
     const exceptionMessage = ExceptionClass.constructor.name;
     const response = { error, message, statusCode };
     const exception = new ExceptionClass(response);
+
     return {
       description,
       data,
@@ -45,48 +48,63 @@ export class TestData {
     dtoData,
     purpose: 'create' | 'register' | 'update',
   ) {
+    const property = 'name';
     const list = [
       this.buildErrorData({
         description: 'number',
-        data: { ...dtoData, name: 2323232 },
+        value: 2323232,
+        property,
+        data: dtoData,
         errors: { isString: NameMessage.STRING },
-        message: { name: NameMessage.STRING },
+        message: { [property]: NameMessage.STRING },
       }),
       this.buildErrorData({
         description: 'boolean',
-        data: { ...dtoData, name: true },
+        value: true,
+        property,
+        data: dtoData,
         errors: { isString: NameMessage.STRING },
-        message: { name: NameMessage.STRING },
+        message: { [property]: NameMessage.STRING },
       }),
       this.buildErrorData({
         description: 'array',
-        data: { ...dtoData, name: [] },
+        value: [],
+        property,
+        data: dtoData,
         errors: { isString: NameMessage.STRING },
-        message: { name: NameMessage.STRING },
+        message: { [property]: NameMessage.STRING },
       }),
       this.buildErrorData({
         description: 'object',
-        data: { ...dtoData, name: {} },
+        value: {},
+        property,
+        data: dtoData,
         errors: { isString: NameMessage.STRING },
-        message: { name: NameMessage.STRING },
+        message: { [property]: NameMessage.STRING },
       }),
       this.buildErrorData({
         description: 'too short',
-        data: { ...dtoData, name: 'Usr' },
+        value: 'x'.repeat(5),
+        property,
+        data: dtoData,
         errors: { minLength: NameMessage.MIN_LEN },
-        message: { name: NameMessage.MIN_LEN },
+        message: { [property]: NameMessage.MIN_LEN },
       }),
       this.buildErrorData({
         description: 'too long',
-        data: { ...dtoData, name: 'x'.repeat(61) },
+        value: 'x'.repeat(61),
+        property,
+        data: dtoData,
         errors: { maxLength: NameMessage.MAX_LEN },
-        message: { name: NameMessage.MAX_LEN },
+        message: { [property]: NameMessage.MAX_LEN },
       }),
       this.buildErrorData({
         description: 'empty',
-        data: { ...dtoData, name: '' },
+        value: '',
+        property,
+        data: dtoData,
         errors: { isNotEmpty: NameMessage.REQUIRED },
-        message: { name: NameMessage.REQUIRED },
+        message: { [property]: NameMessage.REQUIRED },
       }),
     ];
     if (purpose != 'update') {
@@ -94,15 +112,19 @@ export class TestData {
         this.buildErrorData({
           // TODO: deveria ser testado na atualização?
           description: 'null',
-          data: { ...dtoData, name: null },
+          property,
+          value: null,
+          data: dtoData,
           errors: { isNotEmpty: NameMessage.REQUIRED },
-          message: { name: NameMessage.REQUIRED },
+          message: { [property]: NameMessage.REQUIRED },
         }),
         this.buildErrorData({
           description: 'undefined',
-          data: { ...dtoData, name: undefined },
+          property,
+          value: undefined,
+          data: dtoData,
           errors: { isNotEmpty: NameMessage.REQUIRED },
-          message: { name: NameMessage.REQUIRED },
+          message: { [property]: NameMessage.REQUIRED },
         }),
       );
     }
@@ -113,48 +135,63 @@ export class TestData {
     dtoData,
     purpose: 'create' | 'register' | 'update',
   ) {
+    const property = 'email';
     const list = [
       this.buildErrorData({
         description: 'number',
-        data: { ...dtoData, email: 2323232 },
+        property,
+        value: 2323232,
+        data: dtoData,
         errors: { isString: EmailMessage.STRING },
-        message: { email: EmailMessage.STRING },
+        message: { [property]: EmailMessage.STRING },
       }),
       this.buildErrorData({
         description: 'boolean',
-        data: { ...dtoData, email: true },
+        property,
+        value: true,
+        data: dtoData,
         errors: { isString: EmailMessage.STRING },
-        message: { email: EmailMessage.STRING },
+        message: { [property]: EmailMessage.STRING },
       }),
       this.buildErrorData({
         description: 'array',
-        data: { ...dtoData, email: [] },
+        property,
+        value: [],
+        data: dtoData,
         errors: { isString: EmailMessage.STRING },
-        message: { email: EmailMessage.STRING },
+        message: { [property]: EmailMessage.STRING },
       }),
       this.buildErrorData({
         description: 'object',
-        data: { ...dtoData, email: {} },
+        property,
+        value: {},
+        data: dtoData,
         errors: { isString: EmailMessage.STRING },
-        message: { email: EmailMessage.STRING },
+        message: { [property]: EmailMessage.STRING },
       }),
       this.buildErrorData({
         description: 'invalid',
-        data: { ...dtoData, email: 'email.com' },
+        property,
+        value: 'email.com',
+        data: dtoData,
         errors: { isEmail: EmailMessage.INVALID },
-        message: { email: EmailMessage.INVALID },
+        message: { [property]: EmailMessage.INVALID },
       }),
       this.buildErrorData({
         description: 'empty',
-        data: { ...dtoData, email: '' },
+        property,
+        value: '',
+        data: dtoData,
         errors: { isNotEmpty: EmailMessage.REQUIRED },
-        message: { email: EmailMessage.REQUIRED },
+        message: { [property]: EmailMessage.REQUIRED },
       }),
       this.buildErrorData({
         description: 'too long',
-        data: { ...dtoData, email: 'x'.repeat(55) + '@x.com' },
+        property,
+        value: 'x'.repeat(55) + '@x.com',
+        data: dtoData,
         errors: { maxLength: EmailMessage.MAX_LEN },
-        message: { email: EmailMessage.MAX_LEN },
+        message: { [property]: EmailMessage.MAX_LEN },
       }),
     ];
 
@@ -162,15 +199,19 @@ export class TestData {
       list.push(
         this.buildErrorData({
           description: 'null',
-          data: { ...dtoData, email: null },
+          property,
+          value: null,
+          data: dtoData,
           errors: { isNotEmpty: EmailMessage.REQUIRED },
-          message: { email: EmailMessage.REQUIRED },
+          message: { [property]: EmailMessage.REQUIRED },
         }),
         this.buildErrorData({
           description: 'undefined',
-          data: { ...dtoData, email: undefined },
+          property,
+          value: undefined,
+          data: dtoData,
           errors: { isNotEmpty: EmailMessage.REQUIRED },
-          message: { email: EmailMessage.REQUIRED },
+          message: { [property]: EmailMessage.REQUIRED },
         }),
       );
     }
@@ -181,81 +222,106 @@ export class TestData {
     dtoData,
     purpose: 'create' | 'register' | 'update',
   ) {
+    const property = 'password';
     const list = [
       this.buildErrorData({
         description: 'number',
-        data: { ...dtoData, password: 2323232 },
+        property,
+        value: 2323232,
+        data: dtoData,
         errors: { isString: PasswordMessage.STRING },
-        message: { password: PasswordMessage.STRING },
+        message: { [property]: PasswordMessage.STRING },
       }),
       this.buildErrorData({
         description: 'boolean',
-        data: { ...dtoData, password: true },
+        property,
+        value: true,
+        data: dtoData,
         errors: { isString: PasswordMessage.STRING },
-        message: { password: PasswordMessage.STRING },
+        message: { [property]: PasswordMessage.STRING },
       }),
       this.buildErrorData({
         description: 'array',
-        data: { ...dtoData, password: [] },
+        property,
+        value: [],
+        data: dtoData,
         errors: { isString: PasswordMessage.STRING },
-        message: { password: PasswordMessage.STRING },
+        message: { [property]: PasswordMessage.STRING },
       }),
       this.buildErrorData({
         description: 'object',
-        data: { ...dtoData, password: {} },
+        property,
+        value: {},
+        data: dtoData,
         errors: { isString: PasswordMessage.STRING },
-        message: { password: PasswordMessage.STRING },
+        message: { [property]: PasswordMessage.STRING },
       }),
       this.buildErrorData({
         description: 'too short',
-        data: { ...dtoData, password: 'Usr' },
+        property,
+        value: 'Pwd*1',
+        data: dtoData,
         errors: { minLength: PasswordMessage.MIN_LEN },
-        message: { password: PasswordMessage.MIN_LEN },
+        message: { [property]: PasswordMessage.MIN_LEN },
       }),
       this.buildErrorData({
         description: 'without uppercase letter',
-        data: { ...dtoData, password: 'senha123*' },
+        property,
+        value: 'senha123*',
+        data: dtoData,
         errors: { isStrongPassword: PasswordMessage.INVALID },
-        message: { password: PasswordMessage.INVALID },
+        message: { [property]: PasswordMessage.INVALID },
       }),
       this.buildErrorData({
         description: 'without lowercase letter',
-        data: { ...dtoData, password: 'SENHA123*' },
+        property,
+        value: 'SENHA123*',
+        data: dtoData,
         errors: { isStrongPassword: PasswordMessage.INVALID },
-        message: { password: PasswordMessage.INVALID },
+        message: { [property]: PasswordMessage.INVALID },
       }),
       this.buildErrorData({
         description: 'without number',
-        data: { ...dtoData, password: 'SenhaABC*' },
+        property,
+        value: 'SenhaABC*',
+        data: dtoData,
         errors: { isStrongPassword: PasswordMessage.INVALID },
-        message: { password: PasswordMessage.INVALID },
+        message: { [property]: PasswordMessage.INVALID },
       }),
       this.buildErrorData({
         description: 'without special character',
-        data: { ...dtoData, password: 'Senha123' },
+        property,
+        value: 'Senha123',
+        data: dtoData,
         errors: { isStrongPassword: PasswordMessage.INVALID },
-        message: { password: PasswordMessage.INVALID },
+        message: { [property]: PasswordMessage.INVALID },
       }),
       this.buildErrorData({
         description: 'empty',
-        data: { ...dtoData, password: '' },
+        property,
+        value: '',
+        data: dtoData,
         errors: { isNotEmpty: PasswordMessage.REQUIRED },
-        message: { password: PasswordMessage.REQUIRED },
+        message: { [property]: PasswordMessage.REQUIRED },
       }),
     ];
     if (purpose != 'update') {
       list.push(
         this.buildErrorData({
           description: 'null',
-          data: { ...dtoData, password: null },
+          property,
+          value: null,
+          data: dtoData,
           errors: { isNotEmpty: PasswordMessage.REQUIRED },
-          message: { password: PasswordMessage.REQUIRED },
+          message: { [property]: PasswordMessage.REQUIRED },
         }),
         this.buildErrorData({
           description: 'undefined',
-          data: { ...dtoData, password: undefined },
+          property,
+          value: undefined,
+          data: dtoData,
           errors: { isNotEmpty: PasswordMessage.REQUIRED },
-          message: { password: PasswordMessage.REQUIRED },
+          message: { [property]: PasswordMessage.REQUIRED },
         }),
       );
     }
@@ -266,42 +332,55 @@ export class TestData {
     dtoData,
     purpose: 'create' | 'register' | 'update',
   ) {
+    const property = 'roles';
     const list = [
       this.buildErrorData({
         description: 'number',
-        data: { ...dtoData, roles: 2323232 },
+        property,
+        value: 2323232,
+        data: dtoData,
         errors: { isArray: RoleMessage.INVALID },
-        message: { roles: RoleMessage.INVALID },
+        message: { [property]: RoleMessage.INVALID },
       }),
       this.buildErrorData({
         description: 'boolean',
-        data: { ...dtoData, roles: true },
+        property,
+        value: true,
+        data: dtoData,
         errors: { isArray: RoleMessage.INVALID },
-        message: { roles: RoleMessage.INVALID },
+        message: { [property]: RoleMessage.INVALID },
       }),
       this.buildErrorData({
         description: 'object',
-        data: { ...dtoData, roles: {} },
+        property,
+        value: {},
+        data: dtoData,
         errors: { isArray: RoleMessage.INVALID },
-        message: { roles: RoleMessage.INVALID },
+        message: { [property]: RoleMessage.INVALID },
       }),
       this.buildErrorData({
         description: 'string',
-        data: { ...dtoData, roles: 'string' },
+        property,
+        value: 'string',
+        data: dtoData,
         errors: { isArray: RoleMessage.INVALID },
-        message: { roles: RoleMessage.INVALID },
+        message: { [property]: RoleMessage.INVALID },
       }),
       this.buildErrorData({
         description: 'array containing invalid item',
-        data: { ...dtoData, roles: ['invalid'] },
+        property,
+        value: ['invalid'],
+        data: dtoData,
         errors: { isEnum: RoleMessage.INVALID },
-        message: { roles: RoleMessage.INVALID },
+        message: { [property]: RoleMessage.INVALID },
       }),
       this.buildErrorData({
         description: 'empty array',
-        data: { ...dtoData, roles: [] },
+        property,
+        value: [],
+        data: dtoData,
         errors: { arrayMinSize: RoleMessage.MIN_LEN },
-        message: { roles: RoleMessage.MIN_LEN },
+        message: { [property]: RoleMessage.MIN_LEN },
       }),
     ];
     if (purpose != 'update') {
@@ -309,15 +388,19 @@ export class TestData {
         this.buildErrorData({
           // TODO: deveria ser testado na atualização?
           description: 'null',
-          data: { ...dtoData, roles: null },
+          property,
+          value: null,
+          data: dtoData,
           errors: { isNotEmpty: RoleMessage.REQUIRED },
-          message: { roles: RoleMessage.REQUIRED },
+          message: { [property]: RoleMessage.REQUIRED },
         }),
         this.buildErrorData({
           description: 'undefined',
-          data: { ...dtoData, roles: undefined },
+          property,
+          value: undefined,
+          data: dtoData,
           errors: { isNotEmpty: RoleMessage.REQUIRED },
-          message: { roles: RoleMessage.REQUIRED },
+          message: { [property]: RoleMessage.REQUIRED },
         }),
       );
     }
@@ -328,48 +411,63 @@ export class TestData {
     dtoData,
     purpose: 'create' | 'register' | 'update',
   ) {
+    const property = 'code';
     const list = [
       this.buildErrorData({
         description: 'number',
-        data: { ...dtoData, code: 2323232 },
+        property,
+        value: 2323232,
+        data: dtoData,
         errors: { isString: CodeMessage.STRING },
-        message: { code: CodeMessage.STRING },
+        message: { [property]: CodeMessage.STRING },
       }),
       this.buildErrorData({
         description: 'boolean',
-        data: { ...dtoData, code: true },
+        property,
+        value: true,
+        data: dtoData,
         errors: { isString: CodeMessage.STRING },
-        message: { code: CodeMessage.STRING },
+        message: { [property]: CodeMessage.STRING },
       }),
       this.buildErrorData({
         description: 'array',
-        data: { ...dtoData, code: [] },
+        property,
+        value: [],
+        data: dtoData,
         errors: { isString: CodeMessage.STRING },
-        message: { code: CodeMessage.STRING },
+        message: { [property]: CodeMessage.STRING },
       }),
       this.buildErrorData({
         description: 'object',
-        data: { ...dtoData, code: {} },
+        property,
+        value: {},
+        data: dtoData,
         errors: { isString: CodeMessage.STRING },
-        message: { code: CodeMessage.STRING },
+        message: { [property]: CodeMessage.STRING },
       }),
       this.buildErrorData({
         description: 'too short',
-        data: { ...dtoData, code: 'Usr' },
+        property,
+        value: 'x'.repeat(5),
+        data: dtoData,
         errors: { minLength: CodeMessage.MIN_LEN },
-        message: { code: CodeMessage.MIN_LEN },
+        message: { [property]: CodeMessage.MIN_LEN },
       }),
       this.buildErrorData({
         description: 'too long',
-        data: { ...dtoData, code: 'x'.repeat(61) },
+        property,
+        value: 'x'.repeat(61),
+        data: dtoData,
         errors: { maxLength: CodeMessage.MAX_LEN },
-        message: { code: CodeMessage.MAX_LEN },
+        message: { [property]: CodeMessage.MAX_LEN },
       }),
       this.buildErrorData({
         description: 'empty',
-        data: { ...dtoData, code: '' },
+        property,
+        value: '',
+        data: dtoData,
         errors: { isNotEmpty: CodeMessage.REQUIRED },
-        message: { code: CodeMessage.REQUIRED },
+        message: { [property]: CodeMessage.REQUIRED },
       }),
     ];
     if (purpose != 'update') {
@@ -377,15 +475,19 @@ export class TestData {
         this.buildErrorData({
           // TODO: deveria ser testado na atualização?
           description: 'null',
-          data: { ...dtoData, code: null },
+          property,
+          value: null,
+          data: dtoData,
           errors: { isNotEmpty: CodeMessage.REQUIRED },
-          message: { code: CodeMessage.REQUIRED },
+          message: { [property]: CodeMessage.REQUIRED },
         }),
         this.buildErrorData({
           description: 'undefined',
-          data: { ...dtoData, code: undefined },
+          property,
+          value: undefined,
+          data: dtoData,
           errors: { isNotEmpty: CodeMessage.REQUIRED },
-          message: { code: CodeMessage.REQUIRED },
+          message: { [property]: CodeMessage.REQUIRED },
         }),
       );
     }
@@ -396,48 +498,63 @@ export class TestData {
     dtoData,
     purpose: 'create' | 'register' | 'update',
   ) {
+    const property = 'model';
     const list = [
       this.buildErrorData({
         description: 'number',
-        data: { ...dtoData, model: 2323232 },
+        property,
+        value: 2323232,
+        data: dtoData,
         errors: { isString: ModelMessage.STRING },
-        message: { model: ModelMessage.STRING },
+        message: { [property]: ModelMessage.STRING },
       }),
       this.buildErrorData({
         description: 'boolean',
-        data: { ...dtoData, model: true },
+        property,
+        value: true,
+        data: dtoData,
         errors: { isString: ModelMessage.STRING },
-        message: { model: ModelMessage.STRING },
+        message: { [property]: ModelMessage.STRING },
       }),
       this.buildErrorData({
         description: 'array',
-        data: { ...dtoData, model: [] },
+        property,
+        value: [],
+        data: dtoData,
         errors: { isString: ModelMessage.STRING },
-        message: { model: ModelMessage.STRING },
+        message: { [property]: ModelMessage.STRING },
       }),
       this.buildErrorData({
         description: 'object',
-        data: { ...dtoData, model: {} },
+        property,
+        value: {},
+        data: dtoData,
         errors: { isString: ModelMessage.STRING },
-        message: { model: ModelMessage.STRING },
+        message: { [property]: ModelMessage.STRING },
       }),
       this.buildErrorData({
         description: 'too short',
-        data: { ...dtoData, model: 'Usr' },
+        property,
+        value: 'x'.repeat(5),
+        data: dtoData,
         errors: { minLength: ModelMessage.MIN_LEN },
-        message: { model: ModelMessage.MIN_LEN },
+        message: { [property]: ModelMessage.MIN_LEN },
       }),
       this.buildErrorData({
         description: 'too long',
-        data: { ...dtoData, model: 'x'.repeat(61) },
+        property,
+        value: 'x'.repeat(61),
+        data: dtoData,
         errors: { maxLength: ModelMessage.MAX_LEN },
-        message: { model: ModelMessage.MAX_LEN },
+        message: { [property]: ModelMessage.MAX_LEN },
       }),
       this.buildErrorData({
         description: 'empty',
-        data: { ...dtoData, model: '' },
+        property,
+        value: '',
+        data: dtoData,
         errors: { isNotEmpty: ModelMessage.REQUIRED },
-        message: { model: ModelMessage.REQUIRED },
+        message: { [property]: ModelMessage.REQUIRED },
       }),
     ];
     if (purpose != 'update') {
@@ -445,15 +562,19 @@ export class TestData {
         this.buildErrorData({
           // TODO: deveria ser testado na atualização?
           description: 'null',
-          data: { ...dtoData, model: null },
+          property,
+          value: null,
+          data: dtoData,
           errors: { isNotEmpty: ModelMessage.REQUIRED },
-          message: { model: ModelMessage.REQUIRED },
+          message: { [property]: ModelMessage.REQUIRED },
         }),
         this.buildErrorData({
           description: 'undefined',
-          data: { ...dtoData, model: undefined },
+          property,
+          value: undefined,
+          data: dtoData,
           errors: { isNotEmpty: ModelMessage.REQUIRED },
-          message: { model: ModelMessage.REQUIRED },
+          message: { [property]: ModelMessage.REQUIRED },
         }),
       );
     }
@@ -461,30 +582,39 @@ export class TestData {
   }
 
   static getActiveErrorDataList(dtoData) {
+    const property = 'active';
     const list = [
       this.buildErrorData({
         description: 'number',
-        data: { ...dtoData, active: 2323232 },
+        property,
+        value: 2323232,
+        data: dtoData,
         errors: { isBoolean: ActiveMessage.BOOLEAN },
-        message: { active: ActiveMessage.BOOLEAN },
+        message: { [property]: ActiveMessage.BOOLEAN },
       }),
       this.buildErrorData({
         description: 'array',
-        data: { ...dtoData, active: [] },
+        property,
+        value: [],
+        data: dtoData,
         errors: { isBoolean: ActiveMessage.BOOLEAN },
-        message: { active: ActiveMessage.BOOLEAN },
+        message: { [property]: ActiveMessage.BOOLEAN },
       }),
       this.buildErrorData({
         description: 'object',
-        data: { ...dtoData, active: {} },
+        property,
+        value: {},
+        data: dtoData,
         errors: { isBoolean: ActiveMessage.BOOLEAN },
-        message: { active: ActiveMessage.BOOLEAN },
+        message: { [property]: ActiveMessage.BOOLEAN },
       }),
       this.buildErrorData({
         description: 'invalid',
-        data: { ...dtoData, active: 'invalid' },
+        property,
+        value: 'invalid',
+        data: dtoData,
         errors: { isBoolean: ActiveMessage.BOOLEAN },
-        message: { active: ActiveMessage.BOOLEAN },
+        message: { [property]: ActiveMessage.BOOLEAN },
       }),
     ];
     return list;
@@ -494,51 +624,66 @@ export class TestData {
     dtoData,
     purpose: 'create' | 'register' | 'update',
   ) {
+    const property = 'price';
     const list = [
       this.buildErrorData({
         description: 'negative',
-        data: { ...dtoData, price: -1 },
+        property,
+        value: -1,
+        data: dtoData,
         errors: { min: PriceMessage.MIN },
-        message: { price: PriceMessage.MIN },
+        message: { [property]: PriceMessage.MIN },
       }),
       this.buildErrorData({
         description: 'string',
-        data: { ...dtoData, price: '5' },
+        property,
+        value: '5',
+        data: dtoData,
         errors: { isNumber: PriceMessage.NUMBER },
-        message: { price: PriceMessage.MIN },
+        message: { [property]: PriceMessage.NUMBER },
       }),
       this.buildErrorData({
         description: 'boolean',
-        data: { ...dtoData, price: true },
+        property,
+        value: true,
+        data: dtoData,
         errors: { isNumber: PriceMessage.NUMBER },
-        message: { price: PriceMessage.MIN },
+        message: { [property]: PriceMessage.NUMBER },
       }),
       this.buildErrorData({
         description: 'object',
-        data: { ...dtoData, price: {} },
+        property,
+        value: {},
+        data: dtoData,
         errors: { isNumber: PriceMessage.NUMBER },
-        message: { price: PriceMessage.MIN },
+        message: { [property]: PriceMessage.NUMBER },
       }),
       this.buildErrorData({
         description: 'array',
-        data: { ...dtoData, price: [] },
+        property,
+        value: [],
+        data: dtoData,
         errors: { isNumber: PriceMessage.NUMBER },
-        message: { price: PriceMessage.MIN },
+        message: { [property]: PriceMessage.NUMBER },
       }),
     ];
     if (purpose != 'update') {
       list.push(
         this.buildErrorData({
           description: 'undefined',
-          data: { ...dtoData, price: undefined },
+          property,
+          value: undefined,
+          data: dtoData,
           errors: { isNotEmpty: PriceMessage.REQUIRED },
-          message: { price: PriceMessage.REQUIRED },
+          message: { [property]: PriceMessage.REQUIRED },
         }),
         this.buildErrorData({
           description: 'null',
-          data: { ...dtoData, price: null },
+          property,
+          value: null,
+          data: dtoData,
           errors: { isNotEmpty: PriceMessage.REQUIRED },
-          message: { price: PriceMessage.REQUIRED },
+          message: { [property]: PriceMessage.REQUIRED },
         }),
       );
     }
@@ -546,36 +691,47 @@ export class TestData {
   }
 
   static getQuantityInStockErrorDataList(dtoData) {
+    const property = 'quantityInStock';
     const list = [
       this.buildErrorData({
         description: 'negative',
-        data: { ...dtoData, quantityInStock: -1 },
+        property,
+        value: -1,
+        data: dtoData,
         errors: { min: ProductQuantityMessage.MIN },
-        message: { quantityInStock: ProductQuantityMessage.MIN },
+        message: { [property]: ProductQuantityMessage.MIN },
       }),
       this.buildErrorData({
         description: 'string',
-        data: { ...dtoData, quantityInStock: '5' },
+        property,
+        value: '5',
+        data: dtoData,
         errors: { isNumber: ProductQuantityMessage.NUMBER },
-        message: { quantityInStock: ProductQuantityMessage.NUMBER },
+        message: { [property]: ProductQuantityMessage.NUMBER },
       }),
       this.buildErrorData({
         description: 'boolean',
-        data: { ...dtoData, quantityInStock: true },
+        property,
+        value: true,
+        data: dtoData,
         errors: { isNumber: ProductQuantityMessage.NUMBER },
-        message: { quantityInStock: ProductQuantityMessage.NUMBER },
+        message: { [property]: ProductQuantityMessage.NUMBER },
       }),
       this.buildErrorData({
         description: 'object',
-        data: { ...dtoData, quantityInStock: {} },
+        property,
+        value: {},
+        data: dtoData,
         errors: { isNumber: ProductQuantityMessage.NUMBER },
-        message: { quantityInStock: ProductQuantityMessage.NUMBER },
+        message: { [property]: ProductQuantityMessage.NUMBER },
       }),
       this.buildErrorData({
         description: 'array',
-        data: { ...dtoData, quantityInStock: [] },
+        property,
+        value: [],
+        data: dtoData,
         errors: { isNumber: ProductQuantityMessage.NUMBER },
-        message: { quantityInStock: ProductQuantityMessage.NUMBER },
+        message: { [property]: ProductQuantityMessage.NUMBER },
       }),
     ];
     return list;
@@ -585,131 +741,244 @@ export class TestData {
     dtoData,
     purpose: 'create' | 'register' | 'update',
   ) {
+    const property = 'brandId';
     const list = [
       this.buildErrorData({
         description: 'negative',
-        data: { ...dtoData, brandId: -1 },
+        property,
+        value: -1,
+        data: dtoData,
         errors: { min: BrandIdMessage.INVALID },
-        message: { brandId: BrandIdMessage.INVALID },
+        message: { [property]: BrandIdMessage.INVALID },
       }),
       this.buildErrorData({
         description: 'float',
-        data: { ...dtoData, brandId: 1.1 },
+        property,
+        value: 1.1,
+        data: dtoData,
         errors: { isInt: BrandIdMessage.INT },
-        message: { brandId: BrandIdMessage.INT },
+        message: { [property]: BrandIdMessage.INT },
       }),
       this.buildErrorData({
         description: 'string',
-        data: { ...dtoData, brandId: '5' },
+        property,
+        value: '5',
+        data: dtoData,
         errors: { isInt: BrandIdMessage.INT },
-        message: { brandId: BrandIdMessage.INT },
+        message: { [property]: BrandIdMessage.INT },
       }),
       this.buildErrorData({
         description: 'boolean',
-        data: { ...dtoData, brandId: true },
+        property,
+        value: true,
+        data: dtoData,
         errors: { isInt: BrandIdMessage.INT },
-        message: { brandId: BrandIdMessage.INT },
+        message: { [property]: BrandIdMessage.INT },
       }),
       this.buildErrorData({
         description: 'object',
-        data: { ...dtoData, brandId: {} },
+        property,
+        value: {},
+        data: dtoData,
         errors: { isInt: BrandIdMessage.INT },
-        message: { brandId: BrandIdMessage.INT },
+        message: { [property]: BrandIdMessage.INT },
       }),
       this.buildErrorData({
         description: 'array',
-        data: { ...dtoData, brandId: [] },
+        property,
+        value: [],
+        data: dtoData,
         errors: { isInt: BrandIdMessage.INT },
-        message: { brandId: BrandIdMessage.INT },
+        message: { [property]: BrandIdMessage.INT },
       }),
     ];
     if (purpose != 'update') {
       list.push(
         this.buildErrorData({
           description: 'undefined',
-          data: { ...dtoData, brandId: undefined },
+          property,
+          value: undefined,
+          data: dtoData,
           errors: { isNotEmpty: BrandIdMessage.REQUIRED },
-          message: { brandId: BrandIdMessage.REQUIRED },
+          message: { [property]: BrandIdMessage.REQUIRED },
         }),
         this.buildErrorData({
           description: 'null',
-          data: { ...dtoData, brandId: null },
+          property,
+          value: null,
+          data: dtoData,
           errors: { isNotEmpty: BrandIdMessage.REQUIRED },
-          message: { brandId: BrandIdMessage.REQUIRED },
+          message: { [property]: BrandIdMessage.REQUIRED },
         }),
       );
     }
     return list;
   }
 
-  static getNameAcceptableValues(dtoData) {
-    const minLen = 'x'.repeat(6);
-    const maxLen = 'x'.repeat(60);
-    return [
-      { description: 'min length', data: { ...dtoData, name: minLen } },
-      { description: 'max length', data: { ...dtoData, name: maxLen } },
-    ];
+  static buildAcceptableValues(
+    property: string,
+    description: string,
+    data: any,
+    value: any,
+  ) {
+    return { property, description, data: { ...data, [property]: value } };
   }
 
-  static getPasswordAcceptableValues(dtoData) {
+  static getNameAcceptableValues(
+    dtoData,
+    purpose: 'create' | 'register' | 'update',
+  ) {
+    const property = 'name';
+    const minLen = 'x'.repeat(6);
+    const maxLen = 'x'.repeat(60);
+    const list = [
+      this.buildAcceptableValues(property, 'min length', dtoData, minLen),
+      this.buildAcceptableValues(property, 'max length', dtoData, maxLen),
+    ];
+    if (purpose == 'update') {
+      list.push(
+        // this.buildAcceptableValues(property, 'null', dtoData, null),
+        this.buildAcceptableValues(property, 'undefined', dtoData, undefined),
+      );
+    }
+    return list;
+  }
+
+  static getPasswordAcceptableValues(
+    dtoData,
+    purpose: 'create' | 'register' | 'update',
+  ) {
+    const property = 'password';
     const minLen = 'Pwd12*';
     const maxLen = 'Pwd12*' + '123456';
-    return [
-      { descripttion: 'min length', data: { ...dtoData, password: minLen } },
-      { descripttion: 'max length', data: { ...dtoData, password: maxLen } },
+    const list = [
+      this.buildAcceptableValues(property, 'min length', dtoData, minLen),
+      this.buildAcceptableValues(property, 'max length', dtoData, maxLen),
     ];
+    if (purpose == 'update') {
+      list.push(
+        this.buildAcceptableValues(property, 'null', dtoData, null),
+        this.buildAcceptableValues(property, 'undefined', dtoData, undefined),
+      );
+    }
+    return list;
   }
 
-  static getEmailAcceptableValues(dtoData) {
+  static getEmailAcceptableValues(
+    dtoData,
+    purpose: 'create' | 'register' | 'update',
+  ) {
+    const property = 'email';
     const maxLen = 'x'.repeat(50) + '@email.com';
-    return [{ description: 'max length', data: { ...dtoData, email: maxLen } }];
+    const list = [
+      this.buildAcceptableValues(property, 'max length', dtoData, maxLen),
+    ];
+    if (purpose == 'update') {
+      list.push(
+        this.buildAcceptableValues(property, 'null', dtoData, null),
+        this.buildAcceptableValues(property, 'undefined', dtoData, undefined),
+      );
+    }
+    return list;
   }
 
-  static getCodeAcceptableValues(dtoData) {
+  static getCodeAcceptableValues(
+    dtoData,
+    purpose: 'create' | 'register' | 'update',
+  ) {
+    const property = 'code';
     const minLen = 'x'.repeat(6);
     const maxLen = 'x'.repeat(60);
-    return [
-      { description: 'min length', data: { ...dtoData, code: minLen } },
-      { description: 'max length', data: { ...dtoData, code: maxLen } },
+    const list = [
+      this.buildAcceptableValues(property, 'min length', dtoData, minLen),
+      this.buildAcceptableValues(property, 'max length', dtoData, maxLen),
     ];
+    if (purpose == 'update') {
+      list.push(
+        // this.buildAcceptableValues(property, 'null', dtoData, null),
+        this.buildAcceptableValues(property, 'undefined', dtoData, undefined),
+      );
+    }
+    return list;
   }
 
-  static getModelAcceptableValues(dtoData) {
+  static getModelAcceptableValues(
+    dtoData,
+    purpose: 'create' | 'register' | 'update',
+  ) {
+    const property = 'model';
     const minLen = 'x'.repeat(6);
     const maxLen = 'x'.repeat(60);
-    return [
-      { description: 'min length', data: { ...dtoData, model: minLen } },
-      { description: 'max length', data: { ...dtoData, model: maxLen } },
+    const list = [
+      this.buildAcceptableValues(property, 'min length', dtoData, minLen),
+      this.buildAcceptableValues(property, 'max length', dtoData, maxLen),
     ];
+    if (purpose == 'update') {
+      list.push(
+        // this.buildAcceptableValues(property, 'null', dtoData, null),
+        this.buildAcceptableValues(property, 'undefined', dtoData, undefined),
+      );
+    }
+    return list;
   }
 
   static getActiveAcceptableValues(dtoData) {
-    return [
-      { description: 'boolean true', data: { ...dtoData, active: true } },
-      { description: 'boolean false', data: { ...dtoData, active: false } },
-      { description: 'string true', data: { ...dtoData, active: 'true' } },
-      { description: 'string false', data: { ...dtoData, active: 'false' } },
-      { description: 'null', data: { ...dtoData, active: null } },
-      { description: 'undefined', data: { ...dtoData, active: undefined } },
+    const property = 'active';
+    const list = [
+      this.buildAcceptableValues(property, 'boolean true', dtoData, true),
+      this.buildAcceptableValues(property, 'boolean false', dtoData, false),
+      this.buildAcceptableValues(property, 'string true', dtoData, 'true'),
+      this.buildAcceptableValues(property, 'string false', dtoData, 'false'),
+      this.buildAcceptableValues(property, 'null', dtoData, null),
+      this.buildAcceptableValues(property, 'undefined', dtoData, undefined),
     ];
+    return list;
   }
 
-  static getPriceAcceptableValues(dtoData) {
-    return [{ description: 'min value', data: { ...dtoData, price: 0 } }];
-  }
-
-  static getQuantityInStockAcceptableValues(dtoData) {
-    return [
-      { description: 'min value', data: { ...dtoData, quantityInStock: 0 } },
-      { description: 'null', data: { ...dtoData, quantityInStock: null } },
-      {
-        description: 'undefined',
-        data: { ...dtoData, quantityInStock: undefined },
-      },
+  static getPriceAcceptableValues(
+    dtoData,
+    purpose: 'create' | 'register' | 'update',
+  ) {
+    const property = 'price';
+    const list = [
+      this.buildAcceptableValues(property, 'min value', dtoData, 0),
     ];
+    if (purpose == 'update') {
+      list.push(
+        // this.buildAcceptableValues(property, 'null', dtoData, null),
+        this.buildAcceptableValues(property, 'undefined', dtoData, undefined),
+      );
+    }
+    return list;
   }
 
-  static getBrandIdAcceptableValues(dtoData) {
-    return [{ description: 'min value', data: { ...dtoData, brandId: 1 } }];
+  static getQuantityInStockAcceptableValues(
+    dtoData,
+    purpose: 'create' | 'register' | 'update',
+  ) {
+    const property = 'quantityInStock';
+    const list = [
+      this.buildAcceptableValues(property, 'min value', dtoData, 0),
+      // this.buildAcceptableValues(property, 'null', dtoData, null),
+      this.buildAcceptableValues(property, 'undefined', dtoData, undefined),
+    ];
+    return list;
+  }
+
+  static getBrandIdAcceptableValues(
+    dtoData,
+    purpose: 'create' | 'register' | 'update',
+  ) {
+    const property = 'brandId';
+    const list = [
+      this.buildAcceptableValues(property, 'min value', dtoData, 1),
+    ];
+    if (purpose == 'update') {
+      list.push(
+        // this.buildAcceptableValues(property, 'null', dtoData, null),
+        this.buildAcceptableValues(property, 'undefined', dtoData, undefined),
+      );
+    }
+    return list;
   }
 }

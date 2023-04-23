@@ -3,7 +3,6 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { CachingModule } from '../system/caching/caching.module';
 import { EncryptionModule } from '../system/encryption/encryption.module';
 import { UserModule } from '../user/user.module';
 import { JWTConfigs } from './configs/jwt.config';
@@ -27,7 +26,7 @@ import { LocalStrategy } from './strategies/local/local.strategy';
     TypeOrmModule.forFeature([RefreshTokenEntity]),
     UserModule,
     PassportModule,
-    CachingModule,
+    // CachingModule,
     EncryptionModule,
   ],
   providers: [

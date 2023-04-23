@@ -89,18 +89,20 @@ export class TestUserData {
     return TestData.getRolesErrorDataList(dtoData, purpose);
   }
 
-  static getNameAcceptableValues() {
+  static getNameAcceptableValues(purpose: 'create' | 'register' | 'update') {
     let dtoData = this.dataForRepository()[2];
-    return TestData.getNameAcceptableValues(dtoData);
+    return TestData.getNameAcceptableValues(dtoData, purpose);
   }
 
-  static getEmailAcceptableValues() {
+  static getEmailAcceptableValues(purpose: 'create' | 'register' | 'update') {
     let dtoData = this.dataForRepository()[2];
-    return TestData.getEmailAcceptableValues(dtoData);
+    return TestData.getEmailAcceptableValues(dtoData, purpose);
   }
 
-  static getPasswordAcceptableValues() {
+  static getPasswordAcceptableValues(
+    purpose: 'create' | 'register' | 'update',
+  ) {
     let dtoData = this.dataForRepository()[2];
-    return TestData.getPasswordAcceptableValues(dtoData);
+    return TestData.getPasswordAcceptableValues(dtoData, purpose);
   }
 }

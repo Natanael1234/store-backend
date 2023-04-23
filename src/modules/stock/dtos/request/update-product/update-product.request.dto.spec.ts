@@ -25,7 +25,7 @@ describe('UpdateProductRequestDTO', () => {
       },
     );
 
-    it.each(TestProductData.getCodeAcceptableValues())(
+    it.each(TestProductData.getCodeAcceptableValues('update'))(
       'should validate when code is $description',
       async ({ data }) => {
         const errors = await validateFirstError(data, UpdateProductRequestDTO);
@@ -46,7 +46,7 @@ describe('UpdateProductRequestDTO', () => {
       },
     );
 
-    it.each(TestProductData.getNameAcceptableValues())(
+    it.each(TestProductData.getNameAcceptableValues('update'))(
       'should validate when name is $description',
       async ({ data }) => {
         const errors = await validateFirstError(data, UpdateProductRequestDTO);
@@ -67,7 +67,7 @@ describe('UpdateProductRequestDTO', () => {
       },
     );
 
-    it.each(TestProductData.getModelAcceptableValues())(
+    it.each(TestProductData.getModelAcceptableValues('update'))(
       'should validate when model is $description',
       async ({ data }) => {
         const errors = await validateFirstError(data, UpdateProductRequestDTO);
@@ -88,7 +88,7 @@ describe('UpdateProductRequestDTO', () => {
       },
     );
 
-    it.each(TestProductData.getModelAcceptableValues())(
+    it.each(TestProductData.getModelAcceptableValues('update'))(
       'should validate when price is $description',
       async ({ data }) => {
         const errors = await validateFirstError(data, UpdateProductRequestDTO);
@@ -109,7 +109,7 @@ describe('UpdateProductRequestDTO', () => {
       },
     );
 
-    it.each(TestProductData.getQuantityInStockAcceptableValues())(
+    it.each(TestProductData.getQuantityInStockAcceptableValues('update'))(
       'should validate when quantity in stock is $description',
       async ({ data }) => {
         const errors = await validateFirstError(data, UpdateProductRequestDTO);
@@ -151,7 +151,7 @@ describe('UpdateProductRequestDTO', () => {
       },
     );
 
-    it.each(TestProductData.getBrandIdAcceptableValues())(
+    it.each(TestProductData.getBrandIdAcceptableValues('update'))(
       'should validate when brandId is $description',
       async ({ data }) => {
         const errors = await validateFirstError(data, UpdateProductRequestDTO);
