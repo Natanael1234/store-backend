@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AwuthenticationModule } from './modules/authentication/authentication.module';
+import { AuthenticationModule } from './modules/authentication/authentication.module';
 import { StockModule } from './modules/stock/stock.module';
 import { DatabaseModule } from './modules/system/database/database.module';
 import { UserModule } from './modules/user/user.module';
@@ -12,8 +12,8 @@ import { UserModule } from './modules/user/user.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    AuthenticationModule,
     UserModule,
-    AwuthenticationModule,
     // CachingModule,
     DatabaseModule,
     StockModule,
