@@ -32,6 +32,7 @@ export class TestData {
     const exception = new ExceptionClass(response);
 
     return {
+      property,
       description,
       data,
       expectedErrors,

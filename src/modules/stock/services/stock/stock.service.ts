@@ -11,6 +11,7 @@ import { CreateBrandRequestDTO } from '../../dtos/request/create-brand/create-br
 import { CreateProductRequestDTO } from '../../dtos/request/create-product/create-product.request.dto';
 import { UpdateBrandRequestDTO } from '../../dtos/request/update-brand/update-brand.request.dto';
 import { UpdateProductRequestDTO } from '../../dtos/request/update-product/update-product.request.dto';
+import { SuccessResponseDto } from '../../dtos/response/success.response.dto';
 import { BrandMessage } from '../../enums/brand-messages/brand-messages.enum';
 import { ProductMessage } from '../../enums/product-messages/product-messages.enum';
 import { BrandEntity } from '../../models/brand/brand.entity';
@@ -64,21 +65,21 @@ export class StockService {
     return brand;
   }
 
-  async searchBrands(text: string) {
+  async searchBrands(query: string) {
     // TODO: filtrar ativos
-    if (typeof text != 'string')
+    if (typeof query != 'string')
       throw new UnprocessableEntityException('Search must be string');
-    if (!text) throw new UnprocessableEntityException('Search is empty');
+    if (!query) throw new UnprocessableEntityException('Search is empty');
     return await this.brandRepo.find({
       where: [
         {
-          name: Like(`%${text || ''}%`),
+          name: Like(`%${query || ''}%`),
         },
       ],
     });
   }
 
-  async deleteBrand(brandId: number) {
+  async deleteBrand(brandId: number): Promise<SuccessResponseDto> {
     if (!brandId)
       throw new UnprocessableEntityException(BrandMessage.ID_REQUIRED);
     const brand = await this.brandRepo.findOne({
@@ -86,7 +87,7 @@ export class StockService {
     });
     if (!brand) throw new NotFoundException(BrandMessage.NOT_FOUND);
     await this.brandRepo.softDelete(brandId);
-    return true;
+    return new SuccessResponseDto();
   }
 
   async createProduct(
@@ -129,14 +130,14 @@ export class StockService {
     return this.productRepo.find({ relations: { brand: true } });
   }
 
-  async searchProducts(text: string) {
-    if (typeof text != 'string')
+  async searchProducts(query: string) {
+    if (typeof query != 'string')
       throw new UnprocessableEntityException('Search must be string');
-    if (!text) throw new UnprocessableEntityException('Search is empty'); // TODO: move string to enum
+    if (!query) throw new UnprocessableEntityException('Search is empty'); // TODO: move string to enum
     return await this.productRepo.find({
       where: [
         {
-          name: Like(`%${text}%`),
+          name: Like(`%${query}%`),
         },
       ],
       relations: { brand: true },
@@ -148,12 +149,13 @@ export class StockService {
       throw new UnprocessableEntityException(ProductMessage.ID_REQUIRED);
     const product = await this.productRepo.findOne({
       where: { id: productId },
+      relations: { brand: true },
     });
     if (!product) throw new NotFoundException(ProductMessage.NOT_FOUND);
     return product;
   }
 
-  async deleteProduct(productId: number) {
+  async deleteProduct(productId: number): Promise<SuccessResponseDto> {
     if (!productId)
       throw new UnprocessableEntityException(ProductMessage.ID_REQUIRED);
     const product = await this.productRepo.findOne({
@@ -161,6 +163,6 @@ export class StockService {
     });
     if (!product) throw new NotFoundException(ProductMessage.NOT_FOUND);
     await this.productRepo.softDelete(productId);
-    return true;
+    return new SuccessResponseDto();
   }
 }

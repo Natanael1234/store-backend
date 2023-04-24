@@ -16,6 +16,7 @@ import { AuthenticationService } from '../modules/authentication/services/authen
 import { TokenService } from '../modules/authentication/services/token/token.service';
 import { JwtStrategy } from '../modules/authentication/strategies/jwt/jwt.strategy';
 import { LocalStrategy } from '../modules/authentication/strategies/local/local.strategy';
+import { StockController } from '../modules/stock/controllers/stock.controller';
 import { BrandEntity } from '../modules/stock/models/brand/brand.entity';
 import { ProductEntity } from '../modules/stock/models/product/product.entity';
 import { StockService } from '../modules/stock/services/stock/stock.service';
@@ -67,6 +68,7 @@ export async function getTestingModule(
       AppController,
       AuthenticationController,
       UserController,
+      StockController,
       ...(additionalMetadata?.controllers || []),
     ],
   }).compile();

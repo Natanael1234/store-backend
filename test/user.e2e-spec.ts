@@ -1,7 +1,6 @@
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import * as request from 'supertest';
 import { Repository } from 'typeorm';
 import { getTestingModule } from '../src/.jest/test-config.module';
 
@@ -17,6 +16,13 @@ import { UserMessage } from '../src/modules/user/enums/user-messages.ts/user-mes
 import { UserEntity } from '../src/modules/user/models/user/user.entity';
 import { TestUserData } from '../src/test/test-user-data';
 import { testValidateUser } from '../src/test/test-user-utils';
+import {
+  TestRequestFunction,
+  getHTTPDeleteMethod,
+  getHTTPGetMethod,
+  getHTTPPatchMethod,
+  getHTTPPostMethod,
+} from './test-request-utils';
 
 const endpoint = '/users';
 
@@ -27,54 +33,19 @@ describe('UserController (e2e)', () => {
   let userRepo: Repository<UserEntity>;
   let encryptionService: EncryptionService;
 
-  async function httpGet(
-    endpoint: string,
-    params: any,
-    expectedStatus: number,
-    accessToken?: string,
-  ) {
-    let test = request(app.getHttpServer()).get(endpoint);
-    if (accessToken) {
-      test = test.set('Authorization', 'bearer ' + accessToken);
-    }
-    const result = await test.query(params || {});
-    expect(result.statusCode).toEqual(expectedStatus);
-    return result.body;
-  }
-
-  async function httpPost(
-    endpoint: string,
-    body: any,
-    expectedStatus: number,
-    accessToken?: string,
-  ) {
-    let test = request(app.getHttpServer()).post(endpoint);
-    if (accessToken) {
-      test = test.set('Authorization', 'bearer ' + accessToken);
-    }
-    const result = await test.send(body);
-    expect(result.statusCode).toEqual(expectedStatus);
-    return result.body;
-  }
-
-  async function httpPatch(
-    endpoint: string,
-    body: any,
-    expectedStatus: number,
-    accessToken?: string,
-  ) {
-    let test = request(app.getHttpServer()).patch(endpoint);
-    if (accessToken) {
-      test = test.set('Authorization', 'bearer ' + accessToken);
-    }
-    const result = await test.send(body);
-    expect(result.statusCode).toEqual(expectedStatus);
-    return result.body;
-  }
+  let httpGet: TestRequestFunction;
+  let httpPost: TestRequestFunction;
+  let httpPatch: TestRequestFunction;
+  let httpDelete: TestRequestFunction;
 
   beforeEach(async () => {
     moduleFixture = await getTestingModule();
     app = moduleFixture.createNestApplication();
+    httpGet = getHTTPGetMethod(app);
+    httpPost = getHTTPPostMethod(app);
+    httpPatch = getHTTPPatchMethod(app);
+    httpDelete = getHTTPDeleteMethod(app);
+
     authenticationService = app.get<AuthenticationService>(
       AuthenticationService,
     );
