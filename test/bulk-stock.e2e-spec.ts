@@ -59,7 +59,7 @@ describe('StockController (e2e)', () => {
     await moduleFixture.close();
   });
 
-  describe('/stock/products/bulk (POST)', () => {
+  describe('/stock/bulk (POST)', () => {
     it.skip('should bulk create products and brands', async () => {});
   });
 });

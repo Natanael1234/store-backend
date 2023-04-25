@@ -90,8 +90,8 @@ describe('StockController (e2e)', () => {
     await moduleFixture.close();
   });
 
-  describe('/stock/brand', () => {
-    describe('/stock/brands (POST)', () => {
+  describe('/brand', () => {
+    describe('/brands (POST)', () => {
       it('should create brand', async () => {
         const brandData = TestBrandData.dataForRepository;
         const expectedResults = [
@@ -103,19 +103,19 @@ describe('StockController (e2e)', () => {
 
         const createdBrands = [
           await httpPost(
-            '/stock/brands',
+            '/brands',
             brandData[0],
             HttpStatus.CREATED,
             rootToken,
           ),
           await httpPost(
-            '/stock/brands',
+            '/brands',
             brandData[1],
             HttpStatus.CREATED,
             rootToken,
           ),
           await httpPost(
-            '/stock/brands',
+            '/brands',
             brandData[2],
             HttpStatus.CREATED,
             adminToken,
@@ -138,11 +138,7 @@ describe('StockController (e2e)', () => {
       describe('authentication', () => {
         it('should not allow unauthenticated', async () => {
           const brandData = TestBrandData.dataForRepository;
-          await httpPost(
-            '/stock/brands',
-            brandData[0],
-            HttpStatus.UNAUTHORIZED,
-          );
+          await httpPost('/brands', brandData[0], HttpStatus.UNAUTHORIZED);
         });
       });
 
@@ -150,7 +146,7 @@ describe('StockController (e2e)', () => {
         it('should not allow basic user', async () => {
           const brandData = TestBrandData.dataForRepository;
           await httpPost(
-            '/stock/brands',
+            '/brands',
             brandData[0],
             HttpStatus.FORBIDDEN,
             userToken,
@@ -169,12 +165,7 @@ describe('StockController (e2e)', () => {
             await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
             await testDatabaseUtils.reset();
 
-            const body = await httpPost(
-              '/stock/brands',
-              data,
-              statusCode,
-              rootToken,
-            );
+            const body = await httpPost('/brands', data, statusCode, rootToken);
 
             const changes = await testDatabaseUtils.checkChanges();
             expect(changes.alteredDatabase).toBeFalsy();
@@ -195,7 +186,7 @@ describe('StockController (e2e)', () => {
           await testDatabaseUtils.reset();
 
           const createdBrand = await httpPost(
-            '/stock/brands',
+            '/brands',
             data,
             HttpStatus.CREATED,
             rootToken,
@@ -211,7 +202,7 @@ describe('StockController (e2e)', () => {
       });
     });
 
-    describe('/stock/brands (PATCH)', () => {
+    describe('/brands (PATCH)', () => {
       it('should update brand', async () => {
         const brandData = TestBrandData.dataForRepository;
         await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
@@ -225,7 +216,7 @@ describe('StockController (e2e)', () => {
         await testDatabaseUtils.reset();
 
         const updatedBrand = await httpPatch(
-          '/stock/brands/2',
+          '/brands/2',
           updateData,
           HttpStatus.OK,
           rootToken,
@@ -244,11 +235,7 @@ describe('StockController (e2e)', () => {
         it('should not allow unauthenticated', async () => {
           const brandData = TestBrandData.dataForRepository;
           await brandRepo.insert([brandData[0], brandData[1]]);
-          await httpPatch(
-            '/stock/brands/1',
-            brandData[2],
-            HttpStatus.UNAUTHORIZED,
-          );
+          await httpPatch('/brands/1', brandData[2], HttpStatus.UNAUTHORIZED);
         });
       });
 
@@ -257,7 +244,7 @@ describe('StockController (e2e)', () => {
           const brandData = TestBrandData.dataForRepository;
           await brandRepo.insert([brandData[0], brandData[1]]);
           await httpPatch(
-            '/stock/brands/1',
+            '/brands/1',
             brandData[2],
             HttpStatus.FORBIDDEN,
             userToken,
@@ -275,7 +262,7 @@ describe('StockController (e2e)', () => {
           await testDatabaseUtils.reset();
 
           const body = await httpPatch(
-            '/stock/brands/2',
+            '/brands/2',
             data,
             HttpStatus.UNPROCESSABLE_ENTITY,
             rootToken,
@@ -306,7 +293,7 @@ describe('StockController (e2e)', () => {
           }
 
           const updatedBrand = await httpPatch(
-            '/stock/brands/2',
+            '/brands/2',
             data,
             HttpStatus.OK,
             rootToken,
@@ -339,14 +326,14 @@ describe('StockController (e2e)', () => {
       });
     });
 
-    describe('/stock/brands (GET)', () => {
+    describe('/brands (GET)', () => {
       it('should find brands', async () => {
         const brandData = TestBrandData.dataForRepository;
         await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
         await testDatabaseUtils.reset();
 
         const foundBrands = await httpGet(
-          '/stock/brands',
+          '/brands',
           {},
           HttpStatus.OK,
           rootToken,
@@ -363,7 +350,7 @@ describe('StockController (e2e)', () => {
         await testDatabaseUtils.reset();
 
         const foundBrands = await httpGet(
-          '/stock/brands',
+          '/brands',
           {},
           HttpStatus.OK,
           rootToken,
@@ -378,7 +365,7 @@ describe('StockController (e2e)', () => {
         it('should allow unauthenticated', async () => {
           const brandData = TestBrandData.dataForRepository;
           await brandRepo.insert([brandData[0]]);
-          await httpGet('/stock/brands', {}, HttpStatus.OK);
+          await httpGet('/brands', {}, HttpStatus.OK);
         });
       });
 
@@ -386,16 +373,16 @@ describe('StockController (e2e)', () => {
         it('should allow basic user', async () => {
           const brandData = TestBrandData.dataForRepository;
           await brandRepo.insert([brandData[0]]);
-          await httpGet('/stock/brands', {}, HttpStatus.OK, userToken);
+          await httpGet('/brands', {}, HttpStatus.OK, userToken);
         });
       });
     });
 
-    describe('/stock/brands/brandId (GET)', () => {
+    describe('/brands/brandId (GET)', () => {
       it('should find brand for id', async () => {
         const brandData = TestBrandData.dataForRepository;
         await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
-        await httpGet('/stock/brands/2', {}, HttpStatus.OK, rootToken);
+        await httpGet('/brands/2', {}, HttpStatus.OK, rootToken);
       });
 
       it('should fail when brand does not exists', async () => {
@@ -404,7 +391,7 @@ describe('StockController (e2e)', () => {
         await testDatabaseUtils.reset();
 
         const body = await httpGet(
-          '/stock/brands/200',
+          '/brands/200',
           {},
           HttpStatus.NOT_FOUND,
           rootToken,
@@ -422,7 +409,7 @@ describe('StockController (e2e)', () => {
         it('should allow unauthenticated', async () => {
           const brandData = TestBrandData.dataForRepository;
           await brandRepo.insert([brandData[0]]);
-          await httpGet('/stock/brands/1', {}, HttpStatus.OK);
+          await httpGet('/brands/1', {}, HttpStatus.OK);
         });
       });
 
@@ -430,19 +417,19 @@ describe('StockController (e2e)', () => {
         it('should allow basic user', async () => {
           const brandData = TestBrandData.dataForRepository;
           await brandRepo.insert([brandData[0]]);
-          await httpGet('/stock/brands/1', {}, HttpStatus.OK, userToken);
+          await httpGet('/brands/1', {}, HttpStatus.OK, userToken);
         });
       });
     });
 
-    describe('/stock/brands/brandId (DELETE)', () => {
+    describe('/brands/brandId (DELETE)', () => {
       it('should update brand', async () => {
         const brandData = TestBrandData.dataForRepository;
         await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
         await testDatabaseUtils.reset();
 
         const deletedBrand = await httpDelete(
-          '/stock/brands/2',
+          '/brands/2',
           {},
           HttpStatus.OK,
           rootToken,
@@ -462,7 +449,7 @@ describe('StockController (e2e)', () => {
         await testDatabaseUtils.reset();
 
         const body = await httpDelete(
-          '/stock/brands/200',
+          '/brands/200',
           { query: {} },
           HttpStatus.NOT_FOUND,
           rootToken,
@@ -487,7 +474,7 @@ describe('StockController (e2e)', () => {
             productData[2],
           ]);
 
-          await httpDelete('/stock/brands/1', {}, HttpStatus.UNAUTHORIZED);
+          await httpDelete('/brands/1', {}, HttpStatus.UNAUTHORIZED);
         });
       });
 
@@ -502,12 +489,7 @@ describe('StockController (e2e)', () => {
             productData[2],
           ]);
 
-          await httpDelete(
-            '/stock/brands/1',
-            {},
-            HttpStatus.FORBIDDEN,
-            userToken,
-          );
+          await httpDelete('/brands/1', {}, HttpStatus.FORBIDDEN, userToken);
         });
       });
     });
@@ -519,7 +501,7 @@ describe('StockController (e2e)', () => {
         await testDatabaseUtils.reset();
 
         const results1 = await httpGet(
-          '/stock/brands/search',
+          '/brands/search',
           { query: 'rand 1' },
           HttpStatus.OK,
           rootToken,
@@ -529,7 +511,7 @@ describe('StockController (e2e)', () => {
         expect(changes1.alteredDatabase).toBeFalsy();
 
         const results2 = await httpGet(
-          '/stock/brands/search',
+          '/brands/search',
           { query: 'Brand' },
           HttpStatus.OK,
           rootToken,
@@ -553,7 +535,7 @@ describe('StockController (e2e)', () => {
         await testDatabaseUtils.reset();
 
         const results = await httpGet(
-          '/stock/brands/search',
+          '/brands/search',
           { query: 'not found text' },
           HttpStatus.OK,
           rootToken,
@@ -570,7 +552,7 @@ describe('StockController (e2e)', () => {
         await testDatabaseUtils.reset();
 
         const body = await httpGet(
-          '/stock/brands/search',
+          '/brands/search',
           { query: {} },
           HttpStatus.UNPROCESSABLE_ENTITY,
           rootToken,
@@ -591,7 +573,7 @@ describe('StockController (e2e)', () => {
         await testDatabaseUtils.reset();
 
         const body = await httpGet(
-          '/stock/brands/search',
+          '/brands/search',
           { query: '' },
           HttpStatus.UNPROCESSABLE_ENTITY,
           rootToken,
@@ -611,7 +593,7 @@ describe('StockController (e2e)', () => {
         it('should allow unauthenticated', async () => {
           const brandData = TestBrandData.dataForRepository;
           await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
-          await httpGet('/stock/brands', { query: 'rand 1' }, HttpStatus.OK);
+          await httpGet('/brands', { query: 'rand 1' }, HttpStatus.OK);
         });
       });
 
@@ -620,7 +602,7 @@ describe('StockController (e2e)', () => {
           const brandData = TestBrandData.dataForRepository;
           await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
           await httpGet(
-            '/stock/brands',
+            '/brands',
             { query: 'rand 1' },
             HttpStatus.OK,
             userToken,

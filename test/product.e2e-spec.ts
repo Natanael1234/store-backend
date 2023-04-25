@@ -98,8 +98,8 @@ describe('StockController (e2e)', () => {
     await moduleFixture.close();
   });
 
-  describe('/stock/product', () => {
-    describe('/stock/products (POST)', () => {
+  describe('/products', () => {
+    describe('/products (POST)', () => {
       it('should create product', async () => {
         const brandData = TestBrandData.dataForRepository;
         await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
@@ -114,19 +114,19 @@ describe('StockController (e2e)', () => {
 
         const createdProducts = [
           await httpPost(
-            '/stock/products',
+            '/products',
             productData[0],
             HttpStatus.CREATED,
             rootToken,
           ),
           await httpPost(
-            '/stock/products',
+            '/products',
             productData[1],
             HttpStatus.CREATED,
             rootToken,
           ),
           await httpPost(
-            '/stock/products',
+            '/products',
             productData[2],
             HttpStatus.CREATED,
             adminToken,
@@ -166,7 +166,7 @@ describe('StockController (e2e)', () => {
         await testDatabaseUtils.reset();
 
         const body = await httpPost(
-          '/stock/products',
+          '/products',
           data,
           HttpStatus.NOT_FOUND,
           rootToken,
@@ -185,11 +185,7 @@ describe('StockController (e2e)', () => {
           const brandData = TestBrandData.dataForRepository;
           await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
           const productData = TestProductData.dataForRepository;
-          await httpPost(
-            '/stock/products',
-            productData[0],
-            HttpStatus.UNAUTHORIZED,
-          );
+          await httpPost('/products', productData[0], HttpStatus.UNAUTHORIZED);
         });
       });
 
@@ -199,7 +195,7 @@ describe('StockController (e2e)', () => {
           await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
           const productData = TestProductData.dataForRepository;
           await httpPost(
-            '/stock/products',
+            '/products',
             productData[0],
             HttpStatus.FORBIDDEN,
             userToken,
@@ -219,7 +215,7 @@ describe('StockController (e2e)', () => {
             await testDatabaseUtils.reset();
 
             const body = await httpPost(
-              '/stock/products',
+              '/products',
               data,
               statusCode,
               rootToken,
@@ -247,7 +243,7 @@ describe('StockController (e2e)', () => {
           await testDatabaseUtils.reset();
 
           const createdProduct = await httpPost(
-            '/stock/products',
+            '/products',
             data,
             HttpStatus.CREATED,
             rootToken,
@@ -264,7 +260,7 @@ describe('StockController (e2e)', () => {
       });
     });
 
-    describe('/stock/products (PATCH)', () => {
+    describe('/products (PATCH)', () => {
       it('should update product', async () => {
         const brandData = TestBrandData.dataForRepository;
         await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
@@ -292,7 +288,7 @@ describe('StockController (e2e)', () => {
         ];
 
         const updatedProduct = await httpPatch(
-          '/stock/products/2',
+          '/products/2',
           data,
           HttpStatus.OK,
           rootToken,
@@ -318,7 +314,7 @@ describe('StockController (e2e)', () => {
         await testDatabaseUtils.reset();
 
         const body = await httpPatch(
-          '/stock/products/1',
+          '/products/1',
           data,
           HttpStatus.NOT_FOUND,
           rootToken,
@@ -339,7 +335,7 @@ describe('StockController (e2e)', () => {
           const productData = TestProductData.dataForRepository;
           await productRepo.insert([productData[0], productData[1]]);
           await httpPatch(
-            '/stock/products/2',
+            '/products/2',
             productData[2],
             HttpStatus.UNAUTHORIZED,
           );
@@ -353,7 +349,7 @@ describe('StockController (e2e)', () => {
           const productData = TestProductData.dataForRepository;
           await productRepo.insert([productData[0], productData[1]]);
           await httpPatch(
-            '/stock/products/2',
+            '/products/2',
             productData[2],
             HttpStatus.FORBIDDEN,
             userToken,
@@ -380,7 +376,7 @@ describe('StockController (e2e)', () => {
             await testDatabaseUtils.reset();
 
             const body = await httpPatch(
-              '/stock/products/2',
+              '/products/2',
               data,
               statusCode,
               rootToken,
@@ -441,7 +437,7 @@ describe('StockController (e2e)', () => {
           expectedProductResults[1].active = productUpdateDTO.active;
 
           const updatedProduct = await httpPatch(
-            '/stock/products/2',
+            '/products/2',
             data,
             HttpStatus.OK,
             rootToken,
@@ -488,7 +484,7 @@ describe('StockController (e2e)', () => {
       });
     });
 
-    describe('/stock/products (GET)', () => {
+    describe('/products (GET)', () => {
       it('should find products', async () => {
         const brandData = TestBrandData.dataForRepository;
         await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
@@ -501,7 +497,7 @@ describe('StockController (e2e)', () => {
         await testDatabaseUtils.reset();
 
         const foundProducts = await httpGet(
-          '/stock/products',
+          '/products',
           {},
           HttpStatus.OK,
           rootToken,
@@ -519,7 +515,7 @@ describe('StockController (e2e)', () => {
         await testDatabaseUtils.reset();
 
         const foundProducts = await httpGet(
-          '/stock/products',
+          '/products',
           {},
           HttpStatus.OK,
           rootToken,
@@ -540,7 +536,7 @@ describe('StockController (e2e)', () => {
             productData[1],
             productData[2],
           ]);
-          await httpGet('/stock/products', {}, HttpStatus.OK);
+          await httpGet('/products', {}, HttpStatus.OK);
         });
       });
 
@@ -554,12 +550,12 @@ describe('StockController (e2e)', () => {
             productData[1],
             productData[2],
           ]);
-          await httpGet('/stock/products', {}, HttpStatus.OK, userToken);
+          await httpGet('/products', {}, HttpStatus.OK, userToken);
         });
       });
     });
 
-    describe('/stock/products/productId (GET)', () => {
+    describe('/products/productId (GET)', () => {
       it('should find product', async () => {
         const brandData = TestBrandData.dataForRepository;
         await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
@@ -572,7 +568,7 @@ describe('StockController (e2e)', () => {
         await testDatabaseUtils.reset();
 
         const foundProduct = await httpGet(
-          '/stock/products/2',
+          '/products/2',
           {},
           HttpStatus.OK,
           rootToken,
@@ -596,7 +592,7 @@ describe('StockController (e2e)', () => {
         await testDatabaseUtils.reset();
 
         const body = await httpGet(
-          '/stock/products/200',
+          '/products/200',
           {},
           HttpStatus.NOT_FOUND,
           rootToken,
@@ -620,7 +616,7 @@ describe('StockController (e2e)', () => {
             productData[1],
             productData[2],
           ]);
-          await httpGet('/stock/products/2', {}, HttpStatus.OK);
+          await httpGet('/products/2', {}, HttpStatus.OK);
         });
       });
 
@@ -634,12 +630,12 @@ describe('StockController (e2e)', () => {
             productData[1],
             productData[2],
           ]);
-          await httpGet('/stock/products/2', {}, HttpStatus.OK, userToken);
+          await httpGet('/products/2', {}, HttpStatus.OK, userToken);
         });
       });
     });
 
-    describe('/stock/products/:productId (DELETE)', () => {
+    describe('/products/:productId (DELETE)', () => {
       it('should delete product', async () => {
         const brandData = TestBrandData.dataForRepository;
         await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
@@ -652,7 +648,7 @@ describe('StockController (e2e)', () => {
         await testDatabaseUtils.reset();
 
         const response = await httpDelete(
-          '/stock/products/2',
+          '/products/2',
           {},
           HttpStatus.OK,
           rootToken,
@@ -681,7 +677,7 @@ describe('StockController (e2e)', () => {
         await testDatabaseUtils.reset();
 
         const body = await httpDelete(
-          '/stock/products/200',
+          '/products/200',
           {},
           HttpStatus.NOT_FOUND,
           rootToken,
@@ -705,7 +701,7 @@ describe('StockController (e2e)', () => {
             productData[1],
             productData[2],
           ]);
-          await httpDelete('/stock/products/2', {}, HttpStatus.UNAUTHORIZED);
+          await httpDelete('/products/2', {}, HttpStatus.UNAUTHORIZED);
         });
       });
 
@@ -719,17 +715,12 @@ describe('StockController (e2e)', () => {
             productData[1],
             productData[2],
           ]);
-          await httpDelete(
-            '/stock/products/2',
-            {},
-            HttpStatus.FORBIDDEN,
-            userToken,
-          );
+          await httpDelete('/products/2', {}, HttpStatus.FORBIDDEN, userToken);
         });
       });
     });
 
-    describe('/stock/product/search (GET)', () => {
+    describe('/products/search (GET)', () => {
       it('should do textual search for products.', async () => {
         const brandData = TestBrandData.dataForRepository;
         await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
@@ -742,7 +733,7 @@ describe('StockController (e2e)', () => {
         await testDatabaseUtils.reset();
 
         const results1 = await httpGet(
-          '/stock/products/search',
+          '/products/search',
           { query: 'duct 1' },
           HttpStatus.OK,
           rootToken,
@@ -750,7 +741,7 @@ describe('StockController (e2e)', () => {
         const changes1 = await testDatabaseUtils.checkChanges();
 
         const results2 = await httpGet(
-          '/stock/products/search',
+          '/products/search',
           { query: 'Product' },
           HttpStatus.OK,
           rootToken,
@@ -780,7 +771,7 @@ describe('StockController (e2e)', () => {
         await testDatabaseUtils.reset();
 
         const results = await httpGet(
-          '/stock/products/search',
+          '/products/search',
           { query: 'not found text' },
           HttpStatus.OK,
           rootToken,
@@ -803,7 +794,7 @@ describe('StockController (e2e)', () => {
         await testDatabaseUtils.reset();
 
         const body = await httpGet(
-          '/stock/products/search',
+          '/products/search',
           { query: {} },
           HttpStatus.UNPROCESSABLE_ENTITY,
           rootToken,
@@ -831,7 +822,7 @@ describe('StockController (e2e)', () => {
         await testDatabaseUtils.reset();
 
         const body = await httpGet(
-          '/stock/products/search',
+          '/products/search',
           { query: '' },
           HttpStatus.UNPROCESSABLE_ENTITY,
           rootToken,
@@ -857,11 +848,7 @@ describe('StockController (e2e)', () => {
             productData[1],
             productData[2],
           ]);
-          await httpGet(
-            '/stock/products/search',
-            { query: 'duct 1' },
-            HttpStatus.OK,
-          );
+          await httpGet('/products/search', { query: 'duct 1' }, HttpStatus.OK);
         });
       });
 
@@ -876,7 +863,7 @@ describe('StockController (e2e)', () => {
             productData[2],
           ]);
           await httpGet(
-            '/stock/products/search',
+            '/products/search',
             { query: 'duct 1' },
             HttpStatus.OK,
             userToken,

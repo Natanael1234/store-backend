@@ -16,10 +16,12 @@ import { AuthenticationService } from '../modules/authentication/services/authen
 import { TokenService } from '../modules/authentication/services/token/token.service';
 import { JwtStrategy } from '../modules/authentication/strategies/jwt/jwt.strategy';
 import { LocalStrategy } from '../modules/authentication/strategies/local/local.strategy';
-import { StockController } from '../modules/stock/controllers/stock.controller';
+import { BrandController } from '../modules/stock/controllers/brand/brand.controller';
+import { ProductController } from '../modules/stock/controllers/product/product.controller';
 import { BrandEntity } from '../modules/stock/models/brand/brand.entity';
 import { ProductEntity } from '../modules/stock/models/product/product.entity';
-import { StockService } from '../modules/stock/services/stock/stock.service';
+import { BrandService } from '../modules/stock/services/brand/brand.service';
+import { ProductService } from '../modules/stock/services/product/product.service';
 import { EncryptionService } from '../modules/system/encryption/services/encryption/encryption.service';
 import { UserController } from '../modules/user/controllers/user.controller';
 import { RolesGuard } from '../modules/user/guards/roles/roles.guard';
@@ -57,9 +59,10 @@ export async function getTestingModule(
       JwtStrategy,
       LocalStrategy,
       RefreshTokenRepository,
-      StockService,
       TokenService,
       UserService,
+      ProductService,
+      BrandService,
       ...(additionalMetadata?.providers || []),
       { provide: APP_GUARD, useClass: JwtAuthenticationGuard },
       { provide: APP_GUARD, useClass: RolesGuard },
@@ -68,7 +71,8 @@ export async function getTestingModule(
       AppController,
       AuthenticationController,
       UserController,
-      StockController,
+      BrandController,
+      ProductController,
       ...(additionalMetadata?.controllers || []),
     ],
   }).compile();
