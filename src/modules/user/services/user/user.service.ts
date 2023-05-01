@@ -9,12 +9,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Validator } from 'class-validator';
 import { Repository } from 'typeorm';
 import { EncryptionService } from '../../../system/encryption/services/encryption/encryption.service';
-import { validateAndThrows } from '../../../system/utils/validation';
+import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
+import { validateOrThrowError } from '../../../system/utils/validation';
 import { CreateUserRequestDTO } from '../../dtos/create-user/create-user.request.dto';
 import { UpdatePasswordResponseDTO } from '../../dtos/update-password.response.dto';
 import { UpdatePasswordRequestDTO } from '../../dtos/update-password/update-password.request.dto';
 import { UpdateUserRequestDTO } from '../../dtos/update-user/update-user.request.dto';
-import { EmailMessage } from '../../enums/email-messages/email-messages.enum';
 import { UserMessage } from '../../enums/user-messages.ts/user-messages.enum';
 import { UserEntity } from '../../models/user/user.entity';
 
@@ -29,7 +29,7 @@ export class UserService {
 
   public async create(userDto: CreateUserRequestDTO): Promise<UserEntity> {
     if (!userDto) throw new BadRequestException(UserMessage.DATA_REQUIRED);
-    await validateAndThrows(userDto, CreateUserRequestDTO);
+    await validateOrThrowError(userDto, CreateUserRequestDTO);
     if (await this.checkIfEmailAlreadyInUse(userDto.email))
       throw new ConflictException(EmailMessage.INVALID);
     const user = new UserEntity();
@@ -48,7 +48,7 @@ export class UserService {
     if (!userDto) throw new BadRequestException(UserMessage.DATA_REQUIRED);
     if (!userId)
       throw new UnprocessableEntityException(UserMessage.ID_REQUIRED);
-    await validateAndThrows(userDto, UpdateUserRequestDTO);
+    await validateOrThrowError(userDto, UpdateUserRequestDTO);
     const existentUser = await this.findForId(userId);
     if (!existentUser) throw new NotFoundException(UserMessage.NOT_FOUND);
     if (userDto.email && existentUser.email != userDto.email) {
@@ -94,7 +94,7 @@ export class UserService {
   ): Promise<UpdatePasswordResponseDTO> {
     if (!userId) throw new BadRequestException(UserMessage.ID_REQUIRED);
     if (!updatePasswordDto) throw new BadRequestException('Data is required'); // TODO: move message to a enum
-    await validateAndThrows(updatePasswordDto, UpdatePasswordRequestDTO);
+    await validateOrThrowError(updatePasswordDto, UpdatePasswordRequestDTO);
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException(UserMessage.NOT_FOUND);
     user.hash = await this.encryptionService.encrypt(

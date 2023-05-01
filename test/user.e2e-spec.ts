@@ -1,22 +1,32 @@
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import * as request from 'supertest';
 import { Repository } from 'typeorm';
 import { getTestingModule } from '../src/.jest/test-config.module';
 
 import { Role } from '../src/modules/authentication/enums/role/role.enum';
 import { AuthenticationService } from '../src/modules/authentication/services/authentication/authentication.service';
-import { ValidationPipe } from '../src/modules/pipes/custom-validation.pipe';
 import { EncryptionService } from '../src/modules/system/encryption/services/encryption/encryption.service';
-import { EmailMessage } from '../src/modules/user/enums/email-messages/email-messages.enum';
-import { NameMessage } from '../src/modules/user/enums/name-messages/name-messages.enum';
-import { PasswordMessage } from '../src/modules/user/enums/password-messages/password-messages.enum';
+import { EmailMessage } from '../src/modules/system/enums/messages/email-messages/email-messages.enum';
+import { NameMessage } from '../src/modules/system/enums/messages/name-messages/name-messages.enum';
+import { PasswordMessage } from '../src/modules/system/enums/messages/password-messages/password-messages.enum';
+import { ValidationPipe } from '../src/modules/system/pipes/custom-validation.pipe';
 import { RoleMessage } from '../src/modules/user/enums/role-messages/role-messages.enum';
 import { UserMessage } from '../src/modules/user/enums/user-messages.ts/user-messages.enum';
 import { UserEntity } from '../src/modules/user/models/user/user.entity';
+import { TestPurpose } from '../src/test/test-data';
+import { getEmailErrorDataList } from '../src/test/test-data/test-email-data';
+import { getNameErrorDataList } from '../src/test/test-data/test-name-data';
+import { getPasswordErrorDataList } from '../src/test/test-data/test.password-data';
 import { TestUserData } from '../src/test/test-user-data';
 import { testValidateUser } from '../src/test/test-user-utils';
+import {
+  TestRequestFunction,
+  getHTTPDeleteMethod,
+  getHTTPGetMethod,
+  getHTTPPatchMethod,
+  getHTTPPostMethod,
+} from './common/test-request-utils';
 
 const endpoint = '/users';
 
@@ -27,54 +37,19 @@ describe('UserController (e2e)', () => {
   let userRepo: Repository<UserEntity>;
   let encryptionService: EncryptionService;
 
-  async function httpGet(
-    endpoint: string,
-    params: any,
-    expectedStatus: number,
-    accessToken?: string,
-  ) {
-    let test = request(app.getHttpServer()).get(endpoint);
-    if (accessToken) {
-      test = test.set('Authorization', 'bearer ' + accessToken);
-    }
-    const result = await test.query(params || {});
-    expect(result.statusCode).toEqual(expectedStatus);
-    return result.body;
-  }
-
-  async function httpPost(
-    endpoint: string,
-    body: any,
-    expectedStatus: number,
-    accessToken?: string,
-  ) {
-    let test = request(app.getHttpServer()).post(endpoint);
-    if (accessToken) {
-      test = test.set('Authorization', 'bearer ' + accessToken);
-    }
-    const result = await test.send(body);
-    expect(result.statusCode).toEqual(expectedStatus);
-    return result.body;
-  }
-
-  async function httpPatch(
-    endpoint: string,
-    body: any,
-    expectedStatus: number,
-    accessToken?: string,
-  ) {
-    let test = request(app.getHttpServer()).patch(endpoint);
-    if (accessToken) {
-      test = test.set('Authorization', 'bearer ' + accessToken);
-    }
-    const result = await test.send(body);
-    expect(result.statusCode).toEqual(expectedStatus);
-    return result.body;
-  }
+  let httpGet: TestRequestFunction;
+  let httpPost: TestRequestFunction;
+  let httpPatch: TestRequestFunction;
+  let httpDelete: TestRequestFunction;
 
   beforeEach(async () => {
     moduleFixture = await getTestingModule();
     app = moduleFixture.createNestApplication();
+    httpGet = getHTTPGetMethod(app);
+    httpPost = getHTTPPostMethod(app);
+    httpPatch = getHTTPPatchMethod(app);
+    httpDelete = getHTTPDeleteMethod(app);
+
     authenticationService = app.get<AuthenticationService>(
       AuthenticationService,
     );
@@ -98,7 +73,7 @@ describe('UserController (e2e)', () => {
   describe('/users (POST)', () => {
     describe('authentication', () => {
       it('should fail if not authenticated', async () => {
-        const createData = TestUserData.userCreationData;
+        const createData = TestUserData.creationData;
 
         const usersBefore = await userRepo.find();
         const body = await httpPost(
@@ -117,8 +92,8 @@ describe('UserController (e2e)', () => {
     describe('permissions', () => {
       it('should allow root to create users', async () => {
         const registerData = TestUserData.registerData;
-        const usersData = TestUserData.usersData({ passwords: false });
-        const createData = TestUserData.userCreationData;
+        const usersData = TestUserData.dataForRepository({ passwords: false });
+        const createData = TestUserData.creationData;
 
         const expectedData = [
           { id: 1, ...usersData[0] },
@@ -150,7 +125,7 @@ describe('UserController (e2e)', () => {
         { description: 'user', role: Role.USER },
       ])('should not allow $description to create users', async ({ role }) => {
         const registerData = TestUserData.registerData;
-        const createData = TestUserData.userCreationData;
+        const createData = TestUserData.creationData;
         const registeredUsers = [
           await authenticationService.register(registerData[0]),
           await authenticationService.register(registerData[1]),
@@ -177,7 +152,12 @@ describe('UserController (e2e)', () => {
 
     describe('dto', () => {
       describe('name', () => {
-        it.each(TestUserData.getNameErrorDataList('create'))(
+        it.each(
+          getNameErrorDataList(
+            TestUserData.creationData[2],
+            TestPurpose.create,
+          ),
+        )(
           'should fail if name is $description',
           async ({ data, statusCode, response }) => {
             let registerData = TestUserData.registerData;
@@ -196,7 +176,7 @@ describe('UserController (e2e)', () => {
 
         it('should validate when name length is valid', async () => {
           const registerData = TestUserData.registerData;
-          const createData = TestUserData.userCreationData;
+          const createData = TestUserData.creationData;
 
           const shortName = 'x'.repeat(6);
           const longName = 'x'.repeat(60);
@@ -234,7 +214,7 @@ describe('UserController (e2e)', () => {
       describe('email', () => {
         it('should fail if email is already in use', async () => {
           const registerData = TestUserData.registerData;
-          const createData = TestUserData.userCreationData;
+          const createData = TestUserData.creationData;
 
           const registeredUsers = [
             await authenticationService.register(registerData[0]),
@@ -259,7 +239,12 @@ describe('UserController (e2e)', () => {
           });
         });
 
-        it.each(TestUserData.getEmailErrorDataList('create'))(
+        it.each(
+          getEmailErrorDataList(
+            TestUserData.creationData[2],
+            TestPurpose.create,
+          ),
+        )(
           'should fail if email is $description',
           async ({ data, statusCode, response }) => {
             let registerData = TestUserData.registerData;
@@ -278,7 +263,7 @@ describe('UserController (e2e)', () => {
 
         it('should validate when email length is valid', async () => {
           const registerData = TestUserData.registerData;
-          const createData = TestUserData.userCreationData;
+          const createData = TestUserData.creationData;
 
           const email = 'x'.repeat(50) + '@email.com';
           const registeredUSer = await authenticationService.register(
@@ -339,7 +324,12 @@ describe('UserController (e2e)', () => {
       });
 
       describe('password', () => {
-        it.each(TestUserData.getPasswordErrorDataList('create'))(
+        it.each(
+          getPasswordErrorDataList(
+            TestUserData.creationData[2],
+            TestPurpose.create,
+          ),
+        )(
           'should fail when password is $description',
           async ({ data, statusCode, response }) => {
             let registerData = TestUserData.registerData;
@@ -358,7 +348,7 @@ describe('UserController (e2e)', () => {
 
         it('should validate when password length is valid', async () => {
           const registerData = TestUserData.registerData;
-          const createData = TestUserData.userCreationData;
+          const createData = TestUserData.creationData;
 
           const shortPassword = 'Abc12*';
           const longPassword = 'Abc12*******';
@@ -461,7 +451,7 @@ describe('UserController (e2e)', () => {
     describe('permission', () => {
       it('should allow root to update users', async () => {
         const registerData = TestUserData.registerData;
-        const createData = TestUserData.userCreationData;
+        const createData = TestUserData.creationData;
 
         let name = 'New Name';
         let email = 'newname@email.com';
@@ -529,7 +519,9 @@ describe('UserController (e2e)', () => {
 
     describe('dto', () => {
       describe('name', () => {
-        it.each(TestUserData.getNameErrorDataList('update'))(
+        it.each(
+          getNameErrorDataList(TestUserData.updateData[2], TestPurpose.update),
+        )(
           'should fail if name is $description',
           async ({ data, statusCode, response }) => {
             let registerData = TestUserData.registerData;
@@ -558,7 +550,7 @@ describe('UserController (e2e)', () => {
           { description: 'undefined', name: undefined },
         ])('should validate when name is $description', async ({ name }) => {
           const registerData = TestUserData.registerData;
-          const createData = TestUserData.userCreationData;
+          const createData = TestUserData.creationData;
 
           const email = 'new@email.com';
           const registeredUSer = [
@@ -581,7 +573,7 @@ describe('UserController (e2e)', () => {
 
         it('should validate name length is valid', async () => {
           const registerData = TestUserData.registerData;
-          const createData = TestUserData.userCreationData;
+          const createData = TestUserData.creationData;
           const name = 'x'.repeat(60);
           const registeredUSer = [
             await authenticationService.register(registerData[0]),
@@ -604,7 +596,9 @@ describe('UserController (e2e)', () => {
       });
 
       describe('email', () => {
-        it.each(TestUserData.getEmailErrorDataList('update'))(
+        it.each(
+          getEmailErrorDataList(TestUserData.updateData[2], TestPurpose.update),
+        )(
           'should fail if email is $description',
           async ({ data, statusCode, response }) => {
             let registerData = TestUserData.registerData;
@@ -684,7 +678,9 @@ describe('UserController (e2e)', () => {
 
       describe('password', () => {
         it('should not update passwords', async () => {
-          const usersData = TestUserData.usersData({ passwords: false });
+          const usersData = TestUserData.dataForRepository({
+            passwords: false,
+          });
           const registerData = TestUserData.registerData;
 
           let updateData = [
@@ -741,7 +737,9 @@ describe('UserController (e2e)', () => {
 
       describe('roles', () => {
         it('should not update roles', async () => {
-          const usersData = TestUserData.usersData({ passwords: false });
+          const usersData = TestUserData.dataForRepository({
+            passwords: false,
+          });
           const registerData = TestUserData.registerData;
 
           let updateData = [
@@ -817,7 +815,7 @@ describe('UserController (e2e)', () => {
   describe('/users (GET)', () => {
     it('should find users', async () => {
       const registerData = TestUserData.registerData;
-      const createData = TestUserData.userCreationData;
+      const createData = TestUserData.creationData;
 
       const registeredUsers = [
         await authenticationService.register(registerData[0]),
@@ -884,7 +882,7 @@ describe('UserController (e2e)', () => {
   describe('/users/:userId (GET)', () => {
     it('should find one user', async () => {
       const registerData = TestUserData.registerData;
-      const createData = TestUserData.userCreationData;
+      const createData = TestUserData.creationData;
 
       const registeredUsers = [
         await authenticationService.register(registerData[0]),
@@ -1058,7 +1056,12 @@ describe('UserController (e2e)', () => {
 
     describe('dto', () => {
       describe('password', () => {
-        it.each(TestUserData.getPasswordErrorDataList('create'))(
+        it.each(
+          getPasswordErrorDataList(
+            TestUserData.updateData[2],
+            TestPurpose.create,
+          ),
+        )(
           'should fail when password is $description',
           async ({ data, response }) => {
             const registerData = TestUserData.registerData;

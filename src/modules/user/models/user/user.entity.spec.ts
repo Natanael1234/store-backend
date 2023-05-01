@@ -70,9 +70,11 @@ describe('UserEntity', () => {
       const user1 = repo.create(userData1);
       const user2 = repo.create(userData2);
       const user3 = repo.create(userData3);
-      await repo.insert(user1);
-      await repo.insert(user2);
-      await repo.insert(user3);
+      const insertedUsers = [
+        await repo.insert(user1),
+        await repo.insert(user2),
+        await repo.insert(user3),
+      ];
       const usersData = [userData1, userData2, userData3];
       const users = await repo
         .createQueryBuilder('user')

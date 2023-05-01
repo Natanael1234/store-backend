@@ -8,9 +8,9 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { EmailMessage } from '../../../../user/enums/email-messages/email-messages.enum';
-import { NameMessage } from '../../../../user/enums/name-messages/name-messages.enum';
-import { PasswordMessage } from '../../../../user/enums/password-messages/password-messages.enum';
+import { EmailMessage } from '../../../../system/enums/messages/email-messages/email-messages.enum';
+import { NameMessage } from '../../../../system/enums/messages/name-messages/name-messages.enum';
+import { PasswordMessage } from '../../../../system/enums/messages/password-messages/password-messages.enum';
 import { AcceptTermsMessage } from '../../../enums/accept-terms-messages.ts/accept-terms-messages.enum';
 
 export class RegisterRequestDto {

@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
-import { Param, Patch, Req } from '@nestjs/common/decorators';
+import { Body, Controller, Get, Patch, Post } from '@nestjs/common';
+import { Param, Req } from '@nestjs/common/decorators';
 import { Role } from '../../authentication/enums/role/role.enum';
 import { Roles } from '../decorators/roles/roles.decorator';
 import { CreateUserRequestDTO } from '../dtos/create-user/create-user.request.dto';

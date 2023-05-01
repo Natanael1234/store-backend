@@ -15,15 +15,15 @@ import {
   testRegister,
 } from '../src/modules/authentication/services/authentication/authentication-test-utils';
 import { AuthenticationService } from '../src/modules/authentication/services/authentication/authentication.service';
-import { ValidationPipe } from '../src/modules/pipes/custom-validation.pipe';
-import { EmailMessage } from '../src/modules/user/enums/email-messages/email-messages.enum';
-import { NameMessage } from '../src/modules/user/enums/name-messages/name-messages.enum';
-import { PasswordMessage } from '../src/modules/user/enums/password-messages/password-messages.enum';
+import { EmailMessage } from '../src/modules/system/enums/messages/email-messages/email-messages.enum';
+import { NameMessage } from '../src/modules/system/enums/messages/name-messages/name-messages.enum';
+import { PasswordMessage } from '../src/modules/system/enums/messages/password-messages/password-messages.enum';
+import { ValidationPipe } from '../src/modules/system/pipes/custom-validation.pipe';
 import { UserEntity } from '../src/modules/user/models/user/user.entity';
 import { UserService } from '../src/modules/user/services/user/user.service';
 import { TestUserData } from '../src/test/test-user-data';
 
-const usersData = TestUserData.usersData();
+const usersData = TestUserData.dataForRepository();
 const registerData = TestUserData.registerData;
 
 const registerEndpoint = '/authentication/register';

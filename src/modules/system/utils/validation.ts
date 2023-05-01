@@ -26,7 +26,7 @@ export const convertValidationErrorsToMessage = (
   return message;
 };
 
-export const validateAndThrows = async (data, dtoClass) => {
+export const validateOrThrowError = async (data, dtoClass) => {
   const errors = await validateFirstError(data, dtoClass);
   if (errors?.length) {
     const message = convertValidationErrorsToMessage(errors);

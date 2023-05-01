@@ -5,7 +5,7 @@ describe('NameMessage', () => {
     expect(NameMessage).toBeDefined();
   });
 
-  it('should have valid keys amd values', () => {
+  it('should have valid keys and values', () => {
     expect({ ...NameMessage }).toEqual({
       STRING: 'Name must be string',
       REQUIRED: 'Name is required',

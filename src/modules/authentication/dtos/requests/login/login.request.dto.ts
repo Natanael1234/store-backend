@@ -5,8 +5,8 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { PasswordMessage } from '../../../../user/enums/password-messages/password-messages.enum';
-import { EmailMessage } from '../../../../user/enums/email-messages/email-messages.enum';
+import { EmailMessage } from '../../../../system/enums/messages/email-messages/email-messages.enum';
+import { PasswordMessage } from '../../../../system/enums/messages/password-messages/password-messages.enum';
 
 export class LoginRequestDto {
   @MaxLength(60, {

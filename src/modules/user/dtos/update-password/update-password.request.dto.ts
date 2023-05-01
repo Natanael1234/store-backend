@@ -5,7 +5,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { PasswordMessage } from '../../enums/password-messages/password-messages.enum';
+import { PasswordMessage } from '../../../system/enums/messages/password-messages/password-messages.enum';
 
 export class UpdatePasswordRequestDTO {
   @IsStrongPassword(

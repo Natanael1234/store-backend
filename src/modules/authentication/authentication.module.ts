@@ -3,8 +3,8 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { CachingModule } from '../system/caching/caching.module';
 import { EncryptionModule } from '../system/encryption/encryption.module';
+import { UserEntity } from '../user/models/user/user.entity';
 import { UserModule } from '../user/user.module';
 import { JWTConfigs } from './configs/jwt.config';
 import { AuthenticationController } from './controllers/auth/authentication.controller';
@@ -24,10 +24,10 @@ import { LocalStrategy } from './strategies/local/local.strategy';
         expiresIn: JWTConfigs.ACCESS_TOKEN_EXPIRATION,
       },
     }),
-    TypeOrmModule.forFeature([RefreshTokenEntity]),
+    TypeOrmModule.forFeature([RefreshTokenEntity, UserEntity]),
     UserModule,
     PassportModule,
-    CachingModule,
+    // CachingModule,
     EncryptionModule,
   ],
   providers: [
@@ -41,4 +41,4 @@ import { LocalStrategy } from './strategies/local/local.strategy';
   exports: [AuthenticationService],
   controllers: [AuthenticationController],
 })
-export class AwuthenticationModule {}
+export class AuthenticationModule {}

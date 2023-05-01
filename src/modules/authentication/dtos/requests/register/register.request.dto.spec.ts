@@ -1,9 +1,13 @@
 import { plainToInstance } from 'class-transformer';
+import { TestPurpose } from '../../../../../test/test-data';
+import { getEmailErrorDataList } from '../../../../../test/test-data/test-email-data';
+import { getNameErrorDataList } from '../../../../../test/test-data/test-name-data';
+import { getPasswordErrorDataList } from '../../../../../test/test-data/test.password-data';
 import { TestUserData } from '../../../../../test/test-user-data';
+import { EmailMessage } from '../../../../system/enums/messages/email-messages/email-messages.enum';
+import { NameMessage } from '../../../../system/enums/messages/name-messages/name-messages.enum';
+import { PasswordMessage } from '../../../../system/enums/messages/password-messages/password-messages.enum';
 import { validateFirstError } from '../../../../system/utils/validation';
-import { EmailMessage } from '../../../../user/enums/email-messages/email-messages.enum';
-import { NameMessage } from '../../../../user/enums/name-messages/name-messages.enum';
-import { PasswordMessage } from '../../../../user/enums/password-messages/password-messages.enum';
 import { AcceptTermsMessage } from '../../../enums/accept-terms-messages.ts/accept-terms-messages.enum';
 import { RegisterRequestDto } from './register.request.dto';
 
@@ -23,7 +27,9 @@ describe('RegisterRequestDto', () => {
   });
 
   describe('name', () => {
-    it.each(TestUserData.getNameErrorDataList('register'))(
+    it.each(
+      getNameErrorDataList(TestUserData.registerData[2], TestPurpose.register),
+    )(
       'should fail validation when name is $description',
       async ({ data, expectedErrors }) => {
         const errors = await validate(data);
@@ -61,7 +67,9 @@ describe('RegisterRequestDto', () => {
   });
 
   describe('email', () => {
-    it.each(TestUserData.getEmailErrorDataList('register'))(
+    it.each(
+      getEmailErrorDataList(TestUserData.registerData[2], TestPurpose.register),
+    )(
       'should fail validation when email is $emailDescription',
       async ({ data, expectedErrors }) => {
         const errors = await validate(data);
@@ -92,7 +100,12 @@ describe('RegisterRequestDto', () => {
   });
 
   describe('password', () => {
-    it.each(TestUserData.getPasswordErrorDataList('register'))(
+    it.each(
+      getPasswordErrorDataList(
+        TestUserData.registerData[2],
+        TestPurpose.register,
+      ),
+    )(
       'should fail validation when password is $passwordDescription',
       async ({ data, expectedErrors }) => {
         const errors = await validate(data);

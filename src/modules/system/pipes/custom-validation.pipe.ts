@@ -3,7 +3,7 @@ import {
   ValidationError,
 } from '@nestjs/common';
 import { HttpErrorByCode } from '@nestjs/common/utils/http-error-by-code.util';
-import { convertValidationErrorsToMessage } from '../system/utils/validation';
+import { convertValidationErrorsToMessage } from '../utils/validation';
 
 export class ValidationPipe extends NestValidationPipe {
   public createExceptionFactory() {

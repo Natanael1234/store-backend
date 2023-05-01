@@ -1,4 +1,4 @@
-import { CacheModule, ModuleMetadata } from '@nestjs/common';
+import { ModuleMetadata } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
@@ -16,7 +16,12 @@ import { AuthenticationService } from '../modules/authentication/services/authen
 import { TokenService } from '../modules/authentication/services/token/token.service';
 import { JwtStrategy } from '../modules/authentication/strategies/jwt/jwt.strategy';
 import { LocalStrategy } from '../modules/authentication/strategies/local/local.strategy';
-import { CachingService } from '../modules/system/caching/services/caching.service';
+import { BrandController } from '../modules/stock/controllers/brand/brand.controller';
+import { ProductController } from '../modules/stock/controllers/product/product.controller';
+import { BrandEntity } from '../modules/stock/models/brand/brand.entity';
+import { ProductEntity } from '../modules/stock/models/product/product.entity';
+import { BrandService } from '../modules/stock/services/brand/brand.service';
+import { ProductService } from '../modules/stock/services/product/product.service';
 import { EncryptionService } from '../modules/system/encryption/services/encryption/encryption.service';
 import { UserController } from '../modules/user/controllers/user.controller';
 import { RolesGuard } from '../modules/user/guards/roles/roles.guard';
@@ -29,43 +34,45 @@ export async function getTestingModule(
 ): Promise<TestingModule> {
   return await Test.createTestingModule({
     imports: [
-      ConfigModule.forRoot({
-        isGlobal: true,
-      }),
-      TypeOrmModule.forFeature([UserEntity, RefreshTokenEntity]),
+      ConfigModule.forRoot({ isGlobal: true }),
+      TypeOrmModule.forFeature([
+        UserEntity,
+        RefreshTokenEntity,
+        ProductEntity,
+        BrandEntity,
+      ]),
       ConfigModule.forRoot({ isGlobal: true }),
       TypeOrmModule.forRoot(sqlitDatabaseOptions),
       PassportModule,
       JwtModule.register({
         secret: JWTConfigs.ACCESS_TOKEN_SECRET,
-        signOptions: {
-          expiresIn: JWTConfigs.ACCESS_TOKEN_EXPIRATION,
-        },
+        signOptions: { expiresIn: JWTConfigs.ACCESS_TOKEN_EXPIRATION },
       }),
-      CacheModule.register(), // TODO: verificar se não dará conflito com o de produção
+      // CacheModule.register(), // TODO: verificar se não dará conflito com o de produção
       ...(additionalMetadata?.imports || []),
     ],
     providers: [
-      { provide: APP_GUARD, useClass: JwtAuthenticationGuard },
-      LocalStrategy,
-      JwtStrategy,
-      UserService,
+      AppService,
+      AuthenticationService,
+      // CachingService, // TODO: verificar se não dará conflito com o de produção
       EncryptionService,
+      JwtStrategy,
+      LocalStrategy,
       RefreshTokenRepository,
       TokenService,
-      AuthenticationService,
-      AppService,
+      UserService,
+      ProductService,
+      BrandService,
       ...(additionalMetadata?.providers || []),
-      CachingService, // TODO: verificar se não dará conflito com o de produção
-      {
-        provide: APP_GUARD,
-        useClass: RolesGuard,
-      },
+      { provide: APP_GUARD, useClass: JwtAuthenticationGuard },
+      { provide: APP_GUARD, useClass: RolesGuard },
     ],
     controllers: [
-      UserController,
-      AuthenticationController,
       AppController,
+      AuthenticationController,
+      UserController,
+      BrandController,
+      ProductController,
       ...(additionalMetadata?.controllers || []),
     ],
   }).compile();
