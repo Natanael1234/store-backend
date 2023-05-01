@@ -1,5 +1,5 @@
 import { Role } from '../modules/authentication/enums/role/role.enum';
-import { TestData } from './test-data';
+import { TestPurpose } from './test-data';
 
 export class TestUserData {
   /** service/api */
@@ -59,7 +59,7 @@ export class TestUserData {
     });
   }
 
-  private static getData(purpose: 'create' | 'register' | 'update') {
+  private static getData(purpose: TestPurpose) {
     if (purpose == 'create') {
       return TestUserData.creationData;
     } else if (purpose == 'register') {
@@ -67,42 +67,5 @@ export class TestUserData {
     } else {
       return TestUserData.updateData;
     }
-  }
-
-  static getNameErrorDataList(purpose: 'create' | 'register' | 'update') {
-    let dtoData = TestUserData.getData(purpose)[2];
-    return TestData.getNameErrorDataList(dtoData, purpose);
-  }
-
-  static getEmailErrorDataList(purpose: 'create' | 'register' | 'update') {
-    let dtoData = TestUserData.getData(purpose)[2];
-    return TestData.getEmailErrorDataList(dtoData, purpose);
-  }
-
-  static getPasswordErrorDataList(purpose: 'create' | 'register' | 'update') {
-    let dtoData = TestUserData.getData(purpose)[2];
-    return TestData.getPasswordErrorDataList(dtoData, purpose);
-  }
-
-  static getRolesErrorDataList(purpose: 'create' | 'register' | 'update') {
-    let dtoData = TestUserData.getData(purpose)[2];
-    return TestData.getRolesErrorDataList(dtoData, purpose);
-  }
-
-  static getNameAcceptableValues(purpose: 'create' | 'register' | 'update') {
-    let dtoData = this.dataForRepository()[2];
-    return TestData.getNameAcceptableValues(dtoData, purpose);
-  }
-
-  static getEmailAcceptableValues(purpose: 'create' | 'register' | 'update') {
-    let dtoData = this.dataForRepository()[2];
-    return TestData.getEmailAcceptableValues(dtoData, purpose);
-  }
-
-  static getPasswordAcceptableValues(
-    purpose: 'create' | 'register' | 'update',
-  ) {
-    let dtoData = this.dataForRepository()[2];
-    return TestData.getPasswordAcceptableValues(dtoData, purpose);
   }
 }

@@ -13,7 +13,7 @@ import {
   getHTTPGetMethod,
   getHTTPPatchMethod,
   getHTTPPostMethod,
-} from './test-request-utils';
+} from './common/test-request-utils';
 
 describe('StockController (e2e)', () => {
   let app: INestApplication;

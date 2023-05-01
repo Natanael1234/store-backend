@@ -1,5 +1,3 @@
-import { TestData } from './test-data';
-
 export class TestBrandData {
   public static get dataForRepository() {
     return [
@@ -9,23 +7,12 @@ export class TestBrandData {
     ];
   }
 
-  static getNameErrorDataList(purpose: 'create' | 'register' | 'update') {
-    let dtoData = this.dataForRepository[1];
-    return TestData.getNameErrorDataList(dtoData, purpose);
-  }
-
-  static getActiveErrorDataList() {
-    let dtoData = this.dataForRepository[1];
-    return TestData.getActiveErrorDataList(dtoData);
-  }
-
-  static getNameAcceptableValues(purpose: 'create' | 'register' | 'update') {
-    let dtoData = this.dataForRepository[1];
-    return TestData.getNameAcceptableValues(dtoData, purpose);
-  }
-
-  static getActiveAcceptableValues() {
-    let dtoData = this.dataForRepository[1];
-    return TestData.getActiveAcceptableValues(dtoData);
+  public static buildData(quantity: number, startNumber?: number) {
+    if (startNumber == null) startNumber = 1;
+    return Array(quantity)
+      .fill(null)
+      .map((v, i) => {
+        return { name: `Brand ${startNumber++}`, active: true };
+      });
   }
 }

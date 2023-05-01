@@ -7,13 +7,17 @@ import { getTestingModule } from '../src/.jest/test-config.module';
 import { Role } from '../src/modules/authentication/enums/role/role.enum';
 import { AuthenticationService } from '../src/modules/authentication/services/authentication/authentication.service';
 import { EncryptionService } from '../src/modules/system/encryption/services/encryption/encryption.service';
-import { EmailMessage } from '../src/modules/system/enums/email-messages/email-messages.enum';
-import { NameMessage } from '../src/modules/system/enums/name-messages/name-messages.enum';
-import { PasswordMessage } from '../src/modules/system/enums/password-messages/password-messages.enum';
+import { EmailMessage } from '../src/modules/system/enums/messages/email-messages/email-messages.enum';
+import { NameMessage } from '../src/modules/system/enums/messages/name-messages/name-messages.enum';
+import { PasswordMessage } from '../src/modules/system/enums/messages/password-messages/password-messages.enum';
 import { ValidationPipe } from '../src/modules/system/pipes/custom-validation.pipe';
 import { RoleMessage } from '../src/modules/user/enums/role-messages/role-messages.enum';
 import { UserMessage } from '../src/modules/user/enums/user-messages.ts/user-messages.enum';
 import { UserEntity } from '../src/modules/user/models/user/user.entity';
+import { TestPurpose } from '../src/test/test-data';
+import { getEmailErrorDataList } from '../src/test/test-data/test-email-data';
+import { getNameErrorDataList } from '../src/test/test-data/test-name-data';
+import { getPasswordErrorDataList } from '../src/test/test-data/test.password-data';
 import { TestUserData } from '../src/test/test-user-data';
 import { testValidateUser } from '../src/test/test-user-utils';
 import {
@@ -22,7 +26,7 @@ import {
   getHTTPGetMethod,
   getHTTPPatchMethod,
   getHTTPPostMethod,
-} from './test-request-utils';
+} from './common/test-request-utils';
 
 const endpoint = '/users';
 
@@ -148,7 +152,12 @@ describe('UserController (e2e)', () => {
 
     describe('dto', () => {
       describe('name', () => {
-        it.each(TestUserData.getNameErrorDataList('create'))(
+        it.each(
+          getNameErrorDataList(
+            TestUserData.creationData[2],
+            TestPurpose.create,
+          ),
+        )(
           'should fail if name is $description',
           async ({ data, statusCode, response }) => {
             let registerData = TestUserData.registerData;
@@ -230,7 +239,12 @@ describe('UserController (e2e)', () => {
           });
         });
 
-        it.each(TestUserData.getEmailErrorDataList('create'))(
+        it.each(
+          getEmailErrorDataList(
+            TestUserData.creationData[2],
+            TestPurpose.create,
+          ),
+        )(
           'should fail if email is $description',
           async ({ data, statusCode, response }) => {
             let registerData = TestUserData.registerData;
@@ -310,7 +324,12 @@ describe('UserController (e2e)', () => {
       });
 
       describe('password', () => {
-        it.each(TestUserData.getPasswordErrorDataList('create'))(
+        it.each(
+          getPasswordErrorDataList(
+            TestUserData.creationData[2],
+            TestPurpose.create,
+          ),
+        )(
           'should fail when password is $description',
           async ({ data, statusCode, response }) => {
             let registerData = TestUserData.registerData;
@@ -500,7 +519,9 @@ describe('UserController (e2e)', () => {
 
     describe('dto', () => {
       describe('name', () => {
-        it.each(TestUserData.getNameErrorDataList('update'))(
+        it.each(
+          getNameErrorDataList(TestUserData.updateData[2], TestPurpose.update),
+        )(
           'should fail if name is $description',
           async ({ data, statusCode, response }) => {
             let registerData = TestUserData.registerData;
@@ -575,7 +596,9 @@ describe('UserController (e2e)', () => {
       });
 
       describe('email', () => {
-        it.each(TestUserData.getEmailErrorDataList('update'))(
+        it.each(
+          getEmailErrorDataList(TestUserData.updateData[2], TestPurpose.update),
+        )(
           'should fail if email is $description',
           async ({ data, statusCode, response }) => {
             let registerData = TestUserData.registerData;
@@ -1033,7 +1056,12 @@ describe('UserController (e2e)', () => {
 
     describe('dto', () => {
       describe('password', () => {
-        it.each(TestUserData.getPasswordErrorDataList('create'))(
+        it.each(
+          getPasswordErrorDataList(
+            TestUserData.updateData[2],
+            TestPurpose.create,
+          ),
+        )(
           'should fail when password is $description',
           async ({ data, response }) => {
             const registerData = TestUserData.registerData;

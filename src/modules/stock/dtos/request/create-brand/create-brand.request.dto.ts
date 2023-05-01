@@ -7,8 +7,8 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { ActiveMessage } from '../../../../system/enums/active-messages.ts/active-messages.enum';
-import { NameMessage } from '../../../../system/enums/name-messages/name-messages.enum';
+import { ActiveMessage } from '../../../../system/enums/messages/active-messages/active-messages.enum';
+import { NameMessage } from '../../../../system/enums/messages/name-messages/name-messages.enum';
 
 export class CreateBrandRequestDTO {
   @MaxLength(60, { message: NameMessage.MAX_LEN })

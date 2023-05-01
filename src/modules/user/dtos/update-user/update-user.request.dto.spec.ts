@@ -1,6 +1,9 @@
+import { TestPurpose } from '../../../../test/test-data';
+import { getEmailErrorDataList } from '../../../../test/test-data/test-email-data';
+import { getNameErrorDataList } from '../../../../test/test-data/test-name-data';
 import { TestUserData } from '../../../../test/test-user-data';
-import { EmailMessage } from '../../../system/enums/email-messages/email-messages.enum';
-import { NameMessage } from '../../../system/enums/name-messages/name-messages.enum';
+import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
+import { NameMessage } from '../../../system/enums/messages/name-messages/name-messages.enum';
 import { validateFirstError } from '../../../system/utils/validation';
 import { UpdateUserRequestDTO } from './update-user.request.dto';
 
@@ -17,7 +20,9 @@ describe('UpdateUserRequestDto', () => {
   });
 
   describe('name', () => {
-    it.each(TestUserData.getNameErrorDataList('update'))(
+    it.each(
+      getNameErrorDataList(TestUserData.updateData[2], TestPurpose.update),
+    )(
       'should fail validation when name is $description',
       async ({ data, expectedErrors }) => {
         const errors = await validate(data);
@@ -47,7 +52,9 @@ describe('UpdateUserRequestDto', () => {
   });
 
   describe('email', () => {
-    it.each(TestUserData.getEmailErrorDataList('update'))(
+    it.each(
+      getEmailErrorDataList(TestUserData.updateData[2], TestPurpose.update),
+    )(
       'should fail validation when email is $description',
       async ({ data, expectedErrors }) => {
         const errors = await validate(data);

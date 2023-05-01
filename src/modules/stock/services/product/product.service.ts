@@ -5,11 +5,19 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Like, Repository } from 'typeorm';
-import { validateAndThrows } from '../../../system/utils/validation';
+import { FindManyOptions, ILike, IsNull, Not, Repository } from 'typeorm';
+import { validateOrThrowError } from '../../../system/utils/validation';
 import { CreateProductRequestDTO } from '../../dtos/request/create-product/create-product.request.dto';
 import { UpdateProductRequestDTO } from '../../dtos/request/update-product/update-product.request.dto';
-import { SuccessResponseDto } from '../../dtos/response/success.response.dto';
+
+import { plainToInstance } from 'class-transformer';
+import { FilteringRequestDTO } from '../../../system/dtos/request/filtering/filtering.request.dto';
+import { PaginationConfig } from '../../../system/dtos/request/pagination/configs/pagination.config';
+import { PaginationRequestDTO } from '../../../system/dtos/request/pagination/pagination.request.dto';
+import { PaginatedResponseDTO } from '../../../system/dtos/response/pagination/pagination.response.dto';
+import { SuccessResponseDto } from '../../../system/dtos/response/pagination/success.response.dto';
+import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-filter.enum';
+import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
 import { BrandMessage } from '../../enums/brand-messages/brand-messages.enum';
 import { ProductMessage } from '../../enums/product-messages/product-messages.enum';
 import { BrandEntity } from '../../models/brand/brand.entity';
@@ -24,11 +32,9 @@ export class ProductService {
     private productRepo: Repository<ProductEntity>,
   ) {}
 
-  async createProduct(
-    productDto: CreateProductRequestDTO,
-  ): Promise<ProductEntity> {
+  async create(productDto: CreateProductRequestDTO): Promise<ProductEntity> {
     if (!productDto) throw new BadRequestException('Data is required'); // TODO: move message to enum
-    await validateAndThrows(productDto, CreateProductRequestDTO);
+    await validateOrThrowError(productDto, CreateProductRequestDTO);
     const existentBrand = await this.brandRepo.findOne({
       where: { id: productDto.brandId },
     });
@@ -38,14 +44,14 @@ export class ProductService {
     return this.productRepo.save(product);
   }
 
-  async updateProduct(
+  async update(
     productId: number,
     productDto: UpdateProductRequestDTO,
   ): Promise<ProductEntity> {
     if (!productId)
       throw new UnprocessableEntityException(ProductMessage.ID_REQUIRED);
     if (!productDto) throw new BadRequestException('Data is required'); // TODO: move message to enum
-    await validateAndThrows(productDto, UpdateProductRequestDTO);
+    await validateOrThrowError(productDto, UpdateProductRequestDTO);
     const existentBrand = await this.brandRepo.findOne({
       where: { id: productDto.brandId },
     });
@@ -60,25 +66,45 @@ export class ProductService {
     return this.productRepo.findOne({ where: { id: productId } });
   }
 
-  async findProducts() {
-    return this.productRepo.find({ relations: { brand: true } });
+  async find(
+    filtering?: FilteringRequestDTO,
+    pagination?: PaginationRequestDTO,
+  ): Promise<PaginatedResponseDTO<ProductEntity>> {
+    filtering = plainToInstance(FilteringRequestDTO, filtering || {});
+    await validateOrThrowError(filtering || {}, FilteringRequestDTO);
+    pagination = plainToInstance(PaginationRequestDTO, pagination || {});
+    await validateOrThrowError(pagination || {}, PaginationRequestDTO);
+    const { query, active, deleted } = filtering;
+    const { page, pageSize, skip, take } = pagination;
+    const findManyOptions: FindManyOptions = {};
+    findManyOptions.take = take || PaginationConfig.DEFAULT_PAGE_SIZE;
+    findManyOptions.skip = skip || 0;
+    findManyOptions.where = {};
+    if (active == ActiveFilter.ACTIVE) {
+      findManyOptions.where.active = true;
+    } else if (active == ActiveFilter.INACTIVE) {
+      findManyOptions.where.active = false;
+    }
+    if (query != null) {
+      if (query) {
+        findManyOptions.where.name = ILike(`%${query.replace(' ', '%')}%`);
+      }
+    }
+    if (deleted == DeletedFilter.DELETED) {
+      findManyOptions.where.deletedAt = Not(IsNull());
+      findManyOptions.withDeleted = true;
+    } else if (deleted == DeletedFilter.ALL) {
+      findManyOptions.withDeleted = true;
+    }
+    findManyOptions.relations = { brand: true };
+
+    const [results, count] = await this.productRepo.findAndCount(
+      findManyOptions,
+    );
+    return new PaginatedResponseDTO(results, count, page, pageSize);
   }
 
-  async searchProducts(query: string) {
-    if (typeof query != 'string')
-      throw new UnprocessableEntityException('Search must be string');
-    if (!query) throw new UnprocessableEntityException('Search is empty'); // TODO: move string to enum
-    return await this.productRepo.find({
-      where: [
-        {
-          name: Like(`%${query}%`),
-        },
-      ],
-      relations: { brand: true },
-    });
-  }
-
-  async findProduct(productId: number) {
+  async findById(productId: number) {
     if (!productId)
       throw new UnprocessableEntityException(ProductMessage.ID_REQUIRED);
     const product = await this.productRepo.findOne({
@@ -89,7 +115,7 @@ export class ProductService {
     return product;
   }
 
-  async deleteProduct(productId: number): Promise<SuccessResponseDto> {
+  async delete(productId: number): Promise<SuccessResponseDto> {
     if (!productId)
       throw new UnprocessableEntityException(ProductMessage.ID_REQUIRED);
     const product = await this.productRepo.findOne({

@@ -1,5 +1,3 @@
-import { TestData } from './test-data';
-
 export class TestProductData {
   public static get dataForRepository() {
     return [
@@ -31,75 +29,20 @@ export class TestProductData {
     ];
   }
 
-  static getCodeErrorDataList(purpose: 'create' | 'register' | 'update') {
-    let dtoData = this.dataForRepository[1];
-    return TestData.getCodeErrorDataList(dtoData, purpose);
-  }
-
-  static getNameErrorDataList(purpose: 'create' | 'register' | 'update') {
-    let dtoData = this.dataForRepository[1];
-    return TestData.getNameErrorDataList(dtoData, purpose);
-  }
-
-  static getModelErrorDataList(purpose: 'create' | 'register' | 'update') {
-    let dtoData = this.dataForRepository[1];
-    return TestData.getModelErrorDataList(dtoData, purpose);
-  }
-
-  static getActiveErrorDataList() {
-    let dtoData = this.dataForRepository[1];
-    return TestData.getActiveErrorDataList(dtoData);
-  }
-
-  static getPriceErrorDataList(purpose: 'create' | 'register' | 'update') {
-    let dtoData = this.dataForRepository[1];
-    return TestData.getPriceErrorDataList(dtoData, purpose);
-  }
-
-  static getQuantityInStockErrorDataList() {
-    let dtoData = this.dataForRepository[1];
-    return TestData.getQuantityInStockErrorDataList(dtoData);
-  }
-
-  static getBrandIdErrorDataList(purpose: 'create' | 'register' | 'update') {
-    let dtoData = this.dataForRepository[1];
-    return TestData.getBrandIdErrorDataList(dtoData, purpose);
-  }
-
-  static getCodeAcceptableValues(purpose: 'create' | 'register' | 'update') {
-    let dtoData = this.dataForRepository[1];
-    return TestData.getCodeAcceptableValues(dtoData, purpose);
-  }
-
-  static getNameAcceptableValues(purpose: 'create' | 'register' | 'update') {
-    let dtoData = this.dataForRepository[1];
-    return TestData.getNameAcceptableValues(dtoData, purpose);
-  }
-
-  static getModelAcceptableValues(purpose: 'create' | 'register' | 'update') {
-    let dtoData = this.dataForRepository[1];
-    return TestData.getModelAcceptableValues(dtoData, purpose);
-  }
-
-  static getActiveAcceptableValues() {
-    let dtoData = this.dataForRepository[1];
-    return TestData.getActiveAcceptableValues(dtoData);
-  }
-
-  static getPriceAcceptableValues(purpose: 'create' | 'register' | 'update') {
-    let dtoData = this.dataForRepository[1];
-    return TestData.getPriceAcceptableValues(dtoData, purpose);
-  }
-
-  static getQuantityInStockAcceptableValues(
-    purpose: 'create' | 'register' | 'update',
-  ) {
-    let dtoData = this.dataForRepository[1];
-    return TestData.getQuantityInStockAcceptableValues(dtoData, purpose);
-  }
-
-  static getBrandIdAcceptableValues(purpose: 'create' | 'register' | 'update') {
-    let dtoData = this.dataForRepository[1];
-    return TestData.getBrandIdAcceptableValues(dtoData, purpose);
+  public static buildData(quantity: number, startNumber?: number) {
+    if (startNumber == null) startNumber = 1;
+    const arr = Array(quantity);
+    for (let i = 0, j = startNumber; i < arr.length; i++, j++) {
+      arr[i] = {
+        code: `00000000${j}`,
+        name: `Product ${j}`,
+        model: `Model ${j}`,
+        price: 100,
+        quantityInStock: 4,
+        active: true,
+        brandId: 1,
+      };
+    }
+    return arr;
   }
 }

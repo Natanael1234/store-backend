@@ -10,8 +10,8 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
-import { ActiveMessage } from '../../../../system/enums/active-messages.ts/active-messages.enum';
-import { NameMessage } from '../../../../system/enums/name-messages/name-messages.enum';
+import { ActiveMessage } from '../../../../system/enums/messages/active-messages/active-messages.enum';
+import { NameMessage } from '../../../../system/enums/messages/name-messages/name-messages.enum';
 import { BrandIdMessage } from '../../../enums/brand-id-messages/brand-id-quantity-messages.enum';
 import { CodeMessage } from '../../../enums/code-messages/code-messages.enum';
 import { ModelMessage } from '../../../enums/model-messages/model-messages.enum';

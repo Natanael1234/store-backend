@@ -1,3 +1,5 @@
+import { TestPurpose } from '../../../../test/test-data';
+import { getPasswordErrorDataList } from '../../../../test/test-data/test.password-data';
 import { TestUserData } from '../../../../test/test-user-data';
 import { validateFirstError } from '../../../system/utils/validation';
 import { UpdatePasswordRequestDTO } from './update-password.request.dto';
@@ -9,7 +11,9 @@ describe('CreateUserRequestDto', () => {
     expect(errors).toHaveLength(0);
   });
 
-  it.each(TestUserData.getPasswordErrorDataList('create'))(
+  it.each(
+    getPasswordErrorDataList(TestUserData.updateData[2], TestPurpose.create),
+  )(
     'should fail validation when password is $description',
     async ({ data, expectedErrors }) => {
       const errors = await validateFirstError(data, UpdatePasswordRequestDTO);

@@ -1,8 +1,22 @@
+import { TestPurpose } from '../../../../test/test-data';
+import {
+  getEmailAcceptableValues,
+  getEmailErrorDataList,
+} from '../../../../test/test-data/test-email-data';
+import {
+  getNameAcceptableValues,
+  getNameErrorDataList,
+} from '../../../../test/test-data/test-name-data';
+import { getRolesErrorDataList } from '../../../../test/test-data/test-roles-data';
+import {
+  getPasswordAcceptableValues,
+  getPasswordErrorDataList,
+} from '../../../../test/test-data/test.password-data';
 import { TestUserData } from '../../../../test/test-user-data';
 import { Role } from '../../../authentication/enums/role/role.enum';
-import { EmailMessage } from '../../../system/enums/email-messages/email-messages.enum';
-import { NameMessage } from '../../../system/enums/name-messages/name-messages.enum';
-import { PasswordMessage } from '../../../system/enums/password-messages/password-messages.enum';
+import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
+import { NameMessage } from '../../../system/enums/messages/name-messages/name-messages.enum';
+import { PasswordMessage } from '../../../system/enums/messages/password-messages/password-messages.enum';
 import { validateFirstError } from '../../../system/utils/validation';
 import { RoleMessage } from '../../enums/role-messages/role-messages.enum';
 import { CreateUserRequestDTO } from './create-user.request.dto';
@@ -20,7 +34,9 @@ describe('CreateUserRequestDto', () => {
   });
 
   describe('name', () => {
-    it.each(TestUserData.getNameErrorDataList('create'))(
+    it.each(
+      getNameErrorDataList(TestUserData.creationData[2], TestPurpose.create),
+    )(
       'should fail validation when name is $description',
       async ({ data, expectedErrors }) => {
         const errors = await validateFirstError(data, CreateUserRequestDTO);
@@ -31,17 +47,18 @@ describe('CreateUserRequestDto', () => {
       },
     );
 
-    it.each(TestUserData.getNameAcceptableValues('create'))(
-      'Should validate when name is $description',
-      async ({ data }) => {
-        const errors = await validateFirstError(data, CreateUserRequestDTO);
-        expect(errors).toHaveLength(0);
-      },
-    );
+    it.each(
+      getNameAcceptableValues(TestUserData.creationData[2], TestPurpose.create),
+    )('Should validate when name is $description', async ({ data }) => {
+      const errors = await validateFirstError(data, CreateUserRequestDTO);
+      expect(errors).toHaveLength(0);
+    });
   });
 
   describe('email', () => {
-    it.each(TestUserData.getEmailErrorDataList('create'))(
+    it.each(
+      getEmailErrorDataList(TestUserData.creationData[2], TestPurpose.create),
+    )(
       'should fail validation when email is $description',
       async ({ data, expectedErrors }) => {
         const errors = await validateFirstError(data, CreateUserRequestDTO);
@@ -53,17 +70,24 @@ describe('CreateUserRequestDto', () => {
       },
     );
 
-    it.each(TestUserData.getEmailAcceptableValues('create'))(
-      'Should validate when email is $description',
-      async ({ data }) => {
-        const errors = await validateFirstError(data, CreateUserRequestDTO);
-        expect(errors).toHaveLength(0);
-      },
-    );
+    it.each(
+      getEmailAcceptableValues(
+        TestUserData.creationData[2],
+        TestPurpose.create,
+      ),
+    )('Should validate when email is $description', async ({ data }) => {
+      const errors = await validateFirstError(data, CreateUserRequestDTO);
+      expect(errors).toHaveLength(0);
+    });
   });
 
   describe('password', () => {
-    it.each(TestUserData.getPasswordErrorDataList('create'))(
+    it.each(
+      getPasswordErrorDataList(
+        TestUserData.creationData[2],
+        TestPurpose.create,
+      ),
+    )(
       'should fail validation when password is $description',
       async ({ data, expectedErrors }) => {
         const errors = await validateFirstError(data, CreateUserRequestDTO);
@@ -74,17 +98,21 @@ describe('CreateUserRequestDto', () => {
       },
     );
 
-    it.each(TestUserData.getPasswordAcceptableValues('create'))(
-      'Should validate when password is $description',
-      async ({ data }) => {
-        const errors = await validateFirstError(data, CreateUserRequestDTO);
-        expect(errors).toHaveLength(0);
-      },
-    );
+    it.each(
+      getPasswordAcceptableValues(
+        TestUserData.creationData[2],
+        TestPurpose.create,
+      ),
+    )('Should validate when password is $description', async ({ data }) => {
+      const errors = await validateFirstError(data, CreateUserRequestDTO);
+      expect(errors).toHaveLength(0);
+    });
   });
 
   describe('roles', () => {
-    it.each(TestUserData.getRolesErrorDataList('create'))(
+    it.each(
+      getRolesErrorDataList(TestUserData.creationData[2], TestPurpose.create),
+    )(
       'should fail when roles is $description',
       async ({ data, expectedErrors }) => {
         const errors = await validateFirstError(data, CreateUserRequestDTO);

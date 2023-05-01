@@ -1,5 +1,5 @@
-import { EmailMessage } from '../../../../system/enums/email-messages/email-messages.enum';
-import { PasswordMessage } from '../../../../system/enums/password-messages/password-messages.enum';
+import { EmailMessage } from '../../../../system/enums/messages/email-messages/email-messages.enum';
+import { PasswordMessage } from '../../../../system/enums/messages/password-messages/password-messages.enum';
 import { validateFirstError } from '../../../../system/utils/validation';
 import { LoginRequestDto } from './login.request.dto';
 

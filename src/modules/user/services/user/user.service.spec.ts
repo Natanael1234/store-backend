@@ -9,14 +9,19 @@ import { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { getTestingModule } from '../../../../.jest/test-config.module';
+import { TestPurpose } from '../../../../test/test-data';
+import { getEmailErrorDataList } from '../../../../test/test-data/test-email-data';
+import { getNameErrorDataList } from '../../../../test/test-data/test-name-data';
+import { getRolesErrorDataList } from '../../../../test/test-data/test-roles-data';
+import { getPasswordErrorDataList } from '../../../../test/test-data/test.password-data';
 import { TestUserData } from '../../../../test/test-user-data';
 import { testValidateUser } from '../../../../test/test-user-utils';
 import { Role } from '../../../authentication/enums/role/role.enum';
 import { AuthenticationService } from '../../../authentication/services/authentication/authentication.service';
 import { EncryptionService } from '../../../system/encryption/services/encryption/encryption.service';
-import { EmailMessage } from '../../../system/enums/email-messages/email-messages.enum';
-import { NameMessage } from '../../../system/enums/name-messages/name-messages.enum';
-import { PasswordMessage } from '../../../system/enums/password-messages/password-messages.enum';
+import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
+import { NameMessage } from '../../../system/enums/messages/name-messages/name-messages.enum';
+import { PasswordMessage } from '../../../system/enums/messages/password-messages/password-messages.enum';
 import { CreateUserRequestDTO } from '../../dtos/create-user/create-user.request.dto';
 import { RoleMessage } from '../../enums/role-messages/role-messages.enum';
 import { UserMessage } from '../../enums/user-messages.ts/user-messages.enum';
@@ -87,7 +92,12 @@ describe('UserService', () => {
 
     describe('fields', () => {
       describe('name', () => {
-        it.each(TestUserData.getNameErrorDataList('create'))(
+        it.each(
+          getNameErrorDataList(
+            TestUserData.creationData[2],
+            TestPurpose.create,
+          ),
+        )(
           'should fail when name is $description',
           async ({ data, exception: expectedException }) => {
             const usersBefore = await userRepo.find();
@@ -127,7 +137,12 @@ describe('UserService', () => {
       });
 
       describe('email', () => {
-        it.each(TestUserData.getEmailErrorDataList('create'))(
+        it.each(
+          getEmailErrorDataList(
+            TestUserData.creationData[2],
+            TestPurpose.create,
+          ),
+        )(
           'should fail when email is $description',
           async ({ data, exception: expectedException }) => {
             const usersBefore = await userRepo.find();
@@ -188,7 +203,12 @@ describe('UserService', () => {
       });
 
       describe('password', () => {
-        it.each(TestUserData.getPasswordErrorDataList('create'))(
+        it.each(
+          getPasswordErrorDataList(
+            TestUserData.creationData[2],
+            TestPurpose.create,
+          ),
+        )(
           'should fail when name is $description',
           async ({ data, exception }) => {
             const usersBefore = await userRepo.find();
@@ -226,7 +246,12 @@ describe('UserService', () => {
       });
 
       describe('roles', () => {
-        it.each(TestUserData.getRolesErrorDataList('create'))(
+        it.each(
+          getRolesErrorDataList(
+            TestUserData.creationData[2],
+            TestPurpose.create,
+          ),
+        )(
           'should fail when roles is $description',
           async ({ data, exception }) => {
             const usersBefore = await userRepo.find();
@@ -445,7 +470,9 @@ describe('UserService', () => {
       });
 
       describe('name', () => {
-        it.each(TestUserData.getNameErrorDataList('update'))(
+        it.each(
+          getNameErrorDataList(TestUserData.updateData[2], TestPurpose.update),
+        )(
           'sould fail when name is $description',
           async ({ data, ExceptionClass, response }) => {
             const creationData = TestUserData.creationData;
@@ -507,7 +534,9 @@ describe('UserService', () => {
       });
 
       describe('email', () => {
-        it.each(TestUserData.getEmailErrorDataList('update'))(
+        it.each(
+          getEmailErrorDataList(TestUserData.updateData[2], TestPurpose.update),
+        )(
           'should fail when email is $description',
           async ({ data, ExceptionClass, response }) => {
             const creationData = TestUserData.creationData;
@@ -820,47 +849,47 @@ describe('UserService', () => {
           expect(usersAfter).toStrictEqual(usersBefore);
         });
 
-        it.each(TestUserData.getPasswordErrorDataList('create'))(
-          'should fail when password is $description',
-          async ({ data }) => {
-            const registerData = TestUserData.registerData;
+        it.each(
+          getPasswordErrorDataList(
+            TestUserData.updateData[2],
+            TestPurpose.create,
+          ),
+        )('should fail when password is $description', async ({ data }) => {
+          const registerData = TestUserData.registerData;
 
-            await authenticationService.register(registerData[0]);
-            await authenticationService.register(registerData[1]);
-            await authenticationService.register(registerData[2]);
+          await authenticationService.register(registerData[0]);
+          await authenticationService.register(registerData[1]);
+          await authenticationService.register(registerData[2]);
 
-            const usersBefore = await userRepo
-              .createQueryBuilder('user')
-              .addSelect('user.hash')
-              .getMany();
+          const usersBefore = await userRepo
+            .createQueryBuilder('user')
+            .addSelect('user.hash')
+            .getMany();
 
-            const fn = () =>
-              userService.updatePassword(2, { password: data.Password });
+          const fn = () =>
+            userService.updatePassword(2, { password: data.Password });
 
-            await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+          await expect(fn()).rejects.toThrow(UnprocessableEntityException);
 
-            const usersAfter = await userRepo
-              .createQueryBuilder('user')
-              .addSelect('user.hash')
-              .getMany();
+          const usersAfter = await userRepo
+            .createQueryBuilder('user')
+            .addSelect('user.hash')
+            .getMany();
 
-            await expect(fn()).rejects.toThrow(
-              'Unprocessable Entity Exception',
-            );
-            try {
-              await fn();
-            } catch (ex) {
-              expect(ex.getResponse()).toEqual({
-                error: 'UnprocessableEntityException',
-                message: {
-                  password: PasswordMessage.REQUIRED,
-                },
-                statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-              });
-            }
-            expect(usersAfter).toStrictEqual(usersBefore);
-          },
-        );
+          await expect(fn()).rejects.toThrow('Unprocessable Entity Exception');
+          try {
+            await fn();
+          } catch (ex) {
+            expect(ex.getResponse()).toEqual({
+              error: 'UnprocessableEntityException',
+              message: {
+                password: PasswordMessage.REQUIRED,
+              },
+              statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+            });
+          }
+          expect(usersAfter).toStrictEqual(usersBefore);
+        });
       });
     });
 
