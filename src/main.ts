@@ -6,6 +6,7 @@ import { ValidationPipe } from './modules/system/pipes/custom-validation.pipe';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api');
+  app.enableCors();
   app.useGlobalPipes(
     new ValidationPipe({
       stopAtFirstError: true,

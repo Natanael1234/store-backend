@@ -21,7 +21,7 @@ import { PasswordMessage } from '../src/modules/system/enums/messages/password-m
 import { ValidationPipe } from '../src/modules/system/pipes/custom-validation.pipe';
 import { UserEntity } from '../src/modules/user/models/user/user.entity';
 import { UserService } from '../src/modules/user/services/user/user.service';
-import { TestUserData } from '../src/test/test-user-data';
+import { TestUserData } from '../src/test/user/test-user-data';
 
 const usersData = TestUserData.dataForRepository();
 const registerData = TestUserData.registerData;

@@ -2,7 +2,7 @@ import { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { QueryFailedError, Repository } from 'typeorm';
 import { getTestingModule } from '../../../../.jest/test-config.module';
-import { TestBrandData } from '../../../../test/test-brand-data';
+import { TestBrandData } from '../../../../test/brand/test-brand-data';
 import { BrandEntity } from './brand.entity';
 
 function validateBrand(

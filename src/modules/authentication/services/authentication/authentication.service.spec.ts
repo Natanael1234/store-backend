@@ -11,7 +11,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { JsonWebTokenError } from 'jsonwebtoken';
 import { QueryFailedError, Repository } from 'typeorm';
 import { getTestingModule } from '../../../../.jest/test-config.module';
-import { TestUserData } from '../../../../test/test-user-data';
+import { TestUserData } from '../../../../test/user/test-user-data';
 import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
 import { NameMessage } from '../../../system/enums/messages/name-messages/name-messages.enum';
 import { PasswordMessage } from '../../../system/enums/messages/password-messages/password-messages.enum';

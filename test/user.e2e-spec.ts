@@ -18,8 +18,10 @@ import { TestPurpose } from '../src/test/test-data';
 import { getEmailErrorDataList } from '../src/test/test-data/test-email-data';
 import { getNameErrorDataList } from '../src/test/test-data/test-name-data';
 import { getPasswordErrorDataList } from '../src/test/test-data/test.password-data';
-import { TestUserData } from '../src/test/test-user-data';
-import { testValidateUser } from '../src/test/test-user-utils';
+import { TestUserData } from '../src/test/user/test-user-data';
+import { testValidateUser } from '../src/test/user/test-user-utils';
+import { objectToJSON } from './common/instance-to-json';
+import { AbstractTestPagination as TestE2EPagination } from './common/test-pagination';
 import {
   TestRequestFunction,
   getHTTPDeleteMethod,
@@ -815,33 +817,23 @@ describe('UserController (e2e)', () => {
   describe('/users (GET)', () => {
     it('should find users', async () => {
       const registerData = TestUserData.registerData;
-      const createData = TestUserData.creationData;
-
       const registeredUsers = [
         await authenticationService.register(registerData[0]),
         await authenticationService.register(registerData[1]),
         await authenticationService.register(registerData[2]),
       ];
-      const expectedResults = [
-        { id: 1, ...createData[0], roles: [Role.ROOT] },
-        { id: 2, ...createData[1], roles: [Role.USER] },
-        { id: 3, ...createData[2], roles: [Role.USER] },
-      ];
-      expectedResults.forEach(
-        (expectedResults) => delete expectedResults.password,
-      );
       const token = registeredUsers[0].data.payload.token;
-      const usersBefore = await userRepo.find();
+      const registers = await userRepo.find();
+      const ret = await httpGet(endpoint, {}, HttpStatus.OK, token);
 
-      const users = await httpGet(endpoint, {}, HttpStatus.OK, token);
+      expect(ret).toEqual({
+        count: 3,
+        page: 1,
+        pageSize: 12,
+        results: objectToJSON(registers),
+      });
 
-      expect(Array.isArray(users)).toBe(true);
-      expect(users).toHaveLength(3);
-      testValidateUser(users[0], expectedResults[0]);
-      testValidateUser(users[1], expectedResults[1]);
-      testValidateUser(users[2], expectedResults[2]);
-
-      expect(await userRepo.find()).toEqual(usersBefore);
+      expect(await userRepo.find()).toEqual(registers);
     });
 
     it('should fail if not authenticated', async () => {
@@ -876,6 +868,31 @@ describe('UserController (e2e)', () => {
         statusCode: HttpStatus.FORBIDDEN,
       });
       expect(await userRepo.find()).toEqual(usersBefore);
+    });
+
+    describe('pagination', () => {
+      class UserTestPagination extends TestE2EPagination<UserEntity> {
+        registerData: any[] = [];
+        async insertRegisters(quantity: number): Promise<any> {
+          for (const data of TestUserData.buildData(quantity)) {
+            this.registerData.push(await authenticationService.register(data));
+          }
+        }
+
+        findRegisters(options: { take: number; skip: number }) {
+          return userRepo.findAndCount(options);
+        }
+
+        async getPagesFromAPI(
+          queryParameters: { page?: any; pageSize?: any },
+          httpStatus: number,
+        ) {
+          const token = this.registerData[0].data.payload.token;
+
+          return httpGet('/users', queryParameters, httpStatus, token);
+        }
+      }
+      new UserTestPagination().executeTests({ ignoreNoRegisters: true });
     });
   });
 

@@ -1,3 +1,4 @@
+import { TestProductData } from '../../../../../test/product/test-product-data';
 import { TestPurpose } from '../../../../../test/test-data';
 import {
   getActiveAcceptableValues,
@@ -24,7 +25,6 @@ import {
   getQuantityInStockAcceptableValues,
   getQuantityInStockErrorDataList,
 } from '../../../../../test/test-data/test-quantity-in-stock-data';
-import { TestProductData } from '../../../../../test/test-product-data';
 import { validateFirstError } from '../../../../system/utils/validation';
 import { UpdateProductRequestDTO } from './update-product.request.dto';
 

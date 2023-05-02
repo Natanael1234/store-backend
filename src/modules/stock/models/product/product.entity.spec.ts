@@ -2,8 +2,8 @@ import { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { QueryFailedError, Repository } from 'typeorm';
 import { getTestingModule } from '../../../../.jest/test-config.module';
-import { TestBrandData } from '../../../../test/test-brand-data';
-import { TestProductData } from '../../../../test/test-product-data';
+import { TestBrandData } from '../../../../test/brand/test-brand-data';
+import { TestProductData } from '../../../../test/product/test-product-data';
 import { BrandEntity } from '../brand/brand.entity';
 import { ProductEntity } from './product.entity';
 

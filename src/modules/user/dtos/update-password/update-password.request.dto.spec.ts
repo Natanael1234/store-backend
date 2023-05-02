@@ -1,6 +1,6 @@
 import { TestPurpose } from '../../../../test/test-data';
 import { getPasswordErrorDataList } from '../../../../test/test-data/test.password-data';
-import { TestUserData } from '../../../../test/test-user-data';
+import { TestUserData } from '../../../../test/user/test-user-data';
 import { validateFirstError } from '../../../system/utils/validation';
 import { UpdatePasswordRequestDTO } from './update-password.request.dto';
 

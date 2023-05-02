@@ -1,6 +1,9 @@
-import { Body, Controller, Get, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, Query } from '@nestjs/common';
 import { Param, Req } from '@nestjs/common/decorators';
+
 import { Role } from '../../authentication/enums/role/role.enum';
+import { PaginationRequestDTO } from '../../system/dtos/request/pagination/pagination.request.dto';
+import { PaginatedResponseDTO } from '../../system/dtos/response/pagination/pagination.response.dto';
 import { Roles } from '../decorators/roles/roles.decorator';
 import { CreateUserRequestDTO } from '../dtos/create-user/create-user.request.dto';
 import { UpdatePasswordResponseDTO } from '../dtos/update-password.response.dto';
@@ -39,8 +42,10 @@ export class UserController {
 
   @Get()
   @Roles(Role.ROOT, Role.ADMIN)
-  findAll(): Promise<UserEntity[]> {
-    return this.userService.findAll();
+  findAll(
+    @Query() pagination: PaginationRequestDTO,
+  ): Promise<PaginatedResponseDTO<UserEntity>> {
+    return this.userService.find(pagination);
   }
 
   @Get('/:userId')

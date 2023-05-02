@@ -15,8 +15,9 @@ import { ActiveFilter } from '../src/modules/system/enums/filter/active-filter/a
 import { DeletedFilter } from '../src/modules/system/enums/filter/deleted-filter/deleted-filter.enum';
 import { ValidationPipe } from '../src/modules/system/pipes/custom-validation.pipe';
 import { UserEntity } from '../src/modules/user/models/user/user.entity';
-import { TestBrandData } from '../src/test/test-brand-data';
-import { testValidateBrand } from '../src/test/test-brand-utils';
+import { TestBrandData } from '../src/test/brand/test-brand-data';
+import { testValidateBrand } from '../src/test/brand/test-brand-utils';
+import { TestProductData } from '../src/test/product/test-product-data';
 import { TestPurpose } from '../src/test/test-data';
 import {
   getActiveAcceptableValues,
@@ -27,11 +28,11 @@ import {
   getNameErrorDataList,
 } from '../src/test/test-data/test-name-data';
 import { TestDatabaseUtils } from '../src/test/test-database-utils';
-import { TestProductData } from '../src/test/test-product-data';
-import { TestUserData } from '../src/test/test-user-data';
-import { testActiveFilter } from './common/test-active-filter';
-import { testDeletedFilter } from './common/test-deleted-filter';
-import { testPagination } from './common/test-pagination';
+import { TestUserData } from '../src/test/user/test-user-data';
+import { objectToJSON } from './common/instance-to-json';
+import { AbstractTestActiveFilter } from './common/test-active-filter';
+import { AbstractTestDeletedFilter } from './common/test-deleted-filter';
+import { AbstractTestPagination } from './common/test-pagination';
 import {
   TestRequestFunction,
   getHTTPDeleteMethod,
@@ -39,7 +40,7 @@ import {
   getHTTPPatchMethod,
   getHTTPPostMethod,
 } from './common/test-request-utils';
-import { testTextFilter } from './common/test-text-filter';
+import { AbstractTestTextFilter } from './common/test-text-filter';
 
 describe('StockController (e2e)', () => {
   let app: INestApplication;
@@ -335,10 +336,6 @@ describe('StockController (e2e)', () => {
   });
 
   describe('/brands (GET)', () => {
-    function objectToJSON(object) {
-      return JSON.parse(JSON.stringify(object));
-    }
-
     describe('authentication', () => {
       it('should allow unauthenticated', async () => {
         const brandData = TestBrandData.dataForRepository;
@@ -406,121 +403,112 @@ describe('StockController (e2e)', () => {
 
     describe('filtering', () => {
       describe('query', () => {
-        const createRegisters = async (textToAppend: string[]) => {
-          const brandsData = TestBrandData.buildData(textToAppend.length);
-          for (let i = 0; i < textToAppend.length; i++) {
-            brandsData[i].name += textToAppend[i];
-          }
-          await brandRepo.insert(brandsData);
-        };
-        const getPageFromRepository = async (options: { query?: any }) => {
-          const findManyOptions: any = { where: {}, skip: 0, take: 12 };
-          if (options.query) {
-            let query = options.query.replace(/\s+/g, ' ').trim();
-            if (query) {
-              findManyOptions.where.name = ILike(
-                '%' + query.replace(' ', '%') + '%',
-              );
+        class BrandTestTextFilter extends AbstractTestTextFilter<BrandEntity> {
+          async insertRegisters(textToAppend: string[]) {
+            const brandsData = TestBrandData.buildData(textToAppend.length);
+            for (let i = 0; i < textToAppend.length; i++) {
+              brandsData[i].name += textToAppend[i];
             }
+            await brandRepo.insert(brandsData);
           }
-          return brandRepo.findAndCount(findManyOptions);
-        };
-        const getPageFromAPI = async (
-          queryParameters: { query?: ActiveFilter },
-          httpStatus: number,
-        ) => {
-          return httpGet('/brands', queryParameters, httpStatus, rootToken);
-        };
 
-        testTextFilter<BrandEntity>(
-          createRegisters,
-          getPageFromRepository,
-          getPageFromAPI,
-        );
+          findRegisters(options: { query?: string }) {
+            const findManyOptions: any = { where: {}, skip: 0, take: 12 };
+            if (options.query) {
+              let query = options.query.replace(/\s+/g, ' ').trim();
+              if (query) {
+                findManyOptions.where.name = ILike(
+                  '%' + query.replace(' ', '%') + '%',
+                );
+              }
+            }
+            return brandRepo.findAndCount(findManyOptions);
+          }
+
+          getPagesFromAPI(
+            queryParameters: { query?: any },
+            httpStatus: number,
+          ) {
+            return httpGet('/brands', queryParameters, httpStatus, rootToken);
+          }
+        }
+
+        new BrandTestTextFilter().executeTests();
       });
 
       describe('active', () => {
-        const createRegisters = async (
-          quantity: number,
-          inactiveIds: number[],
-        ) => {
-          const brandsData = TestBrandData.buildData(quantity);
-          await brandRepo.insert(brandsData);
-          await brandRepo.update(inactiveIds, { active: false });
-        };
-        const getPagesFromRepository = async (where: { active?: any }) => {
-          return brandRepo.findAndCount({ where, skip: 0, take: 12 });
-        };
-        const getPagesFromAPI = async (
-          queryParameters: { active?: ActiveFilter },
-          httpStatus: number,
-        ) => {
-          return httpGet('/brands', queryParameters, httpStatus, rootToken);
-        };
+        class TestTextFilter extends AbstractTestActiveFilter<BrandEntity> {
+          async insertRegisters(quantity: number, inactiveIds: number[]) {
+            const brandsData = TestBrandData.buildData(quantity);
+            await brandRepo.insert(brandsData);
+            await brandRepo.update(inactiveIds, { active: false });
+          }
 
-        testActiveFilter<BrandEntity>(
-          createRegisters,
-          getPagesFromRepository,
-          getPagesFromAPI,
-        );
+          findRegisters<BrandEntity>(where: { active?: boolean }) {
+            return brandRepo.findAndCount({ where, skip: 0, take: 12 });
+          }
+
+          getPagesFromAPI<BrandEntity>(
+            queryParameters: { active?: any },
+            httpStatus: number,
+          ) {
+            return httpGet('/brands', queryParameters, httpStatus, rootToken);
+          }
+        }
+
+        new TestTextFilter().executeTests();
       });
 
       describe('deleted', () => {
-        const createRegisters = async (
-          quantity: number,
-          deletedIds: number[],
-        ) => {
-          const brandsData = TestBrandData.buildData(quantity);
-          await brandRepo.insert(brandsData);
-          await brandRepo.update(deletedIds, { deletedAt: false });
-        };
-        const getPagesFromRepository = async (options: { deleted?: any }) => {
-          const findManyOptions: any = { skip: 0, take: 12, where: {} };
-          if (options.deleted === true) {
-            findManyOptions.withDeleted = true;
-            findManyOptions.where.deletedAt = Not(IsNull());
-          } else if (options.deleted == null) {
-            findManyOptions.withDeleted = true;
+        class ProductTestDeletedFilter extends AbstractTestDeletedFilter<BrandEntity> {
+          async insertRegisters(quantity: number, deletedIds: number[]) {
+            const brandsData = TestBrandData.buildData(quantity);
+            await brandRepo.insert(brandsData);
+            await brandRepo.update(deletedIds, { deletedAt: false });
           }
-          return brandRepo.findAndCount(findManyOptions);
-        };
-        const getPagesFromAPI = async (
-          queryParameters: { deleted?: DeletedFilter },
-          httpStatus: number,
-        ) => {
-          return httpGet('/brands', queryParameters, httpStatus, rootToken);
-        };
 
-        testDeletedFilter<BrandEntity>(
-          createRegisters,
-          getPagesFromRepository,
-          getPagesFromAPI,
-        );
+          findRegisters(options: { deleted?: boolean }) {
+            const findManyOptions: any = { skip: 0, take: 12, where: {} };
+            if (options.deleted === true) {
+              findManyOptions.withDeleted = true;
+              findManyOptions.where.deletedAt = Not(IsNull());
+            } else if (options.deleted == null) {
+              findManyOptions.withDeleted = true;
+            }
+            return brandRepo.findAndCount(findManyOptions);
+          }
+
+          getPagesFromAPI(
+            queryParameters: { deleted?: any },
+            httpStatus: number,
+          ) {
+            return httpGet('/brands', queryParameters, httpStatus, rootToken);
+          }
+        }
+
+        new ProductTestDeletedFilter().executeTests();
       });
     });
 
     describe('pagination', () => {
-      const createRegisters = (quantity: number) => {
-        return brandRepo.insert(TestBrandData.buildData(quantity));
-      };
-      const getPagesFromRepository = (options: {
-        skip: number;
-        take: number;
-      }) => {
-        return brandRepo.findAndCount(options);
-      };
-      const getPagesFromAPI = (
-        queryParameters: { page: number; pageSize: number },
-        httpStatus: number,
-      ) => {
-        return httpGet('/brands', queryParameters, httpStatus, rootToken);
-      };
+      class BrandTestPagination extends AbstractTestPagination<BrandEntity> {
+        insertRegisters(quantity: number): Promise<any> {
+          return brandRepo.insert(TestBrandData.buildData(quantity));
+        }
 
-      testPagination<BrandEntity>(
-        createRegisters,
-        getPagesFromRepository,
-        getPagesFromAPI,
-      );
+        findRegisters(options: { take: number; skip: number }) {
+          return brandRepo.findAndCount(options);
+        }
+
+        getPagesFromAPI(
+          queryParameters: { page?: any; pageSize?: any },
+          httpStatus: number,
+        ) {
+          return httpGet('/brands', queryParameters, httpStatus, rootToken);
+        }
+      }
+
+      new BrandTestPagination().executeTests();
     });
 
     describe('combined parameters', () => {

@@ -1,6 +1,6 @@
 import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
-import { TestUserData } from '../../../../test/test-user-data';
+import { TestUserData } from '../../../../test/user/test-user-data';
 import { UserEntity } from '../../../user/models/user/user.entity';
 import { UserService } from '../../../user/services/user/user.service';
 import { LoginResponseDto } from '../../dtos/responses/login.response.dto';

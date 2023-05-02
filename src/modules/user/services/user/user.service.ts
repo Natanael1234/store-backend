@@ -6,8 +6,12 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common/exceptions';
 import { InjectRepository } from '@nestjs/typeorm';
+import { plainToInstance } from 'class-transformer';
 import { Validator } from 'class-validator';
-import { Repository } from 'typeorm';
+import { FindManyOptions, Repository } from 'typeorm';
+import { PaginationConfig } from '../../../system/dtos/request/pagination/configs/pagination.config';
+import { PaginationRequestDTO } from '../../../system/dtos/request/pagination/pagination.request.dto';
+import { PaginatedResponseDTO } from '../../../system/dtos/response/pagination/pagination.response.dto';
 import { EncryptionService } from '../../../system/encryption/services/encryption/encryption.service';
 import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
 import { validateOrThrowError } from '../../../system/utils/validation';
@@ -80,8 +84,20 @@ export class UserService {
     return await this.userRepository.findOne({ where: { email } });
   }
 
-  public async findAll(): Promise<UserEntity[]> {
-    return this.userRepository.find(); // TODO: paginação
+  public async find(
+    pagination?: PaginationRequestDTO,
+  ): Promise<PaginatedResponseDTO<UserEntity>> {
+    pagination = plainToInstance(PaginationRequestDTO, pagination || {});
+    await validateOrThrowError(pagination || {}, PaginationRequestDTO);
+    const { page, pageSize, skip, take } = pagination;
+    const findManyOptions: FindManyOptions = {};
+    findManyOptions.take = take || PaginationConfig.DEFAULT_PAGE_SIZE;
+    findManyOptions.skip = skip || 0;
+    findManyOptions.where = {};
+    const [results, count] = await this.userRepository.findAndCount(
+      findManyOptions,
+    );
+    return new PaginatedResponseDTO(results, count, page, pageSize);
   }
 
   public async count(): Promise<number> {

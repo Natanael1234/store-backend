@@ -19,7 +19,7 @@ import { DeletedFilter } from '../src/modules/system/enums/filter/deleted-filter
 import { ValidationPipe } from '../src/modules/system/pipes/custom-validation.pipe';
 import { UserEntity } from '../src/modules/user/models/user/user.entity';
 import { UserService } from '../src/modules/user/services/user/user.service';
-import { TestBrandData } from '../src/test/test-brand-data';
+import { testValidateProduct } from '../src/test/product/test-product-utils';
 import { TestPurpose } from '../src/test/test-data';
 import {
   getActiveAcceptableValues,
@@ -50,12 +50,14 @@ import {
   getQuantityInStockErrorDataList,
 } from '../src/test/test-data/test-quantity-in-stock-data';
 import { TestDatabaseUtils } from '../src/test/test-database-utils';
-import { TestProductData } from '../src/test/test-product-data';
-import { testValidateProduct } from '../src/test/test-product-utils';
-import { TestUserData } from '../src/test/test-user-data';
-import { testActiveFilter } from './common/test-active-filter';
-import { testDeletedFilter } from './common/test-deleted-filter';
-import { testPagination } from './common/test-pagination';
+import { objectToJSON } from './common/instance-to-json';
+
+import { TestBrandData } from '../src/test/brand/test-brand-data';
+import { TestProductData } from '../src/test/product/test-product-data';
+import { TestUserData } from '../src/test/user/test-user-data';
+import { AbstractTestActiveFilter } from './common/test-active-filter';
+import { AbstractTestDeletedFilter } from './common/test-deleted-filter';
+import { AbstractTestPagination } from './common/test-pagination';
 import {
   TestRequestFunction,
   getHTTPDeleteMethod,
@@ -63,7 +65,8 @@ import {
   getHTTPPatchMethod,
   getHTTPPostMethod,
 } from './common/test-request-utils';
-import { testTextFilter } from './common/test-text-filter';
+import { AbstractTestTextFilter } from './common/test-text-filter';
+
 describe('StockController (e2e)', () => {
   let app: INestApplication;
   let moduleFixture: TestingModule;
@@ -560,10 +563,6 @@ describe('StockController (e2e)', () => {
     });
 
     describe('/products (GET)', () => {
-      function objectToJSON(object) {
-        return JSON.parse(JSON.stringify(object));
-      }
-
       describe('authentication', () => {
         it('should allow unauthenticated', async () => {
           await brandRepo.insert(TestBrandData.buildData(1));
@@ -633,140 +632,158 @@ describe('StockController (e2e)', () => {
 
       describe('filtering', () => {
         describe('query', () => {
-          const createRegisters = async (textToAppend: string[]) => {
-            await brandRepo.insert(TestBrandData.buildData(1));
-            const productsData = TestProductData.buildData(textToAppend.length);
-            for (let i = 0; i < textToAppend.length; i++) {
-              productsData[i].name += textToAppend[i];
-            }
-            await productRepo.insert(productsData);
-          };
-          const getPageFromRepository = async (options: { query?: any }) => {
-            const findManyOptions: any = { where: {}, skip: 0, take: 12 };
-            if (options.query) {
-              let query = options.query.replace(/\s+/g, ' ').trim();
-              if (query) {
-                findManyOptions.where.name = ILike(
-                  '%' + query.replace(' ', '%') + '%',
-                );
+          class ProductTestTextFilter extends AbstractTestTextFilter<ProductEntity> {
+            async insertRegisters(textToAppend: string[]) {
+              await brandRepo.insert(TestBrandData.buildData(1));
+              const productsData = TestProductData.buildData(
+                textToAppend.length,
+              );
+              for (let i = 0; i < textToAppend.length; i++) {
+                productsData[i].name += textToAppend[i];
               }
+              await productRepo.insert(productsData);
             }
-            findManyOptions.relations = { brand: true };
-            return productRepo.findAndCount(findManyOptions);
-          };
-          const getPageFromAPI = async (
-            queryParameters: { query?: ActiveFilter },
-            httpStatus: number,
-          ) => {
-            return httpGet('/products', queryParameters, httpStatus, rootToken);
-          };
 
-          testTextFilter<ProductEntity>(
-            createRegisters,
-            getPageFromRepository,
-            getPageFromAPI,
-          );
+            findRegisters(options: { query?: string }) {
+              const findManyOptions: any = { where: {}, skip: 0, take: 12 };
+              if (options.query) {
+                let query = options.query.replace(/\s+/g, ' ').trim();
+                if (query) {
+                  findManyOptions.where.name = ILike(
+                    '%' + query.replace(' ', '%') + '%',
+                  );
+                }
+              }
+              findManyOptions.relations = { brand: true };
+              return productRepo.findAndCount(findManyOptions);
+            }
+
+            getPagesFromAPI(
+              queryParameters: { query?: any },
+              httpStatus: number,
+            ) {
+              return httpGet(
+                '/products',
+                queryParameters,
+                httpStatus,
+                rootToken,
+              );
+            }
+          }
+
+          new ProductTestTextFilter().executeTests();
         });
 
         describe('active', () => {
-          const createRegisters = async (
-            quantity: number,
-            inactiveIds: number[],
-          ) => {
-            await brandRepo.insert(TestBrandData.buildData(1));
-            const productsData = TestProductData.buildData(quantity);
-            await productRepo.insert(productsData);
-            await productRepo.update(inactiveIds, { active: false });
-          };
-          const getPagesFromRepository = async (where: { active?: any }) => {
-            return productRepo.findAndCount({
-              where,
-              skip: 0,
-              take: 12,
-              relations: { brand: true },
-            });
-          };
-          const getPagesFromAPI = async (
-            queryParameters: { active?: ActiveFilter },
-            httpStatus: number,
-          ) => {
-            return httpGet('/products', queryParameters, httpStatus, rootToken);
-          };
+          class TestProductActiveFilter extends AbstractTestActiveFilter<ProductEntity> {
+            async insertRegisters(
+              quantity: number,
+              inactiveIds: number[],
+            ): Promise<any> {
+              await brandRepo.insert(TestBrandData.buildData(1));
+              const productsData = TestProductData.buildData(quantity);
+              await productRepo.insert(productsData);
+              await productRepo.update(inactiveIds, { active: false });
+            }
 
-          testActiveFilter<ProductEntity>(
-            createRegisters,
-            getPagesFromRepository,
-            getPagesFromAPI,
-          );
+            findRegisters(options: {
+              active?: boolean;
+            }): Promise<[pages: ProductEntity[], count: number]> {
+              return productRepo.findAndCount({
+                where: options,
+                skip: 0,
+                take: 12,
+                relations: { brand: true },
+              });
+            }
+
+            getPagesFromAPI(
+              queryParameters: { active?: any },
+              httpStatus: number,
+            ): Promise<{
+              count: number;
+              page: number;
+              pageSize: number;
+              results: ProductEntity[];
+            }> {
+              return httpGet(
+                '/products',
+                queryParameters,
+                httpStatus,
+                rootToken,
+              );
+            }
+          }
+
+          new TestProductActiveFilter().executeTests();
         });
 
         describe('deleted', () => {
-          const createRegisters = async (
-            quantity: number,
-            deletedIds: number[],
-          ) => {
-            await brandRepo.insert(TestBrandData.buildData(1));
-            const productsData = TestProductData.buildData(quantity);
-            await productRepo.insert(productsData);
-            await productRepo.update(deletedIds, { deletedAt: false });
-          };
-          const getPagesFromRepository = async (options: { deleted?: any }) => {
-            const findManyOptions: any = {
-              skip: 0,
-              take: 12,
-              where: {},
-              relations: { brand: true },
-            };
-            if (options.deleted === true) {
-              findManyOptions.withDeleted = true;
-              findManyOptions.where.deletedAt = Not(IsNull());
-            } else if (options.deleted == null) {
-              findManyOptions.withDeleted = true;
+          class ProductTestDeletedFilter extends AbstractTestDeletedFilter<ProductEntity> {
+            async insertRegisters(quantity: number, deletedIds: number[]) {
+              await brandRepo.insert(TestBrandData.buildData(1));
+              const productsData = TestProductData.buildData(quantity);
+              await productRepo.insert(productsData);
+              await productRepo.update(deletedIds, { deletedAt: false });
             }
-            return productRepo.findAndCount(findManyOptions);
-          };
-          const getPagesFromAPI = async (
-            queryParameters: { deleted?: DeletedFilter },
-            httpStatus: number,
-          ) => {
-            return httpGet('/products', queryParameters, httpStatus, rootToken);
-          };
 
-          testDeletedFilter<ProductEntity>(
-            createRegisters,
-            getPagesFromRepository,
-            getPagesFromAPI,
-          );
+            findRegisters(options: { deleted?: boolean }) {
+              const findManyOptions: any = {
+                skip: 0,
+                take: 12,
+                where: {},
+                relations: { brand: true },
+              };
+              if (options.deleted === true) {
+                findManyOptions.withDeleted = true;
+                findManyOptions.where.deletedAt = Not(IsNull());
+              } else if (options.deleted == null) {
+                findManyOptions.withDeleted = true;
+              }
+              return productRepo.findAndCount(findManyOptions);
+            }
+
+            getPagesFromAPI(
+              queryParameters: { deleted?: any },
+              httpStatus: number,
+            ) {
+              return httpGet(
+                '/products',
+                queryParameters,
+                httpStatus,
+                rootToken,
+              );
+            }
+          }
+
+          new ProductTestDeletedFilter().executeTests();
         });
       });
 
       describe('pagination', () => {
-        const createRegisters = async (quantity: number) => {
-          await brandRepo.insert(TestBrandData.buildData(1));
-          return productRepo.insert(TestProductData.buildData(quantity));
-        };
-        const getPagesFromRepository = (options: {
-          skip: number;
-          take: number;
-        }) => {
-          const findManyOptions: any = {};
-          if (options.skip) findManyOptions.skip = options.skip;
-          if (options.take) findManyOptions.take = options.take;
-          findManyOptions.relations = { brand: true };
-          return productRepo.findAndCount(findManyOptions);
-        };
-        const getPagesFromAPI = (
-          queryParameters: { page: number; pageSize: number },
-          httpStatus: number,
-        ) => {
-          return httpGet('/products', queryParameters, httpStatus, rootToken);
-        };
+        class ProductTestPagination extends AbstractTestPagination<ProductEntity> {
+          async insertRegisters(quantity: number): Promise<any> {
+            await brandRepo.insert(TestBrandData.buildData(1));
+            return productRepo.insert(TestProductData.buildData(quantity));
+          }
 
-        testPagination<ProductEntity>(
-          createRegisters,
-          getPagesFromRepository,
-          getPagesFromAPI,
-        );
+          findRegisters(options: { take: number; skip: number }) {
+            const findManyOptions: any = {};
+            if (options.skip) findManyOptions.skip = options.skip;
+            if (options.take) findManyOptions.take = options.take;
+            findManyOptions.relations = { brand: true };
+            return productRepo.findAndCount(findManyOptions);
+          }
+
+          getPagesFromAPI(
+            queryParameters: { page?: any; pageSize?: any },
+            httpStatus: number,
+          ) {
+            return httpGet('/products', queryParameters, httpStatus, rootToken);
+          }
+        }
+
+        new ProductTestPagination().executeTests();
       });
 
       describe('combined parameters', () => {
