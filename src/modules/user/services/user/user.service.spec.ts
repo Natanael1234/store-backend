@@ -9,15 +9,17 @@ import { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { getTestingModule } from '../../../../.jest/test-config.module';
+import { TestServicePagination } from '../../../../test/pagination/test-service-pagination';
 import { TestPurpose } from '../../../../test/test-data';
 import { getEmailErrorDataList } from '../../../../test/test-data/test-email-data';
 import { getNameErrorDataList } from '../../../../test/test-data/test-name-data';
 import { getRolesErrorDataList } from '../../../../test/test-data/test-roles-data';
 import { getPasswordErrorDataList } from '../../../../test/test-data/test.password-data';
-import { TestUserData } from '../../../../test/test-user-data';
-import { testValidateUser } from '../../../../test/test-user-utils';
+import { TestUserData } from '../../../../test/user/test-user-data';
+import { testValidateUser } from '../../../../test/user/test-user-utils';
 import { Role } from '../../../authentication/enums/role/role.enum';
 import { AuthenticationService } from '../../../authentication/services/authentication/authentication.service';
+import { PaginatedResponseDTO } from '../../../system/dtos/response/pagination/pagination.response.dto';
 import { EncryptionService } from '../../../system/encryption/services/encryption/encryption.service';
 import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
 import { NameMessage } from '../../../system/enums/messages/name-messages/name-messages.enum';
@@ -276,7 +278,7 @@ describe('UserService', () => {
           await userService.create(usersData[0]);
           await userService.create(usersData[1]);
 
-          const usersBefore = await userService.findAll();
+          const usersBefore = await userRepo.find();
           async function fn() {
             await userService.create({
               name: invalidName,
@@ -286,7 +288,7 @@ describe('UserService', () => {
             });
           }
           await expect(fn()).rejects.toThrow(UnprocessableEntityException);
-          expect(usersBefore).toEqual(await userService.findAll());
+          expect(usersBefore).toEqual(await userRepo.find());
           await expect(fn()).rejects.toThrow('Unprocessable Entity Exception');
           try {
             await fn();
@@ -309,34 +311,62 @@ describe('UserService', () => {
 
   describe('find', () => {
     it('should return an empty array when no users are found', async () => {
-      const users = await userService.findAll();
-      expect(Array.isArray(users)).toBe(true);
-      expect(users).toHaveLength(0);
+      const ret = await userService.find();
+
+      expect(ret).toEqual({ count: 0, page: 1, pageSize: 12, results: [] });
     });
 
     it('should return an array of users', async () => {
       const createData = TestUserData.dataForRepository();
-      const createdUSers = [
-        userRepo.create(createData[0]),
-        userRepo.create(createData[1]),
-        userRepo.create(createData[2]),
-      ];
-      await userRepo.save(createdUSers[0]);
-      await userRepo.save(createdUSers[1]);
-      await userRepo.save(createdUSers[2]);
-      const users = await userService.findAll();
-      expect(Array.isArray(users)).toBe(true);
-      expect(users).toHaveLength(3);
-      const expectedData = [
-        { id: 1, ...createData[0] },
-        { id: 2, ...createData[1] },
-        { id: 3, ...createData[2] },
-      ];
-      expectedData.forEach((data) => delete data.password);
+      await userRepo.insert(createData[0]);
+      await userRepo.insert(createData[1]);
+      await userRepo.insert(createData[2]);
 
-      testValidateUser(users[0], expectedData[0]);
-      testValidateUser(users[1], expectedData[1]);
-      testValidateUser(users[2], expectedData[2]);
+      const registers = await userRepo.find();
+      const ret: any = await userService.find();
+
+      expect(ret).toEqual({
+        count: 3,
+        page: 1,
+        pageSize: 12,
+        results: registers,
+      });
+    });
+
+    describe('pagination', () => {
+      class TestUserServicePagination extends TestServicePagination<UserEntity> {
+        async insertRegisters(quantity: number): Promise<any> {
+          let creationData = [];
+          for (const data of TestUserData.buildData(quantity)) {
+            creationData.push({
+              name: data.name,
+              email: data.email,
+              hash: await encryptionService.encrypt(data.password),
+              roles: data.roles,
+            });
+          }
+          await userRepo.insert(creationData);
+        }
+
+        findRegisters(options: {
+          skip: number;
+          take: number;
+        }): Promise<[registes: UserEntity[], count: number]> {
+          const findManyOptions: any = { where: {} };
+          if (options.skip) findManyOptions.skip = options.skip;
+          if (options.take) findManyOptions.take = options.take;
+          return userRepo.findAndCount(findManyOptions);
+        }
+
+        findViaService(pagination?: {
+          page?: number;
+          pageSize?: number;
+        }): Promise<PaginatedResponseDTO<UserEntity>> {
+          return userService.find(pagination);
+        }
+      }
+
+      new TestUserServicePagination().executeTests();
     });
   });
 
@@ -418,7 +448,7 @@ describe('UserService', () => {
         await userService.create(usersData[0]);
         await userService.create(usersData[1]);
         await userService.create(usersData[2]);
-        const usersBefore = await userService.findAll();
+        const usersBefore = await userRepo.find();
 
         async function fn() {
           await userService.update(12, {
@@ -428,7 +458,7 @@ describe('UserService', () => {
           });
         }
         await expect(fn()).rejects.toThrow(NotFoundException);
-        expect(usersBefore).toEqual(await userService.findAll());
+        expect(usersBefore).toEqual(await userRepo.find());
         await expect(fn()).rejects.toThrow(UserMessage.NOT_FOUND);
       });
 
@@ -439,7 +469,6 @@ describe('UserService', () => {
         const usersData = TestUserData.creationData;
         await userService.create(usersData[0]);
         await userService.create(usersData[1]);
-        const usersBefore = await userService.findAll();
 
         const fn = userService.update(2, data);
 
@@ -457,13 +486,13 @@ describe('UserService', () => {
             await userService.create(usersData[0]);
             await userService.create(usersData[1]);
             await userService.create(usersData[2]);
-            const usersBefore = await userService.findAll();
+            const usersBefore = await userRepo.find();
             async function fn() {
               await userService.findForId(userId);
             }
 
             await expect(fn()).rejects.toThrow(BadRequestException);
-            expect(usersBefore).toEqual(await userService.findAll());
+            expect(usersBefore).toEqual(await userRepo.find());
             await expect(fn()).rejects.toThrow(UserMessage.ID_REQUIRED);
           },
         );
@@ -488,7 +517,7 @@ describe('UserService', () => {
             };
 
             await expect(fn()).rejects.toThrow(ExceptionClass);
-            expect(usersBefore).toEqual(await userService.findAll());
+            expect(usersBefore).toEqual(await userRepo.find());
             expect(await userRepo.find()).toEqual(usersBefore);
             try {
               await fn();
@@ -549,7 +578,7 @@ describe('UserService', () => {
             const fn = async () => await userService.update(2, data);
 
             await expect(fn()).rejects.toThrow(ExceptionClass);
-            expect(usersBefore).toEqual(await userService.findAll());
+            expect(usersBefore).toEqual(await userRepo.find());
             expect(await userRepo.find()).toEqual(usersBefore);
             try {
               await fn();
@@ -658,7 +687,7 @@ describe('UserService', () => {
           await userService.create(creationData[0]);
           await userService.create(creationData[1]);
           await userService.create(creationData[2]);
-          const usersBefore = await userService.findAll();
+          const usersBefore = await userRepo.find();
 
           async function fn() {
             await userService.update(2, {
@@ -668,7 +697,7 @@ describe('UserService', () => {
             });
           }
           await expect(fn()).rejects.toThrow(UnprocessableEntityException);
-          expect(usersBefore).toEqual(await userService.findAll());
+          expect(usersBefore).toEqual(await userRepo.find());
           await expect(fn()).rejects.toThrow('Unprocessable Entity Exception');
           try {
             await fn();

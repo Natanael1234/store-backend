@@ -1,4 +1,4 @@
-import { TestBrandData } from '../../../../../test/test-brand-data';
+import { TestBrandData } from '../../../../../test/brand/test-brand-data';
 import { TestPurpose } from '../../../../../test/test-data';
 import {
   getActiveAcceptableValues,

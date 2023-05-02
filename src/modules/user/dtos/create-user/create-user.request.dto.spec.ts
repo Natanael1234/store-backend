@@ -12,7 +12,7 @@ import {
   getPasswordAcceptableValues,
   getPasswordErrorDataList,
 } from '../../../../test/test-data/test.password-data';
-import { TestUserData } from '../../../../test/test-user-data';
+import { TestUserData } from '../../../../test/user/test-user-data';
 import { Role } from '../../../authentication/enums/role/role.enum';
 import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
 import { NameMessage } from '../../../system/enums/messages/name-messages/name-messages.enum';

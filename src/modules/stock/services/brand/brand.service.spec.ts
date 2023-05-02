@@ -8,8 +8,9 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
 import { ILike, IsNull, Not, Repository } from 'typeorm';
 import { getTestingModule } from '../../../../.jest/test-config.module';
-import { TestBrandData } from '../../../../test/test-brand-data';
-import { testValidateBrand } from '../../../../test/test-brand-utils';
+import { TestBrandData } from '../../../../test/brand/test-brand-data';
+import { testValidateBrand } from '../../../../test/brand/test-brand-utils';
+import { TestServicePagination } from '../../../../test/pagination/test-service-pagination';
 import { TestPurpose } from '../../../../test/test-data';
 import {
   getActiveAcceptableValues,
@@ -19,9 +20,9 @@ import {
   getNameAcceptableValues,
   getNameErrorDataList,
 } from '../../../../test/test-data/test-name-data';
+import { PaginatedResponseDTO } from '../../../system/dtos/response/pagination/pagination.response.dto';
 import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
-import { PaginationMessage } from '../../../system/enums/messages/pagination-messages/pagination-messages.enum';
 import { CreateBrandRequestDTO } from '../../dtos/request/create-brand/create-brand.request.dto';
 import { UpdateBrandRequestDTO } from '../../dtos/request/update-brand/update-brand.request.dto';
 import { BrandMessage } from '../../enums/brand-messages/brand-messages.enum';
@@ -502,136 +503,29 @@ describe('BrandService', () => {
     });
 
     describe('pagination', () => {
-      let brandsData;
-      let expectedResults;
+      class TestBrandServicePagination extends TestServicePagination<BrandEntity> {
+        async insertRegisters(quantity: number): Promise<any> {
+          await brandRepo.insert(TestBrandData.buildData(quantity));
+        }
+        findRegisters(options: {
+          skip: number;
+          take: number;
+        }): Promise<[registes: BrandEntity[], count: number]> {
+          const findManyOptions: any = { where: {} };
+          if (options.skip) findManyOptions.skip = options.skip;
+          if (options.take) findManyOptions.take = options.take;
+          return brandRepo.findAndCount(findManyOptions);
+        }
 
-      beforeEach(async () => {
-        brandsData = TestBrandData.buildData(15);
-        const brands = await brandRepo.find();
-        await brandRepo.insert(brandsData);
-        expectedResults = await brandRepo.find();
-      });
-
-      async function testPagination(paginationParams?: {
-        page?: number;
-        pageSize?: number;
-      }) {
-        // prepare
-        const count = brandsData.length;
-        let page = paginationParams?.page;
-        if (page == null) page = 1;
-        if (page < 1) page = 1;
-
-        let pageSize = paginationParams?.pageSize;
-        if (pageSize == null) pageSize = 12;
-        if (pageSize < 1) pageSize = 1;
-        if (pageSize > 40) pageSize = 40;
-
-        const skip = (page - 1) * pageSize;
-        const take = pageSize;
-        const expectedResultsPage: any[] = expectedResults.slice(
-          skip,
-          skip + take,
-        );
-
-        // execute
-        const ret = paginationParams
-          ? await brandService.find({}, paginationParams)
-          : await brandService.find();
-
-        // test
-        expect(ret).toBeDefined();
-        expect(ret.count).toEqual(count);
-        expect(ret.page).toEqual(page);
-        expect(ret.page).toBeGreaterThanOrEqual(1);
-        expect(ret.pageSize).toEqual(pageSize);
-        expect(ret.pageSize).toBeGreaterThanOrEqual(1);
-
-        expect(ret.results).toHaveLength(expectedResultsPage.length);
-        for (let i = 0; i < expectedResultsPage.length; i++) {
-          testValidateBrand(ret.results[i], expectedResultsPage[i]);
+        findViaService(pagination?: {
+          page?: number;
+          pageSize?: number;
+        }): Promise<PaginatedResponseDTO<BrandEntity>> {
+          return brandService.find({}, pagination);
         }
       }
 
-      it('should paginate serch brands without sending pagination params', async () => {
-        await testPagination(null);
-      });
-
-      it('should paginate search without sending page and page size', async () => {
-        await testPagination({});
-      });
-
-      it('should paginate seach without sending page size', async () => {
-        await testPagination({ page: 1 });
-      });
-
-      it('should paginate search without sending page size and sending page > 1', async () => {
-        await testPagination({ page: 2 });
-      });
-
-      it('should paginage serch without sending page and sending page size != default page size', async () => {
-        await testPagination({ pageSize: 5 });
-      });
-
-      it('should paginate search seding page > 1 and page size != page size', async () => {
-        await testPagination({ page: 3, pageSize: 5 });
-      });
-
-      it('should use page=1 when page parameter = 0', async () => {
-        await testPagination({ page: 0, pageSize: 5 });
-      });
-
-      it('should use page=1 when page parameter < 0', async () => {
-        await testPagination({ page: -1, pageSize: 5 });
-      });
-
-      it('should use pageSize=1 when pageSize parameter = 0', async () => {
-        await testPagination({ pageSize: 0 });
-      });
-
-      it('should use pageSize=1 when pageSize parameter = -1', async () => {
-        await testPagination({ pageSize: -1 });
-      });
-
-      it('should use pageSize=40 when pageSize parameter = 40', async () => {
-        await testPagination({ pageSize: 40 });
-      });
-
-      it('should use pageSize=40 when pageSize parameter > 40', async () => {
-        await testPagination({ pageSize: 41 });
-      });
-
-      it('should fail if page is float', async () => {
-        const fn = () => brandService.find({}, { page: 1.1 });
-        await expect(fn()).rejects.toThrow(UnprocessableEntityException);
-        try {
-          await fn();
-        } catch (ex) {
-          expect(ex.response).toEqual({
-            error: 'UnprocessableEntityException',
-            message: {
-              page: PaginationMessage.PAGE_INT,
-            },
-            statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-          });
-        }
-      });
-
-      it('should fail if page is negative float', async () => {
-        const fn = () => brandService.find({}, { page: -1.1 });
-        await expect(fn()).rejects.toThrow(UnprocessableEntityException);
-        try {
-          await fn();
-        } catch (ex) {
-          expect(ex.response).toEqual({
-            error: 'UnprocessableEntityException',
-            message: {
-              page: PaginationMessage.PAGE_INT,
-            },
-            statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-          });
-        }
-      });
+      new TestBrandServicePagination().executeTests();
     });
 
     describe('combined tests', () => {

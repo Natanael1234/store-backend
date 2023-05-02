@@ -1,5 +1,5 @@
-import { Role } from '../modules/authentication/enums/role/role.enum';
-import { TestPurpose } from './test-data';
+import { Role } from '../../modules/authentication/enums/role/role.enum';
+import { TestPurpose } from '../test-data';
 
 export class TestUserData {
   /** service/api */
@@ -24,6 +24,20 @@ export class TestUserData {
         roles: [Role.ADMIN],
       },
     ];
+  }
+
+  public static buildData(quantity: number, startNumber?: number) {
+    if (startNumber == null) startNumber = 1;
+    const arr = Array(quantity);
+    for (let i = 0, j = startNumber; i < arr.length; i++, j++) {
+      arr[i] = {
+        name: `User ${j}`,
+        password: 'Abc12*',
+        email: `user${j}@email.com`,
+        roles: [Role.ROOT],
+      };
+    }
+    return arr;
   }
 
   static get updateData() {

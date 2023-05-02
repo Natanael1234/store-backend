@@ -9,7 +9,10 @@ import { plainToInstance } from 'class-transformer';
 import { ILike, IsNull, Not, Repository } from 'typeorm';
 import { getTestingModule } from '../../../../.jest/test-config.module';
 
-import { TestBrandData } from '../../../../test/test-brand-data';
+import { TestBrandData } from '../../../../test/brand/test-brand-data';
+import { TestServicePagination } from '../../../../test/pagination/test-service-pagination';
+import { TestProductData } from '../../../../test/product/test-product-data';
+import { testValidateProduct } from '../../../../test/product/test-product-utils';
 import { TestPurpose } from '../../../../test/test-data';
 import {
   getActiveAcceptableValues,
@@ -39,12 +42,10 @@ import {
   getQuantityInStockAcceptableValues,
   getQuantityInStockErrorDataList,
 } from '../../../../test/test-data/test-quantity-in-stock-data';
-import { TestProductData } from '../../../../test/test-product-data';
-import { testValidateProduct } from '../../../../test/test-product-utils';
+import { PaginatedResponseDTO } from '../../../system/dtos/response/pagination/pagination.response.dto';
 import { SuccessResponseDto } from '../../../system/dtos/response/pagination/success.response.dto';
 import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
-import { PaginationMessage } from '../../../system/enums/messages/pagination-messages/pagination-messages.enum';
 import { CreateProductRequestDTO } from '../../dtos/request/create-product/create-product.request.dto';
 import { UpdateProductRequestDTO } from '../../dtos/request/update-product/update-product.request.dto';
 import { BrandMessage } from '../../enums/brand-messages/brand-messages.enum';
@@ -792,139 +793,32 @@ describe('StockService', () => {
     });
 
     describe('pagination', () => {
-      let productsData;
-      let expectedResults;
+      class TestUserServicePagination extends TestServicePagination<ProductEntity> {
+        async insertRegisters(quantity: number): Promise<any> {
+          await brandRepo.insert(TestBrandData.buildData(1));
+          await productRepo.insert(TestProductData.buildData(quantity));
+        }
 
-      beforeEach(async () => {
-        await brandRepo.insert(TestBrandData.buildData(1));
-        productsData = TestProductData.buildData(15);
-        await productRepo.insert(productsData);
-        expectedResults = await productRepo.find({
-          relations: { brand: true },
-        });
-      });
+        findRegisters(options: {
+          skip: number;
+          take: number;
+        }): Promise<[registes: ProductEntity[], count: number]> {
+          const findManyOptions: any = { where: {} };
+          if (options.skip) findManyOptions.skip = options.skip;
+          if (options.take) findManyOptions.take = options.take;
+          findManyOptions.relations = { brand: true };
+          return productRepo.findAndCount(findManyOptions);
+        }
 
-      async function testPagination(paginationParams?: {
-        page?: number;
-        pageSize?: number;
-      }) {
-        // prepare
-        const count = productsData.length;
-        let page = paginationParams?.page;
-        if (page == null) page = 1;
-        if (page < 1) page = 1;
-
-        let pageSize = paginationParams?.pageSize;
-        if (pageSize == null) pageSize = 12;
-        if (pageSize < 1) pageSize = 1;
-        if (pageSize > 40) pageSize = 40;
-
-        const skip = (page - 1) * pageSize;
-        const take = pageSize;
-
-        const expectedResultsPage: any[] = expectedResults.slice(
-          skip,
-          skip + take,
-        );
-
-        // execute
-        const ret = paginationParams
-          ? await productService.find({}, paginationParams)
-          : await productService.find({});
-
-        // test
-        expect(ret).toBeDefined();
-        expect(ret.count).toEqual(count);
-        expect(ret.page).toEqual(page);
-        expect(ret.page).toBeGreaterThanOrEqual(1);
-        expect(ret.pageSize).toEqual(pageSize);
-        expect(ret.pageSize).toBeGreaterThanOrEqual(1);
-
-        expect(ret.results).toHaveLength(expectedResultsPage.length);
-        for (let i = 0; i < expectedResultsPage.length; i++) {
-          testValidateProduct(ret.results[i], expectedResultsPage[i]);
+        findViaService(pagination?: {
+          page?: number;
+          pageSize?: number;
+        }): Promise<PaginatedResponseDTO<ProductEntity>> {
+          return productService.find({}, pagination);
         }
       }
 
-      it('should paginate serch products without sending pagination params', async () => {
-        await testPagination(null);
-      });
-
-      it('should paginate search products sending page and page size', async () => {
-        await testPagination({});
-      });
-
-      it('should paginate seach products sending page size', async () => {
-        await testPagination({ page: 1 });
-      });
-
-      it('should paginate search products sending page size and sending page > 1', async () => {
-        await testPagination({ page: 2 });
-      });
-
-      it('should paginate serch products sending page and sending page size != default page size', async () => {
-        await testPagination({ pageSize: 5 });
-      });
-
-      it('should paginate search seding page > 1 and page size != page size', async () => {
-        await testPagination({ page: 3, pageSize: 5 });
-      });
-
-      it('should use page=1 when page parameter = 0', async () => {
-        await testPagination({ page: 0, pageSize: 5 });
-      });
-
-      it('should use page=1 when page parameter < 0', async () => {
-        await testPagination({ page: -1, pageSize: 5 });
-      });
-
-      it('should use pageSize=1 when pageSize parameter = 0', async () => {
-        await testPagination({ pageSize: 0 });
-      });
-
-      it('should use pageSize=1 when pageSize parameter = -1', async () => {
-        await testPagination({ pageSize: -1 });
-      });
-
-      it('should use pageSize=40 when pageSize parameter = 40', async () => {
-        await testPagination({ pageSize: 40 });
-      });
-
-      it('should use pageSize=40 when pageSize parameter > 40', async () => {
-        await testPagination({ pageSize: 41 });
-      });
-
-      it('should fail if page is float', async () => {
-        const fn = () => productService.find({}, { page: 1.1 });
-        await expect(fn()).rejects.toThrow(UnprocessableEntityException);
-        try {
-          await fn();
-        } catch (ex) {
-          expect(ex.response).toEqual({
-            error: 'UnprocessableEntityException',
-            message: {
-              page: PaginationMessage.PAGE_INT,
-            },
-            statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-          });
-        }
-      });
-
-      it('should fail if page is negative float', async () => {
-        const fn = () => productService.find({}, { page: -1.1 });
-        await expect(fn()).rejects.toThrow(UnprocessableEntityException);
-        try {
-          await fn();
-        } catch (ex) {
-          expect(ex.response).toEqual({
-            error: 'UnprocessableEntityException',
-            message: {
-              page: PaginationMessage.PAGE_INT,
-            },
-            statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-          });
-        }
-      });
+      new TestUserServicePagination().executeTests();
     });
 
     describe('combined tests', () => {

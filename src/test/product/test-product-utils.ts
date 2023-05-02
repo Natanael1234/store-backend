@@ -1,4 +1,4 @@
-import { testValidateBrand } from './test-brand-utils';
+import { testValidateBrand } from '../brand/test-brand-utils';
 
 function getExpectedFields(brands: boolean) {
   const fields = [

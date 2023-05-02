@@ -9,10 +9,11 @@ export class TestBrandData {
 
   public static buildData(quantity: number, startNumber?: number) {
     if (startNumber == null) startNumber = 1;
-    return Array(quantity)
+    const data = Array(quantity)
       .fill(null)
       .map((v, i) => {
         return { name: `Brand ${startNumber++}`, active: true };
       });
+    return data;
   }
 }

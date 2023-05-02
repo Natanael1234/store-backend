@@ -1,7 +1,7 @@
 import { TestPurpose } from '../../../../test/test-data';
 import { getEmailErrorDataList } from '../../../../test/test-data/test-email-data';
 import { getNameErrorDataList } from '../../../../test/test-data/test-name-data';
-import { TestUserData } from '../../../../test/test-user-data';
+import { TestUserData } from '../../../../test/user/test-user-data';
 import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
 import { NameMessage } from '../../../system/enums/messages/name-messages/name-messages.enum';
 import { validateFirstError } from '../../../system/utils/validation';
