@@ -6,6 +6,7 @@ import {
 import { UnauthorizedException } from '@nestjs/common/exceptions';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { SignOptions, TokenExpiredError } from 'jsonwebtoken';
+import { AuthorizationMessage } from '../../../system/enums/messages/authorization-messages/authorization-messages.enum';
 import ms, { StringValue } from '../../../system/utils/time/ms/ms';
 import { UserMessage } from '../../../user/enums/user-messages.ts/user-messages.enum';
 import { UserEntity } from '../../../user/models/user/user.entity';
@@ -60,6 +61,9 @@ export class TokenService {
     const { user, refreshToken } = await this.resolveRefreshToken(
       encodedRefreshToken,
     );
+    if (user && !user.active) {
+      throw new UnauthorizedException(AuthorizationMessage.NOT_AUTORIZED);
+    }
     if (!refreshToken) {
       throw new NotFoundException(RefreshTokenMessage.NOT_FOUND);
     }
@@ -68,6 +72,16 @@ export class TokenService {
       await this.refreshTokenRepository.save(refreshToken);
     }
     return true;
+  }
+
+  public async createAccessTokenFromRefreshToken(
+    refreshToken: string,
+  ): Promise<{ token: string; user: UserEntity }> {
+    if (!refreshToken)
+      throw new UnprocessableEntityException(RefreshTokenMessage.REQUIRED);
+    const { user } = await this.resolveRefreshToken(refreshToken);
+    const token = await this.generateAccessToken(user);
+    return { user, token };
   }
 
   public async resolveRefreshToken(
@@ -92,16 +106,6 @@ export class TokenService {
     }
 
     return { user, refreshToken };
-  }
-
-  public async createAccessTokenFromRefreshToken(
-    refreshToken: string,
-  ): Promise<{ token: string; user: UserEntity }> {
-    if (!refreshToken)
-      throw new UnprocessableEntityException(RefreshTokenMessage.REQUIRED);
-    const { user } = await this.resolveRefreshToken(refreshToken);
-    const token = await this.generateAccessToken(user);
-    return { user, token };
   }
 
   private async decodeRefreshToken(
@@ -133,7 +137,7 @@ export class TokenService {
       throw new UnprocessableEntityException(RefreshTokenMessage.MALFORMED);
     }
 
-    return this.usersService.findForId(+subId);
+    return await this.usersService.findForId(+subId);
   }
 
   private async getStoredTRefreshTokenFromRefreshTokenPayload(

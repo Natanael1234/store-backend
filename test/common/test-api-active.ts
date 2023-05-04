@@ -1,17 +1,15 @@
 import { HttpStatus, UnprocessableEntityException } from '@nestjs/common';
+import { FindManyOptions } from 'typeorm';
 import { ActiveFilter } from '../../src/modules/system/enums/filter/active-filter/active-filter.enum';
 import { ActiveMessage } from '../../src/modules/system/enums/messages/active-messages/active-messages.enum';
 import { objectToJSON } from './instance-to-json';
 
-export abstract class AbstractTestActiveFilter<T> {
-  abstract insertRegisters(
-    quantity: number,
-    inactiveIds: number[],
-  ): Promise<any>;
+export abstract class AbstractTestAPIActiveFilter<T> {
+  abstract insertRegisters(active: boolean[]): Promise<any>;
 
-  abstract findRegisters(options: {
-    active?: boolean;
-  }): Promise<[pages: T[], count: number]>;
+  abstract findRegisters(
+    findManyOptions: FindManyOptions,
+  ): Promise<[pages: T[], count: number]>;
 
   abstract getPagesFromAPI(
     queryParameters: { active?: any },
@@ -25,8 +23,27 @@ export abstract class AbstractTestActiveFilter<T> {
 
   executeTests() {
     it('should return active results when "active" parameter is not defined', async () => {
-      await this.insertRegisters(15, [2, 13]);
-      const [registers] = await this.findRegisters({ active: true });
+      await this.insertRegisters([
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+      ]);
+      const [registers] = await this.findRegisters({
+        where: { active: true },
+        take: 12,
+      });
       const ret = await this.getPagesFromAPI({}, HttpStatus.OK);
       expect(ret).toEqual({
         count: 13,
@@ -37,8 +54,27 @@ export abstract class AbstractTestActiveFilter<T> {
     });
 
     it('should return active results when active parameter is equal to "active"', async () => {
-      await this.insertRegisters(15, [2, 13]);
-      const [registers] = await this.findRegisters({ active: true });
+      await this.insertRegisters([
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+      ]);
+      const [registers] = await this.findRegisters({
+        where: { active: true },
+        take: 12,
+      });
       const ret = await this.getPagesFromAPI(
         { active: ActiveFilter.ACTIVE },
         HttpStatus.OK,
@@ -52,17 +88,33 @@ export abstract class AbstractTestActiveFilter<T> {
     });
 
     it('should return inactive results when active parameter is equal to "inactive"', async () => {
-      await this.insertRegisters(
-        15,
-        [1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15],
-      );
-      const [registers] = await this.findRegisters({ active: false });
+      await this.insertRegisters([
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+      ]);
+      const [registers] = await this.findRegisters({
+        where: { active: false },
+        take: 12,
+      });
       const ret = await this.getPagesFromAPI(
         { active: ActiveFilter.INACTIVE },
         HttpStatus.OK,
       );
       expect(ret).toEqual({
-        count: 13,
+        count: 2,
         page: 1,
         pageSize: 12,
         results: objectToJSON(registers),
@@ -70,8 +122,24 @@ export abstract class AbstractTestActiveFilter<T> {
     });
 
     it('should return both active and inactive results when active parameter is equal to "all"', async () => {
-      await this.insertRegisters(15, [2, 13]);
-      const [registers] = await this.findRegisters({});
+      await this.insertRegisters([
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+      ]);
+      const [registers] = await this.findRegisters({ take: 12 });
       const ret = await this.getPagesFromAPI(
         { active: ActiveFilter.ALL },
         HttpStatus.OK,

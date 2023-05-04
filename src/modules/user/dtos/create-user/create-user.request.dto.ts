@@ -1,15 +1,19 @@
+import { Transform } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
+  IsBoolean,
   IsEmail,
   IsEnum,
   IsNotEmpty,
+  IsOptional,
   IsString,
   IsStrongPassword,
   MaxLength,
   MinLength,
 } from 'class-validator';
 import { Role } from '../../../authentication/enums/role/role.enum';
+import { ActiveMessage } from '../../../system/enums/messages/active-messages/active-messages.enum';
 import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
 import { NameMessage } from '../../../system/enums/messages/name-messages/name-messages.enum';
 import { PasswordMessage } from '../../../system/enums/messages/password-messages/password-messages.enum';
@@ -49,4 +53,24 @@ export class CreateUserRequestDTO {
   @IsArray({ message: RoleMessage.INVALID })
   @IsNotEmpty({ message: RoleMessage.REQUIRED })
   roles: Role[];
+
+  @IsBoolean({ message: ActiveMessage.BOOLEAN })
+  @Transform(({ value }) => {
+    if (value == null) {
+      return false;
+    } else if (typeof value == 'string') {
+      value = value.toLowerCase();
+      if (value == 'true') {
+        return true;
+      } else if (value == 'false') {
+        return false;
+      }
+      return value;
+    } else if (typeof value == 'boolean') {
+      return value;
+    }
+    return value;
+  })
+  @IsOptional()
+  active?: boolean;
 }

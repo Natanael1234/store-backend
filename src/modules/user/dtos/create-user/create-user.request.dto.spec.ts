@@ -1,5 +1,9 @@
 import { TestPurpose } from '../../../../test/test-data';
 import {
+  getActiveAcceptableValues,
+  getActiveErrorDataList,
+} from '../../../../test/test-data/test-active-data';
+import {
   getEmailAcceptableValues,
   getEmailErrorDataList,
 } from '../../../../test/test-data/test-email-data';
@@ -120,6 +124,27 @@ describe('CreateUserRequestDto', () => {
         expect(errors[0].property).toEqual('roles');
         expect(errors[0].value).toEqual(data.roles);
         expect(errors[0].constraints).toEqual(expectedErrors);
+      },
+    );
+  });
+
+  describe('active', () => {
+    it.each(getActiveErrorDataList(TestUserData.creationData[2]))(
+      'should fail when active is $description',
+      async ({ data, expectedErrors }) => {
+        const errors = await validateFirstError(data, CreateUserRequestDTO);
+        expect(errors).toHaveLength(1);
+        expect(errors[0].property).toEqual('active');
+        expect(errors[0].value).toEqual(data.active);
+        expect(errors[0].constraints).toEqual(expectedErrors);
+      },
+    );
+
+    it.each(getActiveAcceptableValues(TestUserData.creationData[2]))(
+      'should validate when active is $description',
+      async ({ data }) => {
+        const errors = await validateFirstError(data, CreateUserRequestDTO);
+        expect(errors).toHaveLength(0);
       },
     );
   });

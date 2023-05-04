@@ -1,4 +1,5 @@
 import { Role } from '../../modules/authentication/enums/role/role.enum';
+import { EncryptionService } from '../../modules/system/encryption/services/encryption/encryption.service';
 import { TestPurpose } from '../test-data';
 
 export class TestUserData {
@@ -10,12 +11,14 @@ export class TestUserData {
         password: 'Abc12*',
         email: 'user1@email.com',
         roles: [Role.ROOT],
+        active: true,
       },
       {
         name: 'User 2',
         password: 'Xyz12*',
         email: 'user2@email.com',
         roles: [Role.USER],
+        active: false,
       },
       {
         name: 'User 3',
@@ -35,6 +38,8 @@ export class TestUserData {
         password: 'Abc12*',
         email: `user${j}@email.com`,
         roles: [Role.ROOT],
+        active: true,
+        deletedAt: undefined,
       };
     }
     return arr;
@@ -81,5 +86,48 @@ export class TestUserData {
     } else {
       return TestUserData.updateData;
     }
+  }
+
+  /**
+   * Converts password to hash.
+   */
+  public static async normalizeData(
+    encryptionService: EncryptionService,
+    usersData: {
+      name?: string;
+      email?: string;
+      password?: string;
+      roles?: Role[];
+      active?: boolean;
+    }[],
+  ): Promise<
+    {
+      name?: string;
+      email?: string;
+      hash?: { iv?: string; encryptedData?: string };
+      roles?: Role[];
+      active?: boolean;
+    }[]
+  > {
+    const normalizedData = [];
+    for (let userData of usersData) {
+      normalizedData.push({
+        name: userData.name,
+        email: userData.email,
+        hash: await encryptionService.encrypt(userData.password),
+        roles: userData.roles,
+        active: userData.active,
+      });
+    }
+    return normalizedData;
+  }
+  public static async buildNormalizedData(
+    encryptionService: EncryptionService,
+    quantity,
+  ) {
+    return TestUserData.normalizeData(
+      encryptionService,
+      TestUserData.buildData(quantity),
+    );
   }
 }

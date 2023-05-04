@@ -6,11 +6,14 @@ import {
 import { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
-import { ILike, IsNull, Not, Repository } from 'typeorm';
+import { FindManyOptions, ILike, IsNull, Not, Repository } from 'typeorm';
 import { getTestingModule } from '../../../../.jest/test-config.module';
 import { TestBrandData } from '../../../../test/brand/test-brand-data';
 import { testValidateBrand } from '../../../../test/brand/test-brand-utils';
-import { TestServicePagination } from '../../../../test/pagination/test-service-pagination';
+import { AbstractTestServiceActiveFilter } from '../../../../test/filtering/test-service-active-filter';
+import { AbstractTestServiceDeletedFilter } from '../../../../test/filtering/test-service-deleted-filter';
+import { TestServicePagination } from '../../../../test/filtering/test-service-pagination';
+import { AbstractTestServiceTextFilter } from '../../../../test/filtering/test-service-text-filter';
 import { TestPurpose } from '../../../../test/test-data';
 import {
   getActiveAcceptableValues,
@@ -20,7 +23,6 @@ import {
   getNameAcceptableValues,
   getNameErrorDataList,
 } from '../../../../test/test-data/test-name-data';
-import { PaginatedResponseDTO } from '../../../system/dtos/response/pagination/pagination.response.dto';
 import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
 import { CreateBrandRequestDTO } from '../../dtos/request/create-brand/create-brand.request.dto';
@@ -282,245 +284,90 @@ describe('BrandService', () => {
       );
 
       describe('query', () => {
-        it('should do textual filtering matching one result', async () => {
-          await brandRepo.insert(TestBrandData.buildData(3));
-          const brands = await brandRepo.find();
+        class TestServiceTextFilter extends AbstractTestServiceTextFilter<BrandEntity> {
+          async insertViaRepository(texts: string[]) {
+            const brandsData: any = TestBrandData.buildData(texts.length);
+            for (let i = 0; i < brandsData.length; i++) {
+              brandsData[i].name = texts[i];
+            }
+            await brandRepo.insert(brandsData);
+          }
 
-          const results = await brandService.find({ query: 'nd 1' });
+          findViaRepository(findManyOptions: FindManyOptions<any>) {
+            return brandRepo.findAndCount(findManyOptions);
+          }
 
-          expect(results.count).toEqual(1);
-          expect(results.page).toEqual(1);
-          expect(results.pageSize).toEqual(12);
-          expect(results.results).toStrictEqual([brands[0]]);
-        });
+          findViaService(options?: { query?: string }) {
+            return brandService.find(options);
+          }
+        }
 
-        it('should do textual filtering matching all results', async () => {
-          const brandData = TestBrandData.buildData(3);
-          await brandRepo.insert(brandData);
-          const brands = await brandRepo.find();
-
-          const results = await brandService.find({ query: ' br   nd' });
-
-          expect(results.count).toEqual(3);
-          expect(results.page).toEqual(1);
-          expect(results.pageSize).toEqual(12);
-          expect(results.results).toStrictEqual(brands);
-        });
-
-        it('should do textual filtering matching no results', async () => {
-          await brandRepo.insert(TestBrandData.buildData(3));
-
-          const ret = await brandService.find({
-            query: '  not  found ',
-          });
-
-          expect(ret.count).toEqual(0);
-          expect(ret.page).toEqual(1);
-          expect(ret.pageSize).toEqual(12);
-          expect(ret.results).toEqual([]);
-        });
-
-        it('should not filter by text when query is empty string', async () => {
-          const brandsData = TestBrandData.buildData(3);
-          brandsData.forEach((brandData) => (brandData.active = true));
-          await brandRepo.insert(brandsData);
-          const brands = await brandRepo.find();
-
-          const ret = await brandService.find({ query: '     ' });
-
-          expect(ret.count).toEqual(3);
-          expect(ret.page).toEqual(1);
-          expect(ret.pageSize).toEqual(12);
-          expect(ret.results).toEqual(brands);
-        });
-
-        it('should not filter by text when query is string of spaces', async () => {
-          const brandsData = TestBrandData.buildData(3);
-          brandsData.forEach((brandData) => {
-            brandData.active = true;
-            brandData.name = brandData.name.replace(' ', '');
-          });
-          await brandRepo.insert(brandsData);
-          const brands = await brandRepo.find();
-
-          const ret = await brandService.find({ query: '' });
-          const brandsAfter = await brandRepo.find();
-
-          expect(brands).toStrictEqual(brandsAfter);
-          expect(ret.count).toEqual(3);
-          expect(ret.results).toHaveLength(3);
-        });
+        new TestServiceTextFilter().executeTests();
       });
 
       describe('active', () => {
-        // active
+        class TestUserServiceActive extends AbstractTestServiceActiveFilter<BrandEntity> {
+          async insertRegisters(active: boolean[]) {
+            const insertData: any = await TestBrandData.buildData(
+              active.length,
+            );
+            for (let i = 0; i < active.length; i++) {
+              insertData[i].active = active[i];
+            }
+            await brandRepo.insert(insertData);
+          }
 
-        it.each([
-          { description: 'null', data: { active: null } },
-          { description: 'undefined', data: { active: undefined } },
-          { description: 'not defined', data: {} },
-          {
-            description: 'ActiveFilter.ACTIVE',
-            data: { active: ActiveFilter.ACTIVE },
-          },
-        ])(
-          'should return only active results when "filtering.active" is $description',
-          async ({ data }) => {
-            const brandData = TestBrandData.buildData(3);
-            brandData[2].active = false;
-            await brandRepo.insert(brandData);
-            const brands = await brandRepo.find();
-            const results = await brandService.find(data);
+          findRegisters(findManyOptions: FindManyOptions) {
+            return brandRepo.findAndCount(findManyOptions);
+          }
 
-            expect(results).toEqual({
-              count: 2,
-              page: 1,
-              pageSize: 12,
-              query: undefined,
-              results: [brands[0], brands[1]],
-            });
-          },
-        );
+          findViaService(options?: { active?: ActiveFilter }) {
+            return brandService.find(options, {});
+          }
+        }
 
-        // inactive
-        it('should return only inactive results when "filtering.active" is ActiveFilter.INACTIVE', async () => {
-          const brandData = TestBrandData.buildData(3);
-          brandData[2].active = false;
-          await brandRepo.insert(brandData);
-          const brands = await brandRepo.find();
-
-          const results = await brandService.find({
-            active: ActiveFilter.INACTIVE,
-          });
-
-          expect(results).toEqual({
-            count: 1,
-            page: 1,
-            pageSize: 12,
-            query: undefined,
-            results: [brands[2]],
-          });
-        });
-
-        // active and inactive
-        it('should return active and inactive results when "filtering.active" is ActiveFilter.ALL', async () => {
-          const brandData = TestBrandData.buildData(3);
-          brandData[2].active = false;
-          await brandRepo.insert(brandData);
-          const brands = await brandRepo.find({ withDeleted: true });
-
-          const results = await brandService.find({
-            active: ActiveFilter.ALL,
-          });
-
-          expect(results).toEqual({
-            count: 3,
-            page: 1,
-            pageSize: 12,
-            results: brands,
-          });
-        });
+        new TestUserServiceActive().executeTests();
       });
 
       describe('deleted', () => {
-        // deleted
-        it('should return only not deleted results when "filtering.deleted" is DeletedFilter.DELETED', async () => {
-          const brandData = TestBrandData.buildData(3);
-          brandData[2].active = false;
-          await brandRepo.insert(brandData);
-          await brandRepo.softDelete(2);
-          const brands = await brandRepo.find({
-            withDeleted: true,
-            where: {
-              deletedAt: Not(IsNull()),
-            },
-          });
+        class TestServiceDeleted extends AbstractTestServiceDeletedFilter<BrandEntity> {
+          async insertRegisters(deleted: boolean[]) {
+            const insertData: any = await TestBrandData.buildData(
+              deleted.length,
+            );
+            for (let i = 0; i < deleted.length; i++) {
+              if (deleted[i]) {
+                insertData[i].deletedAt = new Date();
+              }
+            }
 
-          const results = await brandService.find({
-            deleted: DeletedFilter.DELETED,
-          });
+            await brandRepo.insert(insertData);
+          }
 
-          expect(results).toEqual({
-            count: 1,
-            page: 1,
-            pageSize: 12,
-            results: brands,
-          });
-        });
+          findRegisters(findManyOptions: FindManyOptions) {
+            return brandRepo.findAndCount(findManyOptions);
+          }
 
-        // not deleted
-        it.each([
-          { description: 'null', data: { deleted: null } },
-          { description: 'undefined', data: { deleted: undefined } },
-          { description: 'not defined', data: {} },
-          {
-            description: 'DeletedFilter.NOT_DELETED',
-            data: { deleted: DeletedFilter.NOT_DELETED },
-          },
-        ])(
-          'should return only not deleted results when "filtering.deleted" is $description',
-          async ({ data }) => {
-            const brandData = TestBrandData.buildData(3);
-            brandData[2].active = false;
-            await brandRepo.insert(brandData);
-            await brandRepo.softDelete(2);
-            const brands = await brandRepo.find({ where: { active: true } });
+          findViaService(options?: { deleted?: DeletedFilter }) {
+            return brandService.find(options, {});
+          }
+        }
 
-            const results = await brandService.find(data);
-
-            expect(results).toEqual({
-              count: 1,
-              page: 1,
-              pageSize: 12,
-              results: brands,
-            });
-          },
-        );
-
-        // deleted and not deleted
-        it('should return deleted and not deleted results when "filtering.deleted" is DeletedFilter.ALL', async () => {
-          const brandData = TestBrandData.buildData(3);
-          brandData[2].active = false;
-          await brandRepo.insert(brandData);
-          await brandRepo.softDelete(2);
-          const brands = await brandRepo.find({
-            withDeleted: true,
-            where: { active: true },
-          });
-
-          const results = await brandService.find({
-            deleted: DeletedFilter.ALL,
-          });
-
-          expect(results).toEqual({
-            count: 2,
-            page: 1,
-            pageSize: 12,
-            results: brands,
-          });
-        });
+        new TestServiceDeleted().executeTests();
       });
     });
 
     describe('pagination', () => {
       class TestBrandServicePagination extends TestServicePagination<BrandEntity> {
-        async insertRegisters(quantity: number): Promise<any> {
+        async insertViaRepository(quantity: number) {
           await brandRepo.insert(TestBrandData.buildData(quantity));
         }
-        findRegisters(options: {
-          skip: number;
-          take: number;
-        }): Promise<[registes: BrandEntity[], count: number]> {
-          const findManyOptions: any = { where: {} };
-          if (options.skip) findManyOptions.skip = options.skip;
-          if (options.take) findManyOptions.take = options.take;
+
+        findViaRepository(findManyOptions: { skip: number; take: number }) {
           return brandRepo.findAndCount(findManyOptions);
         }
 
-        findViaService(pagination?: {
-          page?: number;
-          pageSize?: number;
-        }): Promise<PaginatedResponseDTO<BrandEntity>> {
+        findViaService(pagination?: { page?: number; pageSize?: number }) {
           return brandService.find({}, pagination);
         }
       }

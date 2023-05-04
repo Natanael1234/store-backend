@@ -1,14 +1,14 @@
 import { HttpStatus, UnprocessableEntityException } from '@nestjs/common';
+import { FindManyOptions } from 'typeorm';
 import { PaginatedResponseDTO } from '../../modules/system/dtos/response/pagination/pagination.response.dto';
 import { PaginationMessage } from '../../modules/system/enums/messages/pagination-messages/pagination-messages.enum';
 
 export abstract class TestServicePagination<T> {
-  abstract insertRegisters(quantity: number): Promise<any>;
+  abstract insertViaRepository(quantity: number): Promise<any>;
 
-  abstract findRegisters(options: {
-    skip: number;
-    take: number;
-  }): Promise<[results: T[], count: number]>;
+  abstract findViaRepository(
+    findManyOptions: FindManyOptions,
+  ): Promise<[results: T[], count: number]>;
 
   abstract findViaService(pagination?: {
     page?: number;
@@ -21,7 +21,7 @@ export abstract class TestServicePagination<T> {
   }) {
     // prepare
     const count = 15;
-    await this.insertRegisters(count);
+    await this.insertViaRepository(count);
 
     let page = paginationParams?.page;
     if (page == null) page = 1;
@@ -34,10 +34,7 @@ export abstract class TestServicePagination<T> {
 
     const skip = (page - 1) * pageSize;
     const take = pageSize;
-    const [results] = await this.findRegisters({
-      skip,
-      take,
-    });
+    const [results] = await this.findViaRepository({ skip, take });
 
     // execute
     const ret = paginationParams

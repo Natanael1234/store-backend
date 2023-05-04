@@ -1,4 +1,8 @@
-import { HttpStatus, INestApplication } from '@nestjs/common';
+import {
+  HttpStatus,
+  INestApplication,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -6,15 +10,16 @@ import * as request from 'supertest';
 import { Repository } from 'typeorm';
 import { getTestingModule } from '../src/.jest/test-config.module';
 import { AcceptTermsMessage } from '../src/modules/authentication/enums/accept-terms-messages.ts/accept-terms-messages.enum';
-import { CredentialsMessage } from '../src/modules/authentication/enums/cretentials-messages.ts/credentials-messages.enum';
+import { Role } from '../src/modules/authentication/enums/role/role.enum';
 import { RefreshTokenRepository } from '../src/modules/authentication/repositories/refresh-token.repository';
 import {
-  testLogin,
-  testLogout,
-  testRefresh,
-  testRegister,
+  testAuthenticationResponse,
+  testDecodedAccessToken,
+  testDistinctTokens,
 } from '../src/modules/authentication/services/authentication/authentication-test-utils';
 import { AuthenticationService } from '../src/modules/authentication/services/authentication/authentication.service';
+import { TokenService } from '../src/modules/authentication/services/token/token.service';
+import { AuthorizationMessage } from '../src/modules/system/enums/messages/authorization-messages/authorization-messages.enum';
 import { EmailMessage } from '../src/modules/system/enums/messages/email-messages/email-messages.enum';
 import { NameMessage } from '../src/modules/system/enums/messages/name-messages/name-messages.enum';
 import { PasswordMessage } from '../src/modules/system/enums/messages/password-messages/password-messages.enum';
@@ -22,14 +27,7 @@ import { ValidationPipe } from '../src/modules/system/pipes/custom-validation.pi
 import { UserEntity } from '../src/modules/user/models/user/user.entity';
 import { UserService } from '../src/modules/user/services/user/user.service';
 import { TestUserData } from '../src/test/user/test-user-data';
-
-const usersData = TestUserData.dataForRepository();
-const registerData = TestUserData.registerData;
-
-const registerEndpoint = '/authentication/register';
-const loginEndpoint = '/authentication/login';
-const refreshEndpoint = '/authentication/refresh';
-const logoutEndpoint = '/authentication/logout';
+import { testValidateUser } from '../src/test/user/test-user-utils';
 
 describe('AuthenticationController (e2e)', () => {
   let app: INestApplication;
@@ -39,6 +37,7 @@ describe('AuthenticationController (e2e)', () => {
   let jwtService: JwtService;
   let refreshTokenRepo: RefreshTokenRepository;
   let userRepo: Repository<UserEntity>;
+  let tokenService: TokenService;
 
   async function httpPost(endpoint: string, body: any, expectedStatus: number) {
     const test = await request(app.getHttpServer()).post(endpoint).send(body);
@@ -69,6 +68,7 @@ describe('AuthenticationController (e2e)', () => {
       AuthenticationService,
     );
     jwtService = app.get<JwtService>(JwtService);
+    tokenService = app.get<TokenService>(TokenService);
     refreshTokenRepo = app.get<RefreshTokenRepository>(RefreshTokenRepository);
     userRepo = app.get<Repository<UserEntity>>(getRepositoryToken(UserEntity));
 
@@ -91,18 +91,94 @@ describe('AuthenticationController (e2e)', () => {
 
   describe('/authentication/register (POST)', () => {
     it('should register users', async () => {
-      await testRegister(
-        userService,
-        userRepo,
-        refreshTokenRepo,
-        jwtService,
-        (data: any) => httpPost(registerEndpoint, data, 201),
+      // httpPost('/authentication/register', data, 201)
+      const registerData = TestUserData.registerData;
+      const response1 = await httpPost(
+        '/authentication/register',
+        registerData[0],
+        201,
       );
+      const response2 = await httpPost(
+        '/authentication/register',
+        registerData[1],
+        201,
+      );
+      const createData = {
+        name: 'Another user',
+        email: 'anotheruser@email.com',
+        password: 'A123df*',
+        roles: [Role.ADMIN],
+        active: false,
+      };
+      await userService.create(createData);
+      const response3 = await httpPost(
+        '/authentication/register',
+        registerData[2],
+        201,
+      );
+
+      const expectedUserData = [
+        {
+          id: 1,
+          name: registerData[0].name,
+          email: registerData[0].email,
+          password: registerData[0].password,
+          roles: [Role.ROOT],
+          active: true,
+        },
+        {
+          id: 2,
+          name: registerData[1].name,
+          email: registerData[1].email,
+          password: registerData[1].password,
+          roles: [Role.USER],
+          active: true,
+        },
+        {
+          id: 3,
+          name: createData.name,
+          email: createData.email,
+          password: createData.password,
+          roles: createData.roles,
+          active: false,
+        },
+        {
+          id: 4,
+          name: registerData[2].name,
+          email: registerData[2].email,
+          password: registerData[2].password,
+          roles: [Role.USER],
+          active: true,
+        },
+      ];
+
+      const repositoryRefreshTokens = await refreshTokenRepo.find();
+      expect(repositoryRefreshTokens).toHaveLength(3);
+      expect(repositoryRefreshTokens[0].userId).toEqual(1);
+      expect(repositoryRefreshTokens[1].userId).toEqual(2);
+      expect(repositoryRefreshTokens[2].userId).toEqual(4);
+
+      const repositoryUsers = await userRepo.find();
+      expect(repositoryUsers).toHaveLength(4);
+      testValidateUser(repositoryUsers[0], expectedUserData[0]);
+      testValidateUser(repositoryUsers[1], expectedUserData[1]);
+      testValidateUser(repositoryUsers[2], expectedUserData[2]);
+      testValidateUser(repositoryUsers[3], expectedUserData[3]);
+
+      testAuthenticationResponse(jwtService, response1, expectedUserData[0]);
+      testAuthenticationResponse(jwtService, response2, expectedUserData[1]);
+      testAuthenticationResponse(jwtService, response3, expectedUserData[3]);
+
+      // check if payloads are different
+      testDistinctTokens(response1.data.payload, response2.data.payload);
+      testDistinctTokens(response1.data.payload, response3.data.payload);
+      testDistinctTokens(response2.data.payload, response3.data.payload);
     });
 
     it('should fail when have multiple errors', async () => {
+      const registerData = TestUserData.registerData;
       await httpPostError(
-        registerEndpoint,
+        '/authentication/register',
         {
           ...registerData[0],
           name: null,
@@ -171,13 +247,14 @@ describe('AuthenticationController (e2e)', () => {
           },
         },
       ])('should fail when name is $description', async ({ name, message }) => {
+        const registerData = TestUserData.registerData;
         const data = { ...registerData[0], name };
         const expectedData = {
           statusCode: 422,
           message,
           error: 'UnprocessableEntityException',
         };
-        await httpPostError(registerEndpoint, data, expectedData);
+        await httpPostError('/authentication/register', data, expectedData);
       });
     });
 
@@ -233,22 +310,24 @@ describe('AuthenticationController (e2e)', () => {
       ])(
         'should fail when email is $description',
         async ({ email, message }) => {
+          const registerData = TestUserData.registerData;
           const data = { ...registerData[0], email };
           const expectedData = {
             statusCode: 422,
             message,
             error: 'UnprocessableEntityException',
           };
-          await httpPostError(registerEndpoint, data, expectedData);
+          await httpPostError('/authentication/register', data, expectedData);
         },
       );
 
       it('should fail if email is already registered', async () => {
+        const usersData = TestUserData.dataForRepository();
         await userService.create(usersData[0]);
         await userService.create(usersData[1]);
         await userService.create(usersData[2]);
         await httpPostError(
-          registerEndpoint,
+          '/authentication/register',
           {
             name: 'User x',
             email: usersData[0].email,
@@ -344,13 +423,14 @@ describe('AuthenticationController (e2e)', () => {
       ])(
         'should fail when password is $description',
         async ({ password, message }) => {
+          const registerData = TestUserData.registerData;
           const data = { ...registerData[0], password };
           const expectedData = {
             statusCode: 422,
             message,
             error: 'UnprocessableEntityException',
           };
-          await httpPostError(registerEndpoint, data, expectedData);
+          await httpPostError('/authentication/register', data, expectedData);
         },
       );
     });
@@ -392,13 +472,14 @@ describe('AuthenticationController (e2e)', () => {
       ])(
         'should fail when acceptTerms is $description',
         async ({ acceptTerms }) => {
+          const registerData = TestUserData.registerData;
           const data = { ...registerData[0], acceptTerms };
           const expectedData = {
             statusCode: 422,
             message: { acceptTerms: AcceptTermsMessage.REQUIRED },
             error: 'UnprocessableEntityException',
           };
-          await httpPostError(registerEndpoint, data, expectedData);
+          await httpPostError('/authentication/register', data, expectedData);
         },
       );
     });
@@ -406,9 +487,91 @@ describe('AuthenticationController (e2e)', () => {
 
   describe('/authentication/login (POST)', () => {
     it('should login', async () => {
-      await testLogin(userService, authenticationService, jwtService, (data) =>
-        httpPost(loginEndpoint, data, 201),
+      const registerData = TestUserData.registerData;
+      await authenticationService.register(registerData[0]);
+      await authenticationService.register(registerData[1]);
+
+      const createUserData = {
+        name: 'Another user',
+        email: 'anotheruser@email.com',
+        password: '123Acb*',
+        roles: [Role.ADMIN],
+        active: true,
+      };
+      await userService.create(createUserData);
+      await authenticationService.register(registerData[2]);
+
+      const expectedUserData = [
+        {
+          id: 1,
+          name: registerData[0].name,
+          email: registerData[0].email,
+          password: registerData[0].password,
+          roles: [Role.USER],
+          active: true,
+        },
+        {
+          id: 2,
+          name: registerData[1].name,
+          email: registerData[1].email,
+          password: registerData[1].password,
+          roles: [Role.USER],
+          active: true,
+        },
+        {
+          id: 3,
+          name: createUserData.name,
+          email: createUserData.email,
+          password: createUserData.password,
+          roles: [Role.ADMIN],
+          active: true,
+        },
+        {
+          id: 4,
+          name: registerData[2].name,
+          email: registerData[2].email,
+          password: registerData[2].password,
+          roles: [Role.USER],
+          active: true,
+        },
+      ];
+
+      const loginRet1 = await httpPost(
+        '/authentication/login',
+        {
+          email: registerData[1].email,
+          password: registerData[1].password,
+        },
+        201,
       );
+      const loginRet2 = await httpPost(
+        '/authentication/login',
+        {
+          email: createUserData.email,
+          password: createUserData.password,
+        },
+        201,
+      );
+
+      // prevents tokens for the same user to be equal due to be generated at the same time
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      const loginRet3 = await httpPost(
+        '/authentication/login',
+        {
+          email: createUserData.email,
+          password: createUserData.password,
+        },
+        201,
+      );
+
+      testAuthenticationResponse(jwtService, loginRet1, expectedUserData[1]);
+      testAuthenticationResponse(jwtService, loginRet2, expectedUserData[2]);
+      testAuthenticationResponse(jwtService, loginRet3, expectedUserData[2]);
+
+      testDistinctTokens(loginRet1.data.payload, loginRet2.data.payload);
+      testDistinctTokens(loginRet1.data.payload, loginRet3.data.payload);
+      testDistinctTokens(loginRet2.data.payload, loginRet3.data.payload);
     });
 
     describe('email', () => {
@@ -456,6 +619,8 @@ describe('AuthenticationController (e2e)', () => {
       ])(
         'should fail when email is $description',
         async ({ email, message }) => {
+          const registerData = TestUserData.registerData;
+
           const data = {
             email,
             password: registerData[0].password,
@@ -465,7 +630,7 @@ describe('AuthenticationController (e2e)', () => {
             message,
             error: 'UnprocessableEntityException',
           };
-          await httpPostError(loginEndpoint, data, expectedData);
+          await httpPostError('/authentication/login', data, expectedData);
         },
       );
     });
@@ -550,22 +715,26 @@ describe('AuthenticationController (e2e)', () => {
       ])(
         'should fail when password is $description',
         async ({ password, message }) => {
+          const registerData = TestUserData.registerData;
+
           const data = { ...registerData[0], password };
           const expectedData = {
             statusCode: 422,
             message,
             error: 'UnprocessableEntityException',
           };
-          await httpPostError(registerEndpoint, data, expectedData);
+          await httpPostError('/authentication/register', data, expectedData);
         },
       );
 
       it('should fail if password is incorrect', async () => {
+        const usersData = TestUserData.dataForRepository();
+
         await userService.create(usersData[0]);
         await userService.create(usersData[1]);
         await userService.create(usersData[2]);
         await httpPostError(
-          loginEndpoint,
+          '/authentication/login',
           {
             name: 'User',
             email: usersData[0].email,
@@ -574,28 +743,278 @@ describe('AuthenticationController (e2e)', () => {
           },
           {
             statusCode: 401,
-            message: CredentialsMessage.INVALID,
+            message: AuthorizationMessage.NOT_AUTORIZED,
             error: 'Unauthorized',
           },
         );
       });
     });
+
+    it('should fail when user is inactive', async () => {
+      const usersData = TestUserData.dataForRepository();
+      const registerData = TestUserData.registerData;
+
+      await authenticationService.register(registerData[0]);
+      await userRepo.update(1, { active: false });
+
+      await httpPostError(
+        '/authentication/login',
+        {
+          email: usersData[0].email,
+          password: usersData[0].password,
+        },
+        {
+          statusCode: 401,
+          message: AuthorizationMessage.NOT_AUTORIZED,
+          error: 'Unauthorized',
+        },
+      );
+    });
+
+    it('should fail when user is soft-deleted', async () => {
+      const usersData = TestUserData.dataForRepository();
+      const registerData = TestUserData.registerData;
+
+      await authenticationService.register(registerData[0]);
+      await userRepo.update(1, { active: false });
+
+      await httpPostError(
+        '/authentication/login',
+        {
+          email: usersData[0].email,
+          password: usersData[0].password,
+        },
+        {
+          statusCode: 401,
+          message: AuthorizationMessage.NOT_AUTORIZED,
+          error: 'Unauthorized',
+        },
+      );
+    });
   });
 
   describe('/authentication/refresh (POST)', () => {
     it('should refresh', async () => {
-      await testRefresh(authenticationService, jwtService, (refreshToken) =>
-        httpPost(refreshEndpoint, { refreshToken }, 201),
+      const registerData = TestUserData.registerData;
+      const registerResponses = [
+        await authenticationService.register(registerData[0]),
+        await authenticationService.register(registerData[1]),
+        await authenticationService.register(registerData[2]),
+      ];
+
+      const refreshResponses = [
+        await httpPost(
+          '/authentication/refresh',
+          { refreshToken: registerResponses[0].data.payload.refreshToken },
+          201,
+        ),
+        await httpPost(
+          '/authentication/refresh',
+          { refreshToken: registerResponses[1].data.payload.refreshToken },
+          201,
+        ),
+        await httpPost(
+          '/authentication/refresh',
+          { refreshToken: registerResponses[1].data.payload.refreshToken },
+          201,
+        ),
+      ];
+
+      const decodedAccessTokens = [
+        await jwtService.decode(refreshResponses[0].data.payload.token),
+        await jwtService.decode(refreshResponses[1].data.payload.token),
+        await jwtService.decode(refreshResponses[2].data.payload.token),
+      ];
+
+      testDecodedAccessToken(decodedAccessTokens[0], 1);
+      testDecodedAccessToken(decodedAccessTokens[1], 2);
+      testDecodedAccessToken(decodedAccessTokens[2], 2);
+    });
+
+    it('should fail when user is inactive', async () => {
+      const registerData = TestUserData.registerData;
+
+      const registerResponses = [
+        await authenticationService.register(registerData[0]),
+        await authenticationService.register(registerData[1]),
+        await authenticationService.register(registerData[2]),
+      ];
+      await userRepo.update(2, { active: false });
+
+      await httpPostError(
+        '/authentication/refresh',
+        {
+          refreshToken: registerResponses[1].data.payload.refreshToken,
+        },
+        {
+          statusCode: HttpStatus.UNAUTHORIZED,
+          error: 'Unauthorized',
+          message: AuthorizationMessage.NOT_AUTORIZED,
+        },
+      );
+    });
+
+    it('should fail when refresh token is blacklisted', async () => {
+      const registerData = TestUserData.registerData;
+
+      const registerResponses = [
+        await authenticationService.register(registerData[0]),
+        await authenticationService.register(registerData[1]),
+        await authenticationService.register(registerData[2]),
+      ];
+
+      await tokenService.revokeRefreshToken(
+        registerResponses[1].data.payload.refreshToken,
+      );
+
+      await httpPostError(
+        '/authentication/refresh',
+        {
+          refreshToken: registerResponses[1].data.payload.refreshToken,
+        },
+        {
+          statusCode: HttpStatus.UNAUTHORIZED,
+          error: 'Unauthorized',
+          message: AuthorizationMessage.NOT_AUTORIZED,
+        },
+      );
+    });
+
+    it('should fail when refresh token is user is soft-deleted', async () => {
+      const registerData = TestUserData.registerData;
+
+      const registerResponses = [
+        await authenticationService.register(registerData[0]),
+        await authenticationService.register(registerData[1]),
+        await authenticationService.register(registerData[2]),
+      ];
+      await userRepo.softDelete(2);
+
+      await httpPostError(
+        '/authentication/refresh',
+        {
+          refreshToken: registerResponses[1].data.payload.refreshToken,
+        },
+        {
+          statusCode: HttpStatus.UNAUTHORIZED,
+          error: 'Unauthorized',
+          message: AuthorizationMessage.NOT_AUTORIZED,
+        },
       );
     });
   });
 
   describe('/authentication/logout (POST)', () => {
     it('should logout', async () => {
-      await testLogout(
-        authenticationService,
-        refreshTokenRepo,
-        (refreshToken) => httpPost(logoutEndpoint, { refreshToken }, 201),
+      const registerData = TestUserData.registerData;
+      const registered = [
+        await authenticationService.register(registerData[0]),
+        await authenticationService.register(registerData[1]),
+        await authenticationService.register(registerData[2]),
+      ];
+
+      const logoutsResults = [
+        await httpPost(
+          '/authentication/logout',
+          { refreshToken: registered[1].data.payload.refreshToken },
+          201,
+        ),
+      ];
+
+      const refreshTokens = await refreshTokenRepo.find();
+
+      expect(logoutsResults[0]).toEqual({ status: 'success' });
+      expect(refreshTokens).toHaveLength(3);
+      expect(refreshTokens[0].revoked).toEqual(false);
+      expect(refreshTokens[1].revoked).toEqual(true);
+      expect(refreshTokens[2].revoked).toEqual(false);
+    });
+
+    it.each([
+      { refreshTokenDescription: null, refreshToken: null },
+      { refreshTokenDescription: undefined, refreshToken: undefined },
+      { refreshTokenDescription: 'empty', refreshToken: '' },
+    ])(
+      'should fail when refresh token is $refreshTokenDescription',
+      async ({ refreshToken }) => {
+        const registerData = TestUserData.registerData;
+
+        await authenticationService.register(registerData[0]);
+        const fn = async () => authenticationService.logout(refreshToken);
+        await expect(fn).rejects.toThrow(AuthorizationMessage.NOT_AUTORIZED);
+        await expect(fn).rejects.toThrow(UnauthorizedException);
+      },
+    );
+
+    it('should fail when user is inactive', async () => {
+      const registerData = TestUserData.registerData;
+
+      const registerResponses = [
+        await authenticationService.register(registerData[0]),
+        await authenticationService.register(registerData[1]),
+        await authenticationService.register(registerData[2]),
+      ];
+      await userRepo.update(2, { active: false });
+
+      await httpPostError(
+        '/authentication/logout',
+        {
+          refreshToken: registerResponses[1].data.payload.refreshToken,
+        },
+        {
+          statusCode: HttpStatus.UNAUTHORIZED,
+          error: 'Unauthorized',
+          message: AuthorizationMessage.NOT_AUTORIZED,
+        },
+      );
+    });
+
+    it('should fail when refresh token is blacklisted', async () => {
+      const registerData = TestUserData.registerData;
+
+      const registerResponses = [
+        await authenticationService.register(registerData[0]),
+        await authenticationService.register(registerData[1]),
+        await authenticationService.register(registerData[2]),
+      ];
+
+      await tokenService.revokeRefreshToken(
+        registerResponses[1].data.payload.refreshToken,
+      );
+
+      await httpPostError(
+        '/authentication/logout',
+        {
+          refreshToken: registerResponses[1].data.payload.refreshToken,
+        },
+        {
+          statusCode: HttpStatus.UNAUTHORIZED,
+          error: 'Unauthorized',
+          message: AuthorizationMessage.NOT_AUTORIZED,
+        },
+      );
+    });
+
+    it('should fail when refresh token is user is soft-deleted', async () => {
+      const registerData = TestUserData.registerData;
+
+      const registerResponses = [
+        await authenticationService.register(registerData[0]),
+        await authenticationService.register(registerData[1]),
+        await authenticationService.register(registerData[2]),
+      ];
+      await userRepo.softDelete(2);
+
+      await httpPostError(
+        '/authentication/logout',
+        {
+          refreshToken: registerResponses[1].data.payload.refreshToken,
+        },
+        {
+          statusCode: HttpStatus.UNAUTHORIZED,
+          error: 'Unauthorized',
+          message: AuthorizationMessage.NOT_AUTORIZED,
+        },
       );
     });
   });

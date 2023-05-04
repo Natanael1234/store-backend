@@ -314,9 +314,14 @@ describe('TokenServiceService', () => {
 
   describe('revokeRefreshToken', () => {
     it('should revoke refresh token', async () => {
-      await userRepo.insert(userRepo.create(userData1));
-      await userRepo.insert(userRepo.create(userData2));
-      await userRepo.insert(userRepo.create(userData3));
+      const userData = [
+        { ...userData1, active: true },
+        { ...userData2, active: true },
+        { ...userData3, active: true },
+      ];
+      await userRepo.insert(userRepo.create(userData[0]));
+      await userRepo.insert(userRepo.create(userData[1]));
+      await userRepo.insert(userRepo.create(userData[2]));
 
       const users = await userRepo.find();
 
@@ -431,10 +436,15 @@ describe('TokenServiceService', () => {
     });
 
     it('should fail when refresh token is revoked', async () => {
+      const usersData = [
+        { ...userData1, active: true },
+        { ...userData2, active: true },
+        { ...userData3, active: true },
+      ];
       const refreshTokendId = 2;
-      await userRepo.insert(userRepo.create(userData1));
-      await userRepo.insert(userRepo.create(userData2));
-      await userRepo.insert(userRepo.create(userData3));
+      await userRepo.insert(userRepo.create(usersData[0]));
+      await userRepo.insert(userRepo.create(usersData[1]));
+      await userRepo.insert(userRepo.create(usersData[2]));
 
       const users = await userRepo.find();
 
@@ -450,7 +460,7 @@ describe('TokenServiceService', () => {
         await tokenService.createAccessTokenFromRefreshToken(refreshToken);
 
       await expect(fn(generatedRefreshTokens[1])).rejects.toThrow(
-        'Invalid refresh token',
+        RefreshTokenMessage.INVALID,
       );
       await expect(fn(generatedRefreshTokens[1])).rejects.toThrow(
         UnauthorizedException,

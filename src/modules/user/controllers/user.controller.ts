@@ -2,6 +2,7 @@ import { Body, Controller, Get, Patch, Post, Query } from '@nestjs/common';
 import { Param, Req } from '@nestjs/common/decorators';
 
 import { Role } from '../../authentication/enums/role/role.enum';
+import { FilteringRequestDTO } from '../../system/dtos/request/filtering/filtering.request.dto';
 import { PaginationRequestDTO } from '../../system/dtos/request/pagination/pagination.request.dto';
 import { PaginatedResponseDTO } from '../../system/dtos/response/pagination/pagination.response.dto';
 import { Roles } from '../decorators/roles/roles.decorator';
@@ -43,9 +44,10 @@ export class UserController {
   @Get()
   @Roles(Role.ROOT, Role.ADMIN)
   findAll(
+    @Query() filtering: FilteringRequestDTO,
     @Query() pagination: PaginationRequestDTO,
   ): Promise<PaginatedResponseDTO<UserEntity>> {
-    return this.userService.find(pagination);
+    return this.userService.find(filtering, pagination);
   }
 
   @Get('/:userId')

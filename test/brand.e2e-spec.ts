@@ -1,7 +1,7 @@
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { ILike, IsNull, Not, Repository } from 'typeorm';
+import { FindManyOptions, IsNull, Not, Repository } from 'typeorm';
 import { getTestingModule } from '../src/.jest/test-config.module';
 
 import { instanceToPlain, plainToInstance } from 'class-transformer';
@@ -30,9 +30,10 @@ import {
 import { TestDatabaseUtils } from '../src/test/test-database-utils';
 import { TestUserData } from '../src/test/user/test-user-data';
 import { objectToJSON } from './common/instance-to-json';
-import { AbstractTestActiveFilter } from './common/test-active-filter';
-import { AbstractTestDeletedFilter } from './common/test-deleted-filter';
-import { AbstractTestPagination } from './common/test-pagination';
+import { AbstractTestAPIActiveFilter } from './common/test-api-active';
+import { AbstractTestAPIDeletedFilter } from './common/test-api-deleted';
+import { AbstractTestApiPagination } from './common/test-api-pagination';
+import { AbstractTestAPITextFilter } from './common/test-api-text';
 import {
   TestRequestFunction,
   getHTTPDeleteMethod,
@@ -40,7 +41,6 @@ import {
   getHTTPPatchMethod,
   getHTTPPostMethod,
 } from './common/test-request-utils';
-import { AbstractTestTextFilter } from './common/test-text-filter';
 
 describe('StockController (e2e)', () => {
   let app: INestApplication;
@@ -403,25 +403,16 @@ describe('StockController (e2e)', () => {
 
     describe('filtering', () => {
       describe('query', () => {
-        class BrandTestTextFilter extends AbstractTestTextFilter<BrandEntity> {
+        class BrandTestTextFilter extends AbstractTestAPITextFilter<BrandEntity> {
           async insertRegisters(textToAppend: string[]) {
             const brandsData = TestBrandData.buildData(textToAppend.length);
             for (let i = 0; i < textToAppend.length; i++) {
-              brandsData[i].name += textToAppend[i];
+              brandsData[i].name = textToAppend[i];
             }
             await brandRepo.insert(brandsData);
           }
 
-          findRegisters(options: { query?: string }) {
-            const findManyOptions: any = { where: {}, skip: 0, take: 12 };
-            if (options.query) {
-              let query = options.query.replace(/\s+/g, ' ').trim();
-              if (query) {
-                findManyOptions.where.name = ILike(
-                  '%' + query.replace(' ', '%') + '%',
-                );
-              }
-            }
+          findRegisters(findManyOptions: FindManyOptions) {
             return brandRepo.findAndCount(findManyOptions);
           }
 
@@ -437,18 +428,20 @@ describe('StockController (e2e)', () => {
       });
 
       describe('active', () => {
-        class TestTextFilter extends AbstractTestActiveFilter<BrandEntity> {
-          async insertRegisters(quantity: number, inactiveIds: number[]) {
-            const brandsData = TestBrandData.buildData(quantity);
+        class TestTextFilter extends AbstractTestAPIActiveFilter<BrandEntity> {
+          async insertRegisters(actives: boolean[]) {
+            const brandsData: any = TestBrandData.buildData(actives.length);
+            for (let i = 0; i < actives.length; i++) {
+              brandsData[i].active = !!actives[i];
+            }
             await brandRepo.insert(brandsData);
-            await brandRepo.update(inactiveIds, { active: false });
           }
 
-          findRegisters<BrandEntity>(where: { active?: boolean }) {
-            return brandRepo.findAndCount({ where, skip: 0, take: 12 });
+          findRegisters(findManyOptions: FindManyOptions) {
+            return brandRepo.findAndCount(findManyOptions);
           }
 
-          getPagesFromAPI<BrandEntity>(
+          getPagesFromAPI(
             queryParameters: { active?: any },
             httpStatus: number,
           ) {
@@ -460,21 +453,18 @@ describe('StockController (e2e)', () => {
       });
 
       describe('deleted', () => {
-        class ProductTestDeletedFilter extends AbstractTestDeletedFilter<BrandEntity> {
-          async insertRegisters(quantity: number, deletedIds: number[]) {
-            const brandsData = TestBrandData.buildData(quantity);
+        class ProductTestDeletedFilter extends AbstractTestAPIDeletedFilter<BrandEntity> {
+          async insertRegisters(deleteds: boolean[]) {
+            const brandsData: any = TestBrandData.buildData(deleteds.length);
+            for (let i = 0; i < brandsData.length; i++) {
+              if (deleteds[i]) {
+                brandsData[i].deletedAt = new Date();
+              }
+            }
             await brandRepo.insert(brandsData);
-            await brandRepo.update(deletedIds, { deletedAt: false });
           }
 
-          findRegisters(options: { deleted?: boolean }) {
-            const findManyOptions: any = { skip: 0, take: 12, where: {} };
-            if (options.deleted === true) {
-              findManyOptions.withDeleted = true;
-              findManyOptions.where.deletedAt = Not(IsNull());
-            } else if (options.deleted == null) {
-              findManyOptions.withDeleted = true;
-            }
+          findRegisters(findManyOptions: FindManyOptions) {
             return brandRepo.findAndCount(findManyOptions);
           }
 
@@ -491,13 +481,13 @@ describe('StockController (e2e)', () => {
     });
 
     describe('pagination', () => {
-      class BrandTestPagination extends AbstractTestPagination<BrandEntity> {
+      class BrandTestPagination extends AbstractTestApiPagination<BrandEntity> {
         insertRegisters(quantity: number): Promise<any> {
           return brandRepo.insert(TestBrandData.buildData(quantity));
         }
 
-        findRegisters(options: { take: number; skip: number }) {
-          return brandRepo.findAndCount(options);
+        findRegisters(findManyOptions: FindManyOptions) {
+          return brandRepo.findAndCount(findManyOptions);
         }
 
         getPagesFromAPI(
