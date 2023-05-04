@@ -1,14 +1,14 @@
 import { HttpStatus, UnprocessableEntityException } from '@nestjs/common';
+import { FindManyOptions } from 'typeorm';
 import { PaginationMessage } from '../../src/modules/system/enums/messages/pagination-messages/pagination-messages.enum';
 import { objectToJSON } from './instance-to-json';
 
-export abstract class AbstractTestPagination<T> {
+export abstract class AbstractTestApiPagination<T> {
   public abstract insertRegisters(quantity: number): Promise<any>;
 
-  public abstract findRegisters(options: {
-    take: number;
-    skip: number;
-  }): Promise<[pages: T[], count: number]>;
+  public abstract findRegisters(
+    findManyOptions: FindManyOptions,
+  ): Promise<[pages: T[], count: number]>;
 
   public abstract getPagesFromAPI(
     queryParameters: {

@@ -29,12 +29,14 @@ describe('AppController (e2e)', () => {
       email: 'user1@email.com',
       password: 'Abc12*',
       roles: [Role.ADMIN],
+      active: true,
     });
     await userService.create({
       name: 'User 2',
       email: 'user2@email.com',
       password: 'Xyz789*',
       roles: [Role.ADMIN],
+      active: true,
     });
 
     if (authenticated) {
@@ -63,6 +65,7 @@ describe('AppController (e2e)', () => {
         .expect(200)
         .expect('Hello World!');
     });
+
     it('should fail when unauthorized', async () => {
       return request(app.getHttpServer()).get('/').expect(401);
     });

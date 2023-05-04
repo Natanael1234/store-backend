@@ -11,11 +11,13 @@ export function testValidateUser(user, expectedData) {
   expect(user.deletedAt).toBeNull();
   expect(user.roles).toBeDefined();
   expect(user.roles).toEqual(expectedData.roles);
+  expect(user.active).toEqual(expectedData.active);
   expect(Object.keys(user)).toEqual([
     'id',
     'name',
     'email',
     'roles',
+    'active',
     'created',
     'updated',
     'deletedAt',

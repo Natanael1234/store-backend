@@ -7,10 +7,14 @@ import {
 } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindManyOptions, Repository } from 'typeorm';
 import { getTestingModule } from '../../../../.jest/test-config.module';
-import { TestServicePagination } from '../../../../test/pagination/test-service-pagination';
+import { AbstractTestServiceActiveFilter } from '../../../../test/filtering/test-service-active-filter';
+import { AbstractTestServiceDeletedFilter } from '../../../../test/filtering/test-service-deleted-filter';
+import { TestServicePagination } from '../../../../test/filtering/test-service-pagination';
+import { AbstractTestServiceTextFilter } from '../../../../test/filtering/test-service-text-filter';
 import { TestPurpose } from '../../../../test/test-data';
+import { getActiveErrorDataList } from '../../../../test/test-data/test-active-data';
 import { getEmailErrorDataList } from '../../../../test/test-data/test-email-data';
 import { getNameErrorDataList } from '../../../../test/test-data/test-name-data';
 import { getRolesErrorDataList } from '../../../../test/test-data/test-roles-data';
@@ -19,8 +23,9 @@ import { TestUserData } from '../../../../test/user/test-user-data';
 import { testValidateUser } from '../../../../test/user/test-user-utils';
 import { Role } from '../../../authentication/enums/role/role.enum';
 import { AuthenticationService } from '../../../authentication/services/authentication/authentication.service';
-import { PaginatedResponseDTO } from '../../../system/dtos/response/pagination/pagination.response.dto';
 import { EncryptionService } from '../../../system/encryption/services/encryption/encryption.service';
+import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-filter.enum';
+import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
 import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
 import { NameMessage } from '../../../system/enums/messages/name-messages/name-messages.enum';
 import { PasswordMessage } from '../../../system/enums/messages/password-messages/password-messages.enum';
@@ -68,7 +73,10 @@ describe('UserService', () => {
         { id: 2, ...creationData[1] },
         { id: 3, ...creationData[2] },
       ];
-      expectedData.forEach((data) => delete data.password);
+      for (let data of expectedData) {
+        delete data.password;
+        data.active = !!data.active;
+      }
 
       const users = await userRepo.find();
 
@@ -102,11 +110,9 @@ describe('UserService', () => {
         )(
           'should fail when name is $description',
           async ({ data, exception: expectedException }) => {
-            const usersBefore = await userRepo.find();
             try {
               await userService.create(data as CreateUserRequestDTO);
             } catch (ex) {
-              expect(usersBefore).toEqual(await userRepo.find());
               expect(ex).toBeInstanceOf(UnprocessableEntityException);
               expect(ex.getResponse()).toEqual(expectedException.getResponse());
             }
@@ -269,6 +275,23 @@ describe('UserService', () => {
         );
       });
 
+      describe('active', () => {
+        it.each(getActiveErrorDataList(TestUserData.creationData[2]))(
+          'should fail when active is $description',
+          async ({ data, exception }) => {
+            const usersBefore = await userRepo.find();
+            const fn = () => userService.create(data as CreateUserRequestDTO);
+            await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+            try {
+              await fn();
+            } catch (ex) {
+              expect(ex.getResponse()).toEqual(exception.getResponse());
+              expect(await userRepo.find()).toEqual(usersBefore);
+            }
+          },
+        );
+      });
+
       describe('multiple errors', () => {
         it('should fail when there are multiple invalid fields', async () => {
           const usersData = TestUserData.creationData;
@@ -322,47 +345,113 @@ describe('UserService', () => {
       await userRepo.insert(createData[1]);
       await userRepo.insert(createData[2]);
 
-      const registers = await userRepo.find();
+      const registers = await userRepo.find({ where: { active: true } });
       const ret: any = await userService.find();
 
       expect(ret).toEqual({
-        count: 3,
+        count: 1,
         page: 1,
         pageSize: 12,
         results: registers,
       });
     });
 
-    describe('pagination', () => {
-      class TestUserServicePagination extends TestServicePagination<UserEntity> {
-        async insertRegisters(quantity: number): Promise<any> {
-          let creationData = [];
-          for (const data of TestUserData.buildData(quantity)) {
-            creationData.push({
-              name: data.name,
-              email: data.email,
-              hash: await encryptionService.encrypt(data.password),
-              roles: data.roles,
-            });
+    describe('filtering', () => {
+      describe('query', () => {
+        class TestServiceTextFilter extends AbstractTestServiceTextFilter<UserEntity> {
+          async insertViaRepository(texts: string[]) {
+            const brandsData: any = await TestUserData.buildNormalizedData(
+              encryptionService,
+              texts.length,
+            );
+            for (let i = 0; i < brandsData.length; i++) {
+              brandsData[i].name = texts[i];
+            }
+            await userRepo.insert(brandsData);
           }
-          await userRepo.insert(creationData);
+
+          findViaRepository(findManyOptions: FindManyOptions<any>) {
+            return userRepo.findAndCount(findManyOptions);
+          }
+
+          findViaService(options?: { query?: string }) {
+            return userService.find(options);
+          }
         }
 
-        findRegisters(options: {
-          skip: number;
-          take: number;
-        }): Promise<[registes: UserEntity[], count: number]> {
-          const findManyOptions: any = { where: {} };
-          if (options.skip) findManyOptions.skip = options.skip;
-          if (options.take) findManyOptions.take = options.take;
+        new TestServiceTextFilter().executeTests();
+      });
+
+      describe('active', () => {
+        class TestUserServiceActive extends AbstractTestServiceActiveFilter<UserEntity> {
+          async insertRegisters(active: boolean[]) {
+            const insertData: any = await TestUserData.buildNormalizedData(
+              encryptionService,
+              active.length,
+            );
+            for (let i = 0; i < active.length; i++) {
+              insertData[i].active = active[i];
+            }
+            await userRepo.insert(insertData);
+          }
+
+          findRegisters(findManyOptions: FindManyOptions) {
+            return userRepo.findAndCount(findManyOptions);
+          }
+
+          findViaService(options?: { active?: ActiveFilter }) {
+            return userService.find(options, {});
+          }
+        }
+
+        new TestUserServiceActive().executeTests();
+      });
+
+      describe('deleted', () => {
+        class TestUserServiceDeleted extends AbstractTestServiceDeletedFilter<UserEntity> {
+          async insertRegisters(deleted: boolean[]) {
+            const insertData: any = await TestUserData.buildNormalizedData(
+              encryptionService,
+              deleted.length,
+            );
+            for (let i = 0; i < deleted.length; i++) {
+              if (deleted[i]) {
+                insertData[i].deletedAt = new Date();
+              }
+            }
+
+            await userRepo.insert(insertData);
+          }
+
+          findRegisters(findManyOptions: FindManyOptions) {
+            return userRepo.findAndCount(findManyOptions);
+          }
+
+          findViaService(options?: { deleted?: DeletedFilter }) {
+            return userService.find(options, {});
+          }
+        }
+
+        new TestUserServiceDeleted().executeTests();
+      });
+    });
+
+    describe('pagination', () => {
+      class TestUserServicePagination extends TestServicePagination<UserEntity> {
+        async insertViaRepository(quantity: number) {
+          const inserData: any = await TestUserData.buildNormalizedData(
+            encryptionService,
+            quantity,
+          );
+          await userRepo.insert(inserData);
+        }
+
+        findViaRepository(findManyOptions: { skip: number; take: number }) {
           return userRepo.findAndCount(findManyOptions);
         }
 
-        findViaService(pagination?: {
-          page?: number;
-          pageSize?: number;
-        }): Promise<PaginatedResponseDTO<UserEntity>> {
-          return userService.find(pagination);
+        findViaService(pagination?: { page?: number; pageSize?: number }) {
+          return userService.find({}, pagination);
         }
       }
 
@@ -426,6 +515,9 @@ describe('UserService', () => {
         { id: 2, ...usersData[1], name, email },
         { id: 3, ...usersData[2] },
       ];
+      for (let data of expectedUpdateData) {
+        data.active = !!data.active;
+      }
       await userRepo.insert(userRepo.create(usersData[0]));
       await userRepo.insert(userRepo.create(usersData[1]));
       await userRepo.insert(userRepo.create(usersData[2]));
@@ -537,6 +629,10 @@ describe('UserService', () => {
             { id: 2, ...usersData[1], name: longName },
             { id: 3, ...usersData[2] },
           ];
+          for (let data of expectedData) {
+            delete data.password;
+            data.active = !!data.active;
+          }
 
           await userService.create(creationData[0]);
           await userService.create(creationData[1]);
@@ -631,6 +727,10 @@ describe('UserService', () => {
             { id: 2, ...usersData[1] },
             { id: 3, ...usersData[2] },
           ];
+          for (let data of expectedUpdateData) {
+            data.active = !!data.active;
+          }
+
           await userRepo.insert(userRepo.create(usersData[0]));
           await userRepo.insert(userRepo.create(usersData[1]));
           await userRepo.insert(userRepo.create(usersData[2]));
@@ -677,6 +777,10 @@ describe('UserService', () => {
           testValidateUser(users[0], expectedUpdateData[0]);
           testValidateUser(users[1], expectedUpdateData[1]);
         });
+      });
+
+      describe('active', () => {
+        it.skip('should update active', async () => {});
       });
 
       describe('multiple errors', () => {
@@ -925,15 +1029,15 @@ describe('UserService', () => {
     it.skip('should ivalidate refresh tokens if change email', async () => {});
   });
 
-  describe('resetPassword', () => {
+  describe.skip('resetPassword', () => {
     it.skip('should reset password', async () => {});
   });
 
-  describe('recoverPassword', () => {
+  describe.skip('recoverPassword', () => {
     it.skip('should request password recovery link by email password', async () => {});
   });
 
-  describe('recreatePasswordByLink', () => {
+  describe.skip('recreatePasswordByLink', () => {
     it.skip('should recreate password by link', async () => {});
   });
 

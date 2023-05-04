@@ -6,11 +6,14 @@ import {
 import { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
-import { ILike, IsNull, Not, Repository } from 'typeorm';
+import { FindManyOptions, ILike, IsNull, Not, Repository } from 'typeorm';
 import { getTestingModule } from '../../../../.jest/test-config.module';
 
 import { TestBrandData } from '../../../../test/brand/test-brand-data';
-import { TestServicePagination } from '../../../../test/pagination/test-service-pagination';
+import { AbstractTestServiceActiveFilter } from '../../../../test/filtering/test-service-active-filter';
+import { AbstractTestServiceDeletedFilter } from '../../../../test/filtering/test-service-deleted-filter';
+import { TestServicePagination } from '../../../../test/filtering/test-service-pagination';
+import { AbstractTestServiceTextFilter } from '../../../../test/filtering/test-service-text-filter';
 import { TestProductData } from '../../../../test/product/test-product-data';
 import { testValidateProduct } from '../../../../test/product/test-product-utils';
 import { TestPurpose } from '../../../../test/test-data';
@@ -42,7 +45,6 @@ import {
   getQuantityInStockAcceptableValues,
   getQuantityInStockErrorDataList,
 } from '../../../../test/test-data/test-quantity-in-stock-data';
-import { PaginatedResponseDTO } from '../../../system/dtos/response/pagination/pagination.response.dto';
 import { SuccessResponseDto } from '../../../system/dtos/response/pagination/success.response.dto';
 import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
@@ -275,32 +277,28 @@ describe('StockService', () => {
     });
 
     describe.each([
-      [
-        ...getCodeErrorDataList(
-          TestProductData.dataForRepository[1],
-          TestPurpose.update,
-        ),
-        ...getNameErrorDataList(
-          TestProductData.dataForRepository[1],
-          TestPurpose.update,
-        ),
-        ...getModelErrorDataList(
-          TestProductData.dataForRepository[1],
-          TestPurpose.update,
-        ),
-        ...getPriceErrorDataList(
-          TestProductData.dataForRepository[1],
-          TestPurpose.update,
-        ),
-        ...getQuantityInStockErrorDataList(
-          TestProductData.dataForRepository[1],
-        ),
-        ...getActiveErrorDataList(TestProductData.dataForRepository[1]),
-        ...getBrandIdErrorDataList(
-          TestProductData.dataForRepository[1],
-          TestPurpose.update,
-        ),
-      ],
+      ...getCodeErrorDataList(
+        TestProductData.dataForRepository[1],
+        TestPurpose.update,
+      ),
+      ...getNameErrorDataList(
+        TestProductData.dataForRepository[1],
+        TestPurpose.update,
+      ),
+      ...getModelErrorDataList(
+        TestProductData.dataForRepository[1],
+        TestPurpose.update,
+      ),
+      ...getPriceErrorDataList(
+        TestProductData.dataForRepository[1],
+        TestPurpose.update,
+      ),
+      ...getQuantityInStockErrorDataList(TestProductData.dataForRepository[1]),
+      ...getActiveErrorDataList(TestProductData.dataForRepository[1]),
+      ...getBrandIdErrorDataList(
+        TestProductData.dataForRepository[1],
+        TestPurpose.update,
+      ),
     ])(
       '$property',
       ({ data, ExceptionClass, response, property, description }) => {
@@ -539,281 +537,99 @@ describe('StockService', () => {
       );
 
       describe('query', () => {
-        it('should do textual filtering matching one result', async () => {
-          await brandRepo.insert(TestBrandData.buildData(3));
-          await productRepo.insert(TestProductData.buildData(3));
-          const { results, count } = await findAndCountProductsFromRepository({
-            query: '   uct 1',
-          });
+        describe('query', () => {
+          class TestServiceTextFilter extends AbstractTestServiceTextFilter<ProductEntity> {
+            async insertViaRepository(texts: string[]) {
+              await brandRepo.insert(TestBrandData.buildData(1));
+              const productsData: any = TestProductData.buildData(texts.length);
+              for (let i = 0; i < productsData.length; i++) {
+                productsData[i].name = texts[i];
+              }
+              await productRepo.insert(productsData);
+            }
 
-          const ret = await productService.find({ query: '   uct 1' });
+            findViaRepository(findManyOptions: FindManyOptions<any>) {
+              findManyOptions.relations = { brand: true };
+              return productRepo.findAndCount(findManyOptions);
+            }
 
-          expect(ret).toEqual({
-            count: 1,
-            page: 1,
-            pageSize: 12,
-            results: results,
-          });
-        });
+            findViaService(options?: { query?: string }) {
+              return productService.find(options);
+            }
+          }
 
-        it('should do textual filtering matching all results', async () => {
-          const query = ' pr   du';
-          await brandRepo.insert(TestBrandData.buildData(1));
-          await productRepo.insert(TestProductData.buildData(3));
-          const { results, count } = await findAndCountProductsFromRepository({
-            query,
-          });
-
-          const ret = await productService.find({ query });
-
-          expect(ret).toEqual({
-            count: 3,
-            page: 1,
-            pageSize: 12,
-            results: results,
-          });
-        });
-
-        it('should do textual filtering matching no results', async () => {
-          await brandRepo.insert(TestBrandData.buildData(1));
-          await productRepo.insert(TestProductData.buildData(12));
-
-          const ret = await productService.find({
-            query: '  not  found ',
-          });
-
-          expect(ret).toEqual({
-            count: 0,
-            page: 1,
-            pageSize: 12,
-            results: [],
-          });
-        });
-
-        it('should not filter by text when query is empty string', async () => {
-          await brandRepo.insert(TestBrandData.buildData(1));
-          const productsData = TestProductData.buildData(3);
-          await productRepo.insert(productsData);
-          const { results, count } = await findAndCountProductsFromRepository({
-            query: '',
-          });
-
-          const ret = await productService.find({ query: '' });
-
-          expect(ret).toEqual({
-            count: 3,
-            page: 1,
-            pageSize: 12,
-            results: results,
-          });
-        });
-
-        it('should not filter by text when query is string of spaces', async () => {
-          const query = '    ';
-          await brandRepo.insert(TestBrandData.buildData(1));
-          const productsData = TestProductData.buildData(3);
-          productsData.forEach((brandData) => {
-            brandData.name = brandData.name.replace(' ', '');
-          });
-          await productRepo.insert(productsData);
-          const { results, count } = await findAndCountProductsFromRepository({
-            query,
-          });
-
-          const ret = await productService.find({ query });
-
-          expect(ret).toEqual({
-            count: 3,
-            page: 1,
-            pageSize: 12,
-            results: results,
-          });
+          new TestServiceTextFilter().executeTests();
         });
       });
 
       describe('active', () => {
-        it.each([
-          { description: 'null', data: { active: null } },
-          { description: 'undefined', data: { active: undefined } },
-          { description: 'not defined', data: {} },
-          {
-            description: 'ActiveFilter.ACTIVE',
-            data: { active: ActiveFilter.ACTIVE },
-          },
-        ])(
-          'should return only active results when "filtering.active" is $description',
-          async ({ data }) => {
+        class TestServiceActive extends AbstractTestServiceActiveFilter<ProductEntity> {
+          async insertRegisters(actives: boolean[]) {
             await brandRepo.insert(TestBrandData.buildData(1));
-            const productData = await TestProductData.buildData(3);
-            productData[2].active = false;
-            await productRepo.insert(productData);
-            const { results, count } = await findAndCountProductsFromRepository(
-              {},
+            const insertData: any = await TestProductData.buildData(
+              actives.length,
             );
+            for (let i = 0; i < actives.length; i++) {
+              insertData[i].active = actives[i];
+            }
+            await productRepo.insert(insertData);
+          }
 
-            const ret = await productService.find(data);
+          findRegisters(findManyOptions: FindManyOptions) {
+            findManyOptions.relations = { brand: true };
+            return productRepo.findAndCount(findManyOptions);
+          }
 
-            expect(ret).toEqual({
-              count: 2,
-              page: 1,
-              pageSize: 12,
-              results: results,
-            });
-          },
-        );
+          findViaService(options?: { active?: ActiveFilter }) {
+            return productService.find(options, {});
+          }
+        }
 
-        // inactive
-        it('should return only inactive results when "filtering.active" is inative', async () => {
-          await brandRepo.insert(TestBrandData.buildData(1));
-          const productData = await TestProductData.buildData(3);
-          productData[2].active = false;
-          await productRepo.insert(productData);
-          const { results, count } = await findAndCountProductsFromRepository({
-            active: ActiveFilter.INACTIVE,
-          });
-
-          const ret = await productService.find({
-            active: ActiveFilter.INACTIVE,
-          });
-
-          expect(ret).toEqual({
-            count: 1,
-            page: 1,
-            pageSize: 12,
-            results: results,
-          });
-
-          //
-        });
-
-        // active and inactive
-        it('should return active and inactive results when "filtering.active" is ActiveFilter.ALL', async () => {
-          await brandRepo.insert(TestBrandData.buildData(1));
-          const productData = await TestProductData.buildData(3);
-          productData[2].active = false;
-          await productRepo.insert(productData);
-          const { results, count } = await findAndCountProductsFromRepository({
-            active: ActiveFilter.ALL,
-          });
-
-          const ret = await productService.find({
-            active: ActiveFilter.ALL,
-          });
-
-          expect(ret).toEqual({
-            count: 3,
-            page: 1,
-            pageSize: 12,
-            results: results,
-          });
-        });
+        new TestServiceActive().executeTests();
       });
 
       describe('deleted', () => {
-        // deleted
-        it('should return only not deleted results when "filtering.deleted" is DeletedFilter.DELETED', async () => {
-          await brandRepo.insert(TestBrandData.buildData(1));
-          const productData = await TestProductData.buildData(3);
-          productData[2].active = false;
-          productData[1].deletedAt = new Date();
-          await productRepo.insert(productData);
-          const { results, count } = await findAndCountProductsFromRepository({
-            deleted: DeletedFilter.DELETED,
-          });
-
-          const ret = await productService.find({
-            deleted: DeletedFilter.DELETED,
-          });
-
-          expect(ret).toEqual({
-            count: 1,
-            page: 1,
-            pageSize: 12,
-            results: results,
-          });
-        });
-
-        // not deleted
-        it.each([
-          { description: 'null', data: { deleted: null } },
-          { description: 'undefined', data: { deleted: undefined } },
-          { description: 'not defined', data: {} },
-          {
-            description: 'DeletedFilter.NOT_DELETED',
-            data: { deleted: DeletedFilter.NOT_DELETED },
-          },
-        ])(
-          'should return only not deleted results when "filtering.deleted" is $description',
-          async ({ data }) => {
+        class TestServiceDeleted extends AbstractTestServiceDeletedFilter<ProductEntity> {
+          async insertRegisters(deleteds: boolean[]) {
             await brandRepo.insert(TestBrandData.buildData(1));
-            const productData = await TestProductData.buildData(3);
-            productData[2].active = false;
-            productData[1].deletedAt = new Date();
-            await productRepo.insert(productData);
-            const { results, count } = await findAndCountProductsFromRepository(
-              {
-                deleted: DeletedFilter.NOT_DELETED,
-                active: ActiveFilter.ACTIVE,
-              },
+            const insertData: any = await TestProductData.buildData(
+              deleteds.length,
             );
+            for (let i = 0; i < deleteds.length; i++) {
+              if (!!deleteds[i]) {
+                insertData[i].deletedAt = new Date();
+              }
+            }
+            await productRepo.insert(insertData);
+          }
 
-            const ret = await productService.find(data);
+          findRegisters(findManyOptions: FindManyOptions) {
+            findManyOptions.relations = { brand: true };
+            return productRepo.findAndCount(findManyOptions);
+          }
 
-            expect(ret).toEqual({
-              count: 1,
-              page: 1,
-              pageSize: 12,
-              results: results,
-            });
-          },
-        );
+          findViaService(options?: { deleted?: DeletedFilter }) {
+            return productService.find(options, {});
+          }
+        }
 
-        // deleted and not deleted
-        it('should return deleted and not deleted results when "filtering.deleted" is DeletedFilter.ALL', async () => {
-          await brandRepo.insert(TestBrandData.buildData(1));
-          const productData = await TestProductData.buildData(3);
-          productData[2].active = false;
-          productData[1].deletedAt = new Date();
-          await productRepo.insert(productData);
-          const { results, count } = await findAndCountProductsFromRepository({
-            deleted: DeletedFilter.ALL,
-            active: ActiveFilter.ACTIVE,
-          });
-
-          const ret = await productService.find({ deleted: DeletedFilter.ALL });
-
-          expect(ret).toEqual({
-            count: 2,
-            page: 1,
-            pageSize: 12,
-            results: results,
-          });
-        });
+        new TestServiceDeleted().executeTests();
       });
     });
 
     describe('pagination', () => {
       class TestUserServicePagination extends TestServicePagination<ProductEntity> {
-        async insertRegisters(quantity: number): Promise<any> {
+        async insertViaRepository(quantity: number) {
           await brandRepo.insert(TestBrandData.buildData(1));
           await productRepo.insert(TestProductData.buildData(quantity));
         }
 
-        findRegisters(options: {
-          skip: number;
-          take: number;
-        }): Promise<[registes: ProductEntity[], count: number]> {
-          const findManyOptions: any = { where: {} };
-          if (options.skip) findManyOptions.skip = options.skip;
-          if (options.take) findManyOptions.take = options.take;
+        findViaRepository(findManyOptions: FindManyOptions) {
           findManyOptions.relations = { brand: true };
           return productRepo.findAndCount(findManyOptions);
         }
 
-        findViaService(pagination?: {
-          page?: number;
-          pageSize?: number;
-        }): Promise<PaginatedResponseDTO<ProductEntity>> {
+        findViaService(pagination?: { page?: number; pageSize?: number }) {
           return productService.find({}, pagination);
         }
       }

@@ -1,4 +1,6 @@
+import { Transform } from 'class-transformer';
 import {
+  IsBoolean,
   IsEmail,
   IsNotEmpty,
   IsOptional,
@@ -6,6 +8,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { ActiveMessage } from '../../../system/enums/messages/active-messages/active-messages.enum';
 import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
 import { NameMessage } from '../../../system/enums/messages/name-messages/name-messages.enum';
 
@@ -30,4 +33,24 @@ export class UpdateUserRequestDTO {
   // @IsNotEmpty({ message: RoleMessage.REQUIRED })
   // @IsOptional()
   // roles?: Role[];
+
+  @IsBoolean({ message: ActiveMessage.BOOLEAN })
+  @Transform(({ value }) => {
+    if (value == null) {
+      return false;
+    } else if (typeof value == 'string') {
+      value = value.toLowerCase();
+      if (value == 'true') {
+        return true;
+      } else if (value == 'false') {
+        return false;
+      }
+      return value;
+    } else if (typeof value == 'boolean') {
+      return value;
+    }
+    return value;
+  })
+  @IsOptional()
+  active?: boolean;
 }

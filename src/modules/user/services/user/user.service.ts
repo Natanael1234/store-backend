@@ -8,11 +8,14 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
 import { Validator } from 'class-validator';
-import { FindManyOptions, Repository } from 'typeorm';
+import { FindManyOptions, ILike, IsNull, Not, Repository } from 'typeorm';
+import { FilteringRequestDTO } from '../../../system/dtos/request/filtering/filtering.request.dto';
 import { PaginationConfig } from '../../../system/dtos/request/pagination/configs/pagination.config';
 import { PaginationRequestDTO } from '../../../system/dtos/request/pagination/pagination.request.dto';
 import { PaginatedResponseDTO } from '../../../system/dtos/response/pagination/pagination.response.dto';
 import { EncryptionService } from '../../../system/encryption/services/encryption/encryption.service';
+import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-filter.enum';
+import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
 import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
 import { validateOrThrowError } from '../../../system/utils/validation';
 import { CreateUserRequestDTO } from '../../dtos/create-user/create-user.request.dto';
@@ -40,6 +43,7 @@ export class UserService {
     user.email = userDto.email;
     user.name = userDto.name;
     user.roles = userDto.roles;
+    user.active = userDto.active;
     user.hash = await this.encryptionService.encrypt(userDto.password);
     await this.userRepository.save(user);
     return this.findForId(user.id);
@@ -63,6 +67,7 @@ export class UserService {
 
     if (userDto.name) existentUser.name = userDto.name;
     if (userDto.email) existentUser.email = userDto.email;
+    if (userDto.active != null) existentUser.active = userDto.active;
     // if (userDto.roles) existentUser.roles = userDto.roles;
 
     await this.userRepository.save(existentUser);
@@ -81,22 +86,49 @@ export class UserService {
   }
 
   public async findForEmail(email: string): Promise<UserEntity> {
-    return await this.userRepository.findOne({ where: { email } });
+    // TODO: testar se deletado
+    return await this.userRepository.findOne({
+      where: { email },
+      withDeleted: true,
+    });
   }
 
   public async find(
+    filtering?: FilteringRequestDTO,
     pagination?: PaginationRequestDTO,
   ): Promise<PaginatedResponseDTO<UserEntity>> {
+    filtering = plainToInstance(FilteringRequestDTO, filtering || {});
+    await validateOrThrowError(filtering || {}, FilteringRequestDTO);
     pagination = plainToInstance(PaginationRequestDTO, pagination || {});
     await validateOrThrowError(pagination || {}, PaginationRequestDTO);
+    const { query, active, deleted } = filtering;
     const { page, pageSize, skip, take } = pagination;
     const findManyOptions: FindManyOptions = {};
     findManyOptions.take = take || PaginationConfig.DEFAULT_PAGE_SIZE;
     findManyOptions.skip = skip || 0;
     findManyOptions.where = {};
+
+    if (active == ActiveFilter.ACTIVE) {
+      findManyOptions.where.active = true;
+    } else if (active == ActiveFilter.INACTIVE) {
+      findManyOptions.where.active = false;
+    }
+    if (query != null) {
+      if (query) {
+        findManyOptions.where.name = ILike(`%${query.replace(' ', '%')}%`);
+      }
+    }
+    if (deleted == DeletedFilter.DELETED) {
+      findManyOptions.where.deletedAt = Not(IsNull());
+      findManyOptions.withDeleted = true;
+    } else if (deleted == DeletedFilter.ALL) {
+      findManyOptions.withDeleted = true;
+    }
+
     const [results, count] = await this.userRepository.findAndCount(
       findManyOptions,
     );
+
     return new PaginatedResponseDTO(results, count, page, pageSize);
   }
 

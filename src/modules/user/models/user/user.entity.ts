@@ -30,6 +30,9 @@ export class UserEntity {
   @Column({ type: 'simple-json', nullable: false })
   roles: Role[];
 
+  @Column({ nullable: false, default: false })
+  active: boolean;
+
   @CreateDateColumn()
   created!: Date;
 

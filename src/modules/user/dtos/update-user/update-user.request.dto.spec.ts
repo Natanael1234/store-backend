@@ -1,7 +1,13 @@
+import { TestBrandData } from '../../../../test/brand/test-brand-data';
 import { TestPurpose } from '../../../../test/test-data';
+import {
+  getActiveAcceptableValues,
+  getActiveErrorDataList,
+} from '../../../../test/test-data/test-active-data';
 import { getEmailErrorDataList } from '../../../../test/test-data/test-email-data';
 import { getNameErrorDataList } from '../../../../test/test-data/test-name-data';
 import { TestUserData } from '../../../../test/user/test-user-data';
+import { ActiveMessage } from '../../../system/enums/messages/active-messages/active-messages.enum';
 import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
 import { NameMessage } from '../../../system/enums/messages/name-messages/name-messages.enum';
 import { validateFirstError } from '../../../system/utils/validation';
@@ -78,19 +84,44 @@ describe('UpdateUserRequestDto', () => {
     });
   });
 
+  describe('active', () => {
+    it.each(getActiveErrorDataList(TestBrandData.dataForRepository[1]))(
+      'should fail when active is $description',
+      async ({ data, expectedErrors }) => {
+        const errors = await validateFirstError(data, UpdateUserRequestDTO);
+        expect(errors).toHaveLength(1);
+        expect(errors[0].property).toEqual('active');
+        expect(errors[0].value).toEqual(data.active);
+        expect(errors[0].constraints).toEqual(expectedErrors);
+      },
+    );
+
+    it.each(getActiveAcceptableValues(TestBrandData.dataForRepository[1]))(
+      'should validate when active is $description',
+      async ({ data }) => {
+        const errors = await validateFirstError(data, UpdateUserRequestDTO);
+        expect(errors).toHaveLength(0);
+      },
+    );
+  });
+
   describe('multiple errors', () => {
     it('should fail in multiple fields', async () => {
       const data = {
         name: 'User',
         email: 'email.com',
+        active: 'error',
       };
       const errors = await validate(data);
 
-      expect(errors).toHaveLength(2);
+      expect(errors).toHaveLength(3);
       expect(errors[0].constraints).toEqual({
         minLength: NameMessage.MIN_LEN,
       });
       expect(errors[1].constraints).toEqual({ isEmail: EmailMessage.INVALID });
+      expect(errors[2].constraints).toEqual({
+        isBoolean: ActiveMessage.BOOLEAN,
+      });
     });
   });
 });

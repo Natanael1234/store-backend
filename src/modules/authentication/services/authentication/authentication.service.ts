@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { UnprocessableEntityException } from '@nestjs/common/exceptions';
+import { AuthorizationMessage } from '../../../system/enums/messages/authorization-messages/authorization-messages.enum';
 import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
 import { NameMessage } from '../../../system/enums/messages/name-messages/name-messages.enum';
 import { PasswordMessage } from '../../../system/enums/messages/password-messages/password-messages.enum';
@@ -53,6 +54,7 @@ export class AuthenticationService {
       email: registerRequestDto.email,
       password: registerRequestDto.password,
       roles: [firstUser ? Role.ROOT : Role.USER],
+      active: true,
     });
     const token = await this.tokenService.generateAccessToken(user);
     const refresh = await this.tokenService.generateRefreshToken(user);
@@ -74,7 +76,10 @@ export class AuthenticationService {
       loginRequestDto.password,
     );
     if (!user) {
-      throw new UnauthorizedException(CredentialsMessage.INVALID);
+      throw new UnauthorizedException(AuthorizationMessage.NOT_AUTORIZED);
+    }
+    if (!user.active) {
+      throw new UnauthorizedException(AuthorizationMessage.NOT_AUTORIZED);
     }
 
     const token = await this.tokenService.generateAccessToken(user);
@@ -86,10 +91,16 @@ export class AuthenticationService {
   }
 
   public async refresh(refreshToken: string): Promise<RefreshResponseDto> {
-    const { user, token } =
-      await this.tokenService.createAccessTokenFromRefreshToken(refreshToken);
-    const payload = this.buildResponsePayload(user, token);
-    return { status: 'success', data: payload };
+    try {
+      const { user, token } =
+        await this.tokenService.createAccessTokenFromRefreshToken(refreshToken);
+      if (!user.active)
+        throw new UnauthorizedException(AuthorizationMessage.NOT_AUTORIZED);
+      const payload = this.buildResponsePayload(user, token);
+      return { status: 'success', data: payload };
+    } catch (error) {
+      throw new UnauthorizedException(AuthorizationMessage.NOT_AUTORIZED);
+    }
   }
 
   public async logout(refreshToken: string): Promise<LogoutResponseDto> {
@@ -97,7 +108,11 @@ export class AuthenticationService {
     if (refreshToken) new ForbiddenException(RefreshTokenMessage.REQUIRED);
 
     // TODO: schedule revoked tokens removal
-    await this.tokenService.revokeRefreshToken(refreshToken);
+    try {
+      await this.tokenService.revokeRefreshToken(refreshToken);
+    } catch (error) {
+      throw new UnauthorizedException(AuthorizationMessage.NOT_AUTORIZED);
+    }
 
     // add bearer token to blacklist
     // await this.cachingService.setValue(bearerToken, token); // TODO: add ttl
