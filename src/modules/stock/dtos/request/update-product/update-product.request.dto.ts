@@ -12,11 +12,11 @@ import {
 } from 'class-validator';
 import { ActiveMessage } from '../../../../system/enums/messages/active-messages/active-messages.enum';
 import { NameMessage } from '../../../../system/enums/messages/name-messages/name-messages.enum';
-import { BrandIdMessage } from '../../../enums/brand-id-messages/brand-id-quantity-messages.enum';
-import { CodeMessage } from '../../../enums/code-messages/code-messages.enum';
-import { ModelMessage } from '../../../enums/model-messages/model-messages.enum';
-import { PriceMessage } from '../../../enums/price-messages/price-messages.enum';
-import { ProductQuantityMessage } from '../../../enums/quantity-messages/quantity-messages.enum';
+import { BrandIdMessage } from '../../../enums/messages/brand-id-messages/brand-id-quantity-messages.enum';
+import { CodeMessage } from '../../../enums/messages/code-messages/code-messages.enum';
+import { ModelMessage } from '../../../enums/messages/model-messages/model-messages.enum';
+import { PriceMessage } from '../../../enums/messages/price-messages/price-messages.enum';
+import { ProductQuantityMessage } from '../../../enums/messages/quantity-messages/quantity-messages.enum';
 
 export class UpdateProductRequestDTO {
   @MaxLength(60, { message: CodeMessage.MAX_LEN })

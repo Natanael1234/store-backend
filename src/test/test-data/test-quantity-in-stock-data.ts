@@ -1,4 +1,4 @@
-import { ProductQuantityMessage } from '../../modules/stock/enums/quantity-messages/quantity-messages.enum';
+import { ProductQuantityMessage } from '../../modules/stock/enums/messages/quantity-messages/quantity-messages.enum';
 import {
   TestAcceptData,
   TestData,

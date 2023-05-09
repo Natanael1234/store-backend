@@ -15,10 +15,12 @@ for (let i = 0; i < 15; i++) {
   }
 }
 
-export abstract class AbstractTestAPITextFilter<T> {
+export abstract class AbstractTestAPITextFilter<EntityType> {
   abstract insertRegisters(textToAppend: string[]): Promise<any>;
 
-  abstract findRegisters(findManyOptions): Promise<[pages: T[], count: number]>;
+  abstract findRegisters(
+    findManyOptions,
+  ): Promise<[pages: EntityType[], count: number]>;
 
   abstract getPagesFromAPI(
     queryParameters: { query?: any },
@@ -27,7 +29,7 @@ export abstract class AbstractTestAPITextFilter<T> {
     count: number;
     page: number;
     pageSize: number;
-    results: T[];
+    results: EntityType[];
   }>;
 
   executeTests(options?: { ignoreNoRegisters }) {

@@ -8,7 +8,7 @@ export abstract class AbstractTestServiceTextFilter<T> {
     findManyOptions: FindManyOptions,
   ): Promise<[results: T[], count: number]>;
 
-  abstract findViaService(options?: {
+  abstract findViaService(queryParams?: {
     query?: string;
   }): Promise<PaginatedResponseDTO<T>>;
 

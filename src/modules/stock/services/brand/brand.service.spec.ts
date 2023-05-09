@@ -12,7 +12,8 @@ import { TestBrandData } from '../../../../test/brand/test-brand-data';
 import { testValidateBrand } from '../../../../test/brand/test-brand-utils';
 import { AbstractTestServiceActiveFilter } from '../../../../test/filtering/test-service-active-filter';
 import { AbstractTestServiceDeletedFilter } from '../../../../test/filtering/test-service-deleted-filter';
-import { TestServicePagination } from '../../../../test/filtering/test-service-pagination';
+import { AbestractTestServicePagination } from '../../../../test/filtering/test-service-pagination';
+import { TestSortScenarioBuilder } from '../../../../test/filtering/test-service-sort-filter';
 import { AbstractTestServiceTextFilter } from '../../../../test/filtering/test-service-text-filter';
 import { TestPurpose } from '../../../../test/test-data';
 import {
@@ -23,11 +24,16 @@ import {
   getNameAcceptableValues,
   getNameErrorDataList,
 } from '../../../../test/test-data/test-name-data';
+import { PaginationConfig } from '../../../system/dtos/request/pagination/configs/pagination.config';
+import { SortConfig } from '../../../system/dtos/request/sort/configs/sort.config';
 import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
+import { SortMessage } from '../../../system/enums/messages/sort-messages/sort-messages.enum';
 import { CreateBrandRequestDTO } from '../../dtos/request/create-brand/create-brand.request.dto';
+import { FindBrandRequestDTO } from '../../dtos/request/find-brand/find-brand.request.dto';
 import { UpdateBrandRequestDTO } from '../../dtos/request/update-brand/update-brand.request.dto';
-import { BrandMessage } from '../../enums/brand-messages/brand-messages.enum';
+import { BrandMessage } from '../../enums/messages/brand-messages/brand-messages.enum';
+import { BrandOrder } from '../../enums/sort/brand-order/brand-order.enum';
 import { BrandEntity } from '../../models/brand/brand.entity';
 import { BrandService } from './brand.service';
 
@@ -232,11 +238,12 @@ describe('BrandService', () => {
       await brandRepo.insert(brandData);
       const brands = await brandRepo.find({
         where: { active: true },
-        take: 12,
         skip: 0,
+        take: PaginationConfig.DEFAULT_PAGE_SIZE,
+        order: { name: SortConfig.DEFAULT_ORDER_DIRECTION },
       });
 
-      const ret = await brandService.find();
+      const ret = await brandService.find({});
 
       expect(ret).toEqual({
         count: 13,
@@ -259,7 +266,7 @@ describe('BrandService', () => {
       expect(ret.pageSize).toEqual(12);
     });
 
-    describe('filtering', () => {
+    describe('query parameters', () => {
       it.each([
         { description: 'null', data: null },
         { description: 'undefined', data: undefined },
@@ -269,7 +276,10 @@ describe('BrandService', () => {
           const brandData = TestBrandData.buildData(3);
           brandData[2].active = false;
           await brandRepo.insert(brandData);
-          const brands = await brandRepo.find();
+          const brands = await brandRepo.find({
+            where: { active: true },
+            order: { name: 'ASC' },
+          });
 
           const results = await brandService.find(data);
 
@@ -277,13 +287,12 @@ describe('BrandService', () => {
             count: 2,
             page: 1,
             pageSize: 12,
-            query: undefined,
-            results: [brands[0], brands[1]],
+            results: brands,
           });
         },
       );
 
-      describe('query', () => {
+      describe('text query', () => {
         class TestServiceTextFilter extends AbstractTestServiceTextFilter<BrandEntity> {
           async insertViaRepository(texts: string[]) {
             const brandsData: any = TestBrandData.buildData(texts.length);
@@ -293,12 +302,13 @@ describe('BrandService', () => {
             await brandRepo.insert(brandsData);
           }
 
-          findViaRepository(findManyOptions: FindManyOptions<any>) {
+          findViaRepository(findManyOptions: FindManyOptions) {
+            findManyOptions.order = { name: 'ASC' };
             return brandRepo.findAndCount(findManyOptions);
           }
 
-          findViaService(options?: { query?: string }) {
-            return brandService.find(options);
+          findViaService(queryParams?: FindBrandRequestDTO) {
+            return brandService.find(queryParams);
           }
         }
 
@@ -318,11 +328,12 @@ describe('BrandService', () => {
           }
 
           findRegisters(findManyOptions: FindManyOptions) {
+            findManyOptions.order = { name: 'ASC' };
             return brandRepo.findAndCount(findManyOptions);
           }
 
-          findViaService(options?: { active?: ActiveFilter }) {
-            return brandService.find(options, {});
+          findViaService(queryParams?: FindBrandRequestDTO) {
+            return brandService.find(queryParams);
           }
         }
 
@@ -336,204 +347,285 @@ describe('BrandService', () => {
               deleted.length,
             );
             for (let i = 0; i < deleted.length; i++) {
-              if (deleted[i]) {
-                insertData[i].deletedAt = new Date();
-              }
+              insertData[i].deletedAt = !!deleted[i] ? new Date() : null;
             }
-
             await brandRepo.insert(insertData);
           }
 
           findRegisters(findManyOptions: FindManyOptions) {
+            findManyOptions.order = { name: 'ASC' };
             return brandRepo.findAndCount(findManyOptions);
           }
 
-          findViaService(options?: { deleted?: DeletedFilter }) {
-            return brandService.find(options, {});
+          findViaService(queryParams?: FindBrandRequestDTO) {
+            return brandService.find(queryParams);
           }
         }
 
         new TestServiceDeleted().executeTests();
       });
-    });
 
-    describe('pagination', () => {
-      class TestBrandServicePagination extends TestServicePagination<BrandEntity> {
-        async insertViaRepository(quantity: number) {
-          await brandRepo.insert(TestBrandData.buildData(quantity));
+      describe('pagination', () => {
+        class TestBrandServicePagination extends AbestractTestServicePagination<BrandEntity> {
+          async insertViaRepository(quantity: number) {
+            await brandRepo.insert(TestBrandData.buildData(quantity));
+          }
+
+          findViaRepository(findManyOptions: FindManyOptions) {
+            findManyOptions.order = { name: 'ASC' };
+            return brandRepo.findAndCount(findManyOptions);
+          }
+
+          findViaService(queryParams?: FindBrandRequestDTO) {
+            return brandService.find(queryParams);
+          }
         }
 
-        findViaRepository(findManyOptions: { skip: number; take: number }) {
-          return brandRepo.findAndCount(findManyOptions);
-        }
+        new TestBrandServicePagination().executeTests();
+      });
 
-        findViaService(pagination?: { page?: number; pageSize?: number }) {
-          return brandService.find({}, pagination);
-        }
-      }
+      describe('sort', () => {
+        const testSortScenario = new TestSortScenarioBuilder<typeof BrandOrder>(
+          BrandOrder,
+          [BrandOrder.NAME_ASC],
+          'api',
+        );
 
-      new TestBrandServicePagination().executeTests();
-    });
-
-    describe('combined tests', () => {
-      let brandsData; //= TestBrandData.buildData(20);
-      beforeEach(async () => {
-        brandsData = [];
-        let j = 1;
-        for (let i = 0; i < 4; i++) {
-          for (let activeState of [true, false]) {
-            for (let deletedAt of [null, new Date()]) {
-              for (let text of ['EVEN', 'ODD']) {
-                brandsData.push({
-                  name: `Brand ${j++} ${text}`,
-                  active: activeState,
-                  deletedAt,
-                });
-              }
+        const brandData = [];
+        for (let name of ['Brand 1', 'Brand 2']) {
+          for (let active of [true, false]) {
+            for (let i = 1; i <= 2; i++) {
+              brandData.push({ name: name, active });
             }
           }
         }
-        const ret = await brandRepo.save(brandsData);
+
+        it.each(testSortScenario.generateSuccessTestScenarios())(
+          `should order results when orderBy=$description`,
+          async ({ orderBySQL, orderBy }) => {
+            // prepare
+            await brandRepo.insert(brandData);
+            const repositoryResults = await brandRepo.find({
+              order: orderBySQL,
+              take: PaginationConfig.DEFAULT_PAGE_SIZE,
+            });
+
+            // execute
+            const apiResult = await brandService.find({
+              orderBy: orderBy,
+              active: ActiveFilter.ALL,
+            });
+
+            // test
+            expect(apiResult).toEqual({
+              count: 8,
+              page: 1,
+              pageSize: 12,
+              results: repositoryResults,
+            });
+          },
+        );
+
+        it('should fail when receives invalid orderBy item string', async () => {
+          // prepare
+          await brandRepo.insert(brandData);
+
+          // execute
+          const fn = () =>
+            brandService.find({
+              orderBy: [
+                'invalid_impossible_and_never_gonna_happen' as BrandOrder,
+              ],
+              active: ActiveFilter.ALL,
+            });
+
+          await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+
+          try {
+            await fn();
+          } catch (ex) {
+            expect(ex.response).toEqual({
+              error: 'UnprocessableEntityException',
+              message: { orderBy: SortMessage.INVALID },
+              statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+            });
+          }
+        });
       });
 
-      async function findAncCountBrands(
-        query,
-        active: ActiveFilter,
-        deleted: DeletedFilter,
-        page: number,
-        pageSize: number,
-      ): Promise<{ results: BrandEntity[]; count: number }> {
-        let findManyOptions: any = { where: {} };
-        // query
-        if (query) {
-          findManyOptions.where['name'] = ILike(`%EVEN%`);
-        }
-        // active
-        if (active == ActiveFilter.ACTIVE) {
-          findManyOptions.where.active = true;
-        } else if (active == ActiveFilter.INACTIVE) {
-          findManyOptions.where.active = false;
-        }
-        // deleted
-        if (deleted == DeletedFilter.DELETED) {
-          findManyOptions.where.deletedAt = Not(IsNull());
-          findManyOptions.withDeleted = true;
-        } else if (deleted == DeletedFilter.ALL) {
-          findManyOptions.withDeleted = true;
-        }
-        findManyOptions.take = pageSize;
-        findManyOptions.skip = (page - 1) * pageSize;
-        const [results, count] = await brandRepo.findAndCount(findManyOptions);
-        return { results, count };
-      }
-
-      async function testCombinedParameters(options: {
-        active: ActiveFilter;
-        deleted: DeletedFilter;
-        page: number;
-        pageSize: number;
-      }) {
-        const { active, deleted, page, pageSize } = options;
-        const query = 'EVEN';
-        const filter = `%EVEN%`;
-        const { results, count } = await findAncCountBrands(
-          filter,
-          active,
-          deleted,
-          page,
-          pageSize,
-        );
-        const ret = await brandService.find(
-          { query, active, deleted },
-          { page, pageSize },
-        );
-        expect(ret).toEqual({
-          count,
-          page,
-          pageSize,
-          results: results,
+      describe('combined tests', () => {
+        let brandsData; //= TestBrandData.buildData(20);
+        beforeEach(async () => {
+          brandsData = [];
+          let j = 1;
+          for (let i = 0; i < 4; i++) {
+            for (let active of [true, false]) {
+              for (let deletedAt of [null, new Date()]) {
+                for (let text of ['EVEN', 'ODD']) {
+                  brandsData.push({
+                    name: `Brand ${j++} ${text}`,
+                    active,
+                    deletedAt,
+                  });
+                }
+              }
+            }
+          }
+          const ret = await brandRepo.save(brandsData);
         });
-      }
 
-      describe.each([
-        {
-          description: 'active and deleted',
-          active: ActiveFilter.ACTIVE,
-          deleted: DeletedFilter.DELETED,
-          pageSize: 3,
-        },
-        {
-          description: 'active and not deleted',
-          active: ActiveFilter.ACTIVE,
-          deleted: DeletedFilter.NOT_DELETED,
-          pageSize: 3,
-        },
-        {
-          description: 'active and deleted or not deleted',
-          active: ActiveFilter.ACTIVE,
-          deleted: DeletedFilter.ALL,
-          pageSize: 6,
-        },
+        async function findAndCountBrands(
+          query,
+          active: ActiveFilter,
+          deleted: DeletedFilter,
+          page: number,
+          pageSize: number,
+          order: any,
+        ): Promise<{ results: BrandEntity[]; count: number }> {
+          let findManyOptions: any = { where: {} };
+          // query
+          if (query) {
+            findManyOptions.where['name'] = ILike(`%EVEN%`);
+          }
+          // active
+          if (active == ActiveFilter.ACTIVE) {
+            findManyOptions.where.active = true;
+          } else if (active == ActiveFilter.INACTIVE) {
+            findManyOptions.where.active = false;
+          }
+          // deleted
+          if (deleted == DeletedFilter.DELETED) {
+            findManyOptions.where.deletedAt = Not(IsNull());
+            findManyOptions.withDeleted = true;
+          } else if (deleted == DeletedFilter.ALL) {
+            findManyOptions.withDeleted = true;
+          }
+          // sort
+          if (order) {
+            findManyOptions.order = order;
+          }
+          findManyOptions.take = pageSize;
+          findManyOptions.skip = (page - 1) * pageSize;
+          const [results, count] = await brandRepo.findAndCount(
+            findManyOptions,
+          );
+          return { results, count };
+        }
 
-        {
-          description: 'inactive and deleted',
-          active: ActiveFilter.INACTIVE,
-          deleted: DeletedFilter.DELETED,
-          pageSize: 3,
-        },
-        {
-          description: 'inactive and not deleted',
-          active: ActiveFilter.INACTIVE,
-          deleted: DeletedFilter.NOT_DELETED,
-          pageSize: 3,
-        },
-        {
-          description: 'inactive and deleted or not deleted',
-          active: ActiveFilter.INACTIVE,
-          deleted: DeletedFilter.ALL,
-          pageSize: 6,
-        },
-
-        {
-          description: 'active or inactive and deleted',
-          active: ActiveFilter.ALL,
-          deleted: DeletedFilter.DELETED,
-          pageSize: 6,
-        },
-        {
-          description: 'active or inactive and not deleted',
-          active: ActiveFilter.ALL,
-          deleted: DeletedFilter.NOT_DELETED,
-          pageSize: 6,
-        },
-        {
-          description: 'active or inactive and deleted or not deleted',
-          active: ActiveFilter.ALL,
-          deleted: DeletedFilter.ALL,
-          pageSize: 12,
-        },
-      ])(
-        'Should do text filtering when brand is $description',
-        ({ description, active, deleted, pageSize }) => {
-          it(`should get first page when ${description}`, async () => {
-            await testCombinedParameters({
-              active,
-              deleted,
-              page: 1,
-              pageSize,
-            });
+        async function testCombinedParameters(options: {
+          active: ActiveFilter;
+          deleted: DeletedFilter;
+          page: number;
+          pageSize: number;
+        }) {
+          const { active, deleted, page, pageSize } = options;
+          const query = 'EVEN';
+          const filter = `%EVEN%`;
+          const order = { name: 'asc' };
+          const { results, count } = await findAndCountBrands(
+            filter,
+            active,
+            deleted,
+            page,
+            pageSize,
+            order,
+          );
+          const ret = await brandService.find({
+            query,
+            active,
+            deleted,
+            page,
+            pageSize,
+            orderBy: [BrandOrder.NAME_ASC],
           });
-
-          it(`should get second page`, async () => {
-            await testCombinedParameters({
-              active,
-              deleted,
-              page: 2,
-              pageSize,
-            });
+          expect(ret).toEqual({
+            count,
+            page,
+            pageSize,
+            results: results,
           });
-        },
-      );
+        }
+
+        describe.each([
+          {
+            description: 'active and deleted',
+            active: ActiveFilter.ACTIVE,
+            deleted: DeletedFilter.DELETED,
+            pageSize: 3,
+          },
+          {
+            description: 'active and not deleted',
+            active: ActiveFilter.ACTIVE,
+            deleted: DeletedFilter.NOT_DELETED,
+            pageSize: 3,
+          },
+          {
+            description: 'active and deleted or not deleted',
+            active: ActiveFilter.ACTIVE,
+            deleted: DeletedFilter.ALL,
+            pageSize: 6,
+          },
+
+          {
+            description: 'inactive and deleted',
+            active: ActiveFilter.INACTIVE,
+            deleted: DeletedFilter.DELETED,
+            pageSize: 3,
+          },
+          {
+            description: 'inactive and not deleted',
+            active: ActiveFilter.INACTIVE,
+            deleted: DeletedFilter.NOT_DELETED,
+            pageSize: 3,
+          },
+          {
+            description: 'inactive and deleted or not deleted',
+            active: ActiveFilter.INACTIVE,
+            deleted: DeletedFilter.ALL,
+            pageSize: 6,
+          },
+
+          {
+            description: 'active or inactive and deleted',
+            active: ActiveFilter.ALL,
+            deleted: DeletedFilter.DELETED,
+            pageSize: 6,
+          },
+          {
+            description: 'active or inactive and not deleted',
+            active: ActiveFilter.ALL,
+            deleted: DeletedFilter.NOT_DELETED,
+            pageSize: 6,
+          },
+          {
+            description: 'active or inactive and deleted or not deleted',
+            active: ActiveFilter.ALL,
+            deleted: DeletedFilter.ALL,
+            pageSize: 12,
+          },
+        ])(
+          'Should do text filtering when brand is $description',
+          ({ description, active, deleted, pageSize }) => {
+            it(`should get first page when ${description}`, async () => {
+              await testCombinedParameters({
+                active,
+                deleted,
+                page: 1,
+                pageSize,
+              });
+            });
+
+            it(`should get second page`, async () => {
+              await testCombinedParameters({
+                active,
+                deleted,
+                page: 2,
+                pageSize,
+              });
+            });
+          },
+        );
+      });
     });
   });
 

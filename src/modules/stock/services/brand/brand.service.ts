@@ -7,17 +7,17 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
 import { FindManyOptions, ILike, IsNull, Not, Repository } from 'typeorm';
-import { FilteringRequestDTO } from '../../../system/dtos/request/filtering/filtering.request.dto';
 import { PaginationConfig } from '../../../system/dtos/request/pagination/configs/pagination.config';
-import { PaginationRequestDTO } from '../../../system/dtos/request/pagination/pagination.request.dto';
 import { PaginatedResponseDTO } from '../../../system/dtos/response/pagination/pagination.response.dto';
 import { SuccessResponseDto } from '../../../system/dtos/response/pagination/success.response.dto';
 import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
 import { validateOrThrowError } from '../../../system/utils/validation';
 import { CreateBrandRequestDTO } from '../../dtos/request/create-brand/create-brand.request.dto';
+import { FindBrandRequestDTO } from '../../dtos/request/find-brand/find-brand.request.dto';
 import { UpdateBrandRequestDTO } from '../../dtos/request/update-brand/update-brand.request.dto';
-import { BrandMessage } from '../../enums/brand-messages/brand-messages.enum';
+import { BrandMessage } from '../../enums/messages/brand-messages/brand-messages.enum';
+import { BrandOrder } from '../../enums/sort/brand-order/brand-order.enum';
 import { BrandEntity } from '../../models/brand/brand.entity';
 
 @Injectable()
@@ -55,29 +55,31 @@ export class BrandService {
   }
 
   async find(
-    filtering?: FilteringRequestDTO,
-    pagination?: PaginationRequestDTO,
+    findBrandDTO?: FindBrandRequestDTO,
   ): Promise<PaginatedResponseDTO<BrandEntity>> {
-    filtering = plainToInstance(FilteringRequestDTO, filtering || {});
-    await validateOrThrowError(filtering || {}, FilteringRequestDTO);
-    pagination = plainToInstance(PaginationRequestDTO, pagination || {});
-    await validateOrThrowError(pagination || {}, PaginationRequestDTO);
-    const { query, active, deleted } = filtering;
-    const { page, pageSize, skip, take } = pagination;
+    findBrandDTO = plainToInstance(FindBrandRequestDTO, findBrandDTO || {});
+    await validateOrThrowError(findBrandDTO || {}, FindBrandRequestDTO);
+
+    let { query, active, deleted, page, pageSize, orderBy } = findBrandDTO;
     const findManyOptions: FindManyOptions = {};
-    findManyOptions.take = take || PaginationConfig.DEFAULT_PAGE_SIZE;
-    findManyOptions.skip = skip || 0;
+
     findManyOptions.where = {};
-    if (active == ActiveFilter.ACTIVE) {
-      findManyOptions.where.active = true;
-    } else if (active == ActiveFilter.INACTIVE) {
-      findManyOptions.where.active = false;
-    }
+
+    // text query
     if (query != null) {
       if (query) {
         findManyOptions.where.name = ILike(`%${query.replace(' ', '%')}%`);
       }
     }
+
+    // active
+    if (active == ActiveFilter.ACTIVE) {
+      findManyOptions.where.active = true;
+    } else if (active == ActiveFilter.INACTIVE) {
+      findManyOptions.where.active = false;
+    }
+
+    // deleted
     if (deleted == DeletedFilter.DELETED) {
       findManyOptions.where.deletedAt = Not(IsNull());
       findManyOptions.withDeleted = true;
@@ -85,6 +87,21 @@ export class BrandService {
       findManyOptions.withDeleted = true;
     }
 
+    // pagination
+    page = page || PaginationConfig.DEFAULT_PAGE;
+    pageSize = pageSize || PaginationConfig.DEFAULT_PAGE_SIZE;
+    findManyOptions.take = pageSize;
+    findManyOptions.skip = (page - 1) * pageSize;
+
+    // sort
+    orderBy = orderBy || [BrandOrder.NAME_ASC];
+    findManyOptions.order = {};
+    for (let orderItem of orderBy) {
+      const [column, direction] = orderItem.split('_');
+      findManyOptions.order[column] = direction;
+    }
+
+    // results
     const [results, count] = await this.brandRepo.findAndCount(findManyOptions);
     return new PaginatedResponseDTO(results, count, page, pageSize);
   }

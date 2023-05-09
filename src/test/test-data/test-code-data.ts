@@ -1,4 +1,4 @@
-import { CodeMessage } from '../../modules/stock/enums/code-messages/code-messages.enum';
+import { CodeMessage } from '../../modules/stock/enums/messages/code-messages/code-messages.enum';
 import {
   TestAcceptData,
   TestData,

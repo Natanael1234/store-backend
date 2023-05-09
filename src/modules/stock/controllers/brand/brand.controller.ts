@@ -10,12 +10,11 @@ import {
 } from '@nestjs/common';
 import { SkipAuthentication } from '../../../authentication/decorators/skip-authentication';
 import { Role } from '../../../authentication/enums/role/role.enum';
-import { FilteringRequestDTO } from '../../../system/dtos/request/filtering/filtering.request.dto';
-import { PaginationRequestDTO } from '../../../system/dtos/request/pagination/pagination.request.dto';
 import { PaginatedResponseDTO } from '../../../system/dtos/response/pagination/pagination.response.dto';
 import { SuccessResponseDto } from '../../../system/dtos/response/pagination/success.response.dto';
 import { Roles } from '../../../user/decorators/roles/roles.decorator';
 import { CreateBrandRequestDTO } from '../../dtos/request/create-brand/create-brand.request.dto';
+import { FindBrandRequestDTO } from '../../dtos/request/find-brand/find-brand.request.dto';
 import { UpdateBrandRequestDTO } from '../../dtos/request/update-brand/update-brand.request.dto';
 import { BrandEntity } from '../../models/brand/brand.entity';
 import { BrandService } from '../../services/brand/brand.service';
@@ -43,10 +42,9 @@ export class BrandController {
   // @Roles(Role.ROOT, Role.ADMIN)
   @SkipAuthentication()
   find(
-    @Query() filtering: FilteringRequestDTO,
-    @Query() pagination: PaginationRequestDTO,
+    @Query() findBrandDTO: FindBrandRequestDTO,
   ): Promise<PaginatedResponseDTO<BrandEntity>> {
-    return this.brandService.find(filtering, pagination);
+    return this.brandService.find(findBrandDTO);
   }
 
   @Get('/:brandId')

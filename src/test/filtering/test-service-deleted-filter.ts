@@ -9,7 +9,7 @@ export abstract class AbstractTestServiceDeletedFilter<T> {
     fndManyOptions: FindManyOptions,
   ): Promise<[results: T[], count: number]>;
 
-  abstract findViaService(options?: {
+  abstract findViaService(queryParams?: {
     deleted?: DeletedFilter;
   }): Promise<PaginatedResponseDTO<T>>;
 

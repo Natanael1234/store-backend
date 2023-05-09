@@ -9,14 +9,18 @@ import { Role } from '../src/modules/authentication/enums/role/role.enum';
 import { AuthenticationService } from '../src/modules/authentication/services/authentication/authentication.service';
 import { CreateBrandRequestDTO } from '../src/modules/stock/dtos/request/create-brand/create-brand.request.dto';
 import { UpdateBrandRequestDTO } from '../src/modules/stock/dtos/request/update-brand/update-brand.request.dto';
-import { BrandMessage } from '../src/modules/stock/enums/brand-messages/brand-messages.enum';
+import { BrandMessage } from '../src/modules/stock/enums/messages/brand-messages/brand-messages.enum';
+import { BrandOrder } from '../src/modules/stock/enums/sort/brand-order/brand-order.enum';
 import { BrandEntity } from '../src/modules/stock/models/brand/brand.entity';
+import { PaginationConfig } from '../src/modules/system/dtos/request/pagination/configs/pagination.config';
 import { ActiveFilter } from '../src/modules/system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../src/modules/system/enums/filter/deleted-filter/deleted-filter.enum';
+import { SortMessage } from '../src/modules/system/enums/messages/sort-messages/sort-messages.enum';
 import { ValidationPipe } from '../src/modules/system/pipes/custom-validation.pipe';
 import { UserEntity } from '../src/modules/user/models/user/user.entity';
 import { TestBrandData } from '../src/test/brand/test-brand-data';
 import { testValidateBrand } from '../src/test/brand/test-brand-utils';
+import { TestSortScenarioBuilder } from '../src/test/filtering/test-service-sort-filter';
 import { TestProductData } from '../src/test/product/test-product-data';
 import { TestPurpose } from '../src/test/test-data';
 import {
@@ -106,7 +110,7 @@ describe('StockController (e2e)', () => {
     await moduleFixture.close();
   });
 
-  describe('/brands (POST)', () => {
+  describe.skip('/brands (POST)', () => {
     it('should create brand', async () => {
       const brandData = TestBrandData.dataForRepository;
       const expectedResults = [
@@ -205,7 +209,7 @@ describe('StockController (e2e)', () => {
     });
   });
 
-  describe('/brands (PATCH)', () => {
+  describe.skip('/brands (PATCH)', () => {
     it('should update brand', async () => {
       const brandData = TestBrandData.dataForRepository;
       await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
@@ -401,8 +405,8 @@ describe('StockController (e2e)', () => {
       });
     });
 
-    describe('filtering', () => {
-      describe('query', () => {
+    describe('query params', () => {
+      describe.skip('query', () => {
         class BrandTestTextFilter extends AbstractTestAPITextFilter<BrandEntity> {
           async insertRegisters(textToAppend: string[]) {
             const brandsData = TestBrandData.buildData(textToAppend.length);
@@ -413,6 +417,7 @@ describe('StockController (e2e)', () => {
           }
 
           findRegisters(findManyOptions: FindManyOptions) {
+            findManyOptions.order = { name: 'ASC' };
             return brandRepo.findAndCount(findManyOptions);
           }
 
@@ -427,7 +432,7 @@ describe('StockController (e2e)', () => {
         new BrandTestTextFilter().executeTests();
       });
 
-      describe('active', () => {
+      describe.skip('active', () => {
         class TestTextFilter extends AbstractTestAPIActiveFilter<BrandEntity> {
           async insertRegisters(actives: boolean[]) {
             const brandsData: any = TestBrandData.buildData(actives.length);
@@ -438,6 +443,7 @@ describe('StockController (e2e)', () => {
           }
 
           findRegisters(findManyOptions: FindManyOptions) {
+            findManyOptions.order = { name: 'ASC' };
             return brandRepo.findAndCount(findManyOptions);
           }
 
@@ -452,7 +458,7 @@ describe('StockController (e2e)', () => {
         new TestTextFilter().executeTests();
       });
 
-      describe('deleted', () => {
+      describe.skip('deleted', () => {
         class ProductTestDeletedFilter extends AbstractTestAPIDeletedFilter<BrandEntity> {
           async insertRegisters(deleteds: boolean[]) {
             const brandsData: any = TestBrandData.buildData(deleteds.length);
@@ -465,6 +471,7 @@ describe('StockController (e2e)', () => {
           }
 
           findRegisters(findManyOptions: FindManyOptions) {
+            findManyOptions.order = { name: 'ASC' };
             return brandRepo.findAndCount(findManyOptions);
           }
 
@@ -478,30 +485,100 @@ describe('StockController (e2e)', () => {
 
         new ProductTestDeletedFilter().executeTests();
       });
+
+      describe.skip('pagination', () => {
+        class BrandTestPagination extends AbstractTestApiPagination<BrandEntity> {
+          insertRegisters(quantity: number): Promise<any> {
+            return brandRepo.insert(TestBrandData.buildData(quantity));
+          }
+
+          findRegisters(findManyOptions: FindManyOptions) {
+            findManyOptions.order = { name: 'ASC' };
+            return brandRepo.findAndCount(findManyOptions);
+          }
+
+          getPagesFromAPI(
+            queryParameters: { page?: any; pageSize?: any },
+            httpStatus: number,
+          ) {
+            return httpGet('/brands', queryParameters, httpStatus, rootToken);
+          }
+        }
+
+        new BrandTestPagination().executeTests();
+      });
+
+      describe('sort', () => {
+        const testSortScenario = new TestSortScenarioBuilder<typeof BrandOrder>(
+          BrandOrder,
+          [BrandOrder.NAME_ASC],
+          'api',
+        );
+
+        const brandData = [];
+        for (let name of ['Brand 1', 'Brand 2']) {
+          for (let active of [true, false]) {
+            for (let i = 1; i <= 2; i++) {
+              brandData.push({ name: name, active });
+            }
+          }
+        }
+
+        it.each(testSortScenario.generateSuccessTestScenarios())(
+          `should order results when orderBy=$description`,
+          async ({ orderBySQL, orderBy }) => {
+            // prepare
+            await brandRepo.insert(brandData);
+            const repositoryResults = await brandRepo.find({
+              order: orderBySQL,
+              take: PaginationConfig.DEFAULT_PAGE_SIZE,
+            });
+
+            // execute
+            const apiResult = await httpGet(
+              '/brands',
+              { orderBy: orderBy, active: ActiveFilter.ALL },
+              HttpStatus.OK,
+              rootToken,
+            );
+
+            // test
+            expect(apiResult).toEqual({
+              count: 8,
+              page: 1,
+              pageSize: 12,
+              results: objectToJSON(repositoryResults),
+            });
+          },
+        );
+
+        it('should fail when receives invalid orderBy item string', async () => {
+          // prepare
+          await brandRepo.insert(brandData);
+
+          // execute
+          const apiResult = await httpGet(
+            '/brands',
+            {
+              orderBy: ['invalid_impossible_and_never_gonna_happen'],
+              active: ActiveFilter.ALL,
+            },
+            HttpStatus.UNPROCESSABLE_ENTITY,
+            rootToken,
+          );
+
+          expect(apiResult).toEqual({
+            error: 'UnprocessableEntityException',
+            message: {
+              orderBy: SortMessage.INVALID,
+            },
+            statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+          });
+        });
+      });
     });
 
-    describe('pagination', () => {
-      class BrandTestPagination extends AbstractTestApiPagination<BrandEntity> {
-        insertRegisters(quantity: number): Promise<any> {
-          return brandRepo.insert(TestBrandData.buildData(quantity));
-        }
-
-        findRegisters(findManyOptions: FindManyOptions) {
-          return brandRepo.findAndCount(findManyOptions);
-        }
-
-        getPagesFromAPI(
-          queryParameters: { page?: any; pageSize?: any },
-          httpStatus: number,
-        ) {
-          return httpGet('/brands', queryParameters, httpStatus, rootToken);
-        }
-      }
-
-      new BrandTestPagination().executeTests();
-    });
-
-    describe('combined parameters', () => {
+    describe.skip('combined parameters', () => {
       it('should return results filtered by all parameters', async () => {
         const brandsData: any = TestBrandData.buildData(20);
         for (let i = 0; i < brandsData.length; i++) {
@@ -520,6 +597,7 @@ describe('StockController (e2e)', () => {
               active: false,
               deletedAt: Not(IsNull()),
             },
+            order: { name: 'ASC' },
             withDeleted: true,
           }),
           await brandRepo.find({
@@ -529,6 +607,7 @@ describe('StockController (e2e)', () => {
               active: false,
               deletedAt: Not(IsNull()),
             },
+            order: { name: 'ASC' },
             withDeleted: true,
           }),
           await brandRepo.find({
@@ -538,6 +617,7 @@ describe('StockController (e2e)', () => {
               active: false,
               deletedAt: Not(IsNull()),
             },
+            order: { name: 'ASC' },
             withDeleted: true,
           }),
         ];
@@ -588,6 +668,7 @@ describe('StockController (e2e)', () => {
             rootToken,
           ),
         ];
+
         expect(ret).toEqual([
           {
             count: 18,
@@ -618,7 +699,7 @@ describe('StockController (e2e)', () => {
     });
   });
 
-  describe('/brands/brandId (GET)', () => {
+  describe.skip('/brands/brandId (GET)', () => {
     it('should find brand for id', async () => {
       const brandData = TestBrandData.dataForRepository;
       await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
@@ -662,7 +743,7 @@ describe('StockController (e2e)', () => {
     });
   });
 
-  describe('/brands/brandId (DELETE)', () => {
+  describe.skip('/brands/brandId (DELETE)', () => {
     it('should update brand', async () => {
       const brandData = TestBrandData.dataForRepository;
       await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);

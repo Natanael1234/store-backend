@@ -9,7 +9,7 @@ export abstract class AbstractTestServiceActiveFilter<T> {
     findManyOptions: FindManyOptions,
   ): Promise<[results: T[], count: number]>;
 
-  abstract findViaService(options?: {
+  abstract findViaService(queryParams?: {
     active?: ActiveFilter;
   }): Promise<PaginatedResponseDTO<T>>;
 

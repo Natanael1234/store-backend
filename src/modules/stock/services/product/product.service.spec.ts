@@ -12,7 +12,7 @@ import { getTestingModule } from '../../../../.jest/test-config.module';
 import { TestBrandData } from '../../../../test/brand/test-brand-data';
 import { AbstractTestServiceActiveFilter } from '../../../../test/filtering/test-service-active-filter';
 import { AbstractTestServiceDeletedFilter } from '../../../../test/filtering/test-service-deleted-filter';
-import { TestServicePagination } from '../../../../test/filtering/test-service-pagination';
+import { AbestractTestServicePagination } from '../../../../test/filtering/test-service-pagination';
 import { AbstractTestServiceTextFilter } from '../../../../test/filtering/test-service-text-filter';
 import { TestProductData } from '../../../../test/product/test-product-data';
 import { testValidateProduct } from '../../../../test/product/test-product-utils';
@@ -50,8 +50,8 @@ import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-
 import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
 import { CreateProductRequestDTO } from '../../dtos/request/create-product/create-product.request.dto';
 import { UpdateProductRequestDTO } from '../../dtos/request/update-product/update-product.request.dto';
-import { BrandMessage } from '../../enums/brand-messages/brand-messages.enum';
-import { ProductMessage } from '../../enums/product-messages/product-messages.enum';
+import { BrandMessage } from '../../enums/messages/brand-messages/brand-messages.enum';
+import { ProductMessage } from '../../enums/messages/product-messages/product-messages.enum';
 import { BrandEntity } from '../../models/brand/brand.entity';
 import { ProductEntity } from '../../models/product/product.entity';
 import { ProductService } from './product.service';
@@ -618,7 +618,7 @@ describe('StockService', () => {
     });
 
     describe('pagination', () => {
-      class TestUserServicePagination extends TestServicePagination<ProductEntity> {
+      class TestUserServicePagination extends AbestractTestServicePagination<ProductEntity> {
         async insertViaRepository(quantity: number) {
           await brandRepo.insert(TestBrandData.buildData(1));
           await productRepo.insert(TestProductData.buildData(quantity));

@@ -4,12 +4,12 @@ import { DeletedFilter } from '../../src/modules/system/enums/filter/deleted-fil
 import { DeletedMessage } from '../../src/modules/system/enums/messages/deleted-messages/deleted-messages.enum';
 import { objectToJSON } from './instance-to-json';
 
-export abstract class AbstractTestAPIDeletedFilter<T> {
+export abstract class AbstractTestAPIDeletedFilter<EntityType> {
   abstract insertRegisters(deletedIds: boolean[]): Promise<any>;
 
   abstract findRegisters(
     findManyOptions: FindManyOptions,
-  ): Promise<[pages: T[], count: number]>;
+  ): Promise<[pages: EntityType[], count: number]>;
 
   abstract getPagesFromAPI(
     queryParameters: {
@@ -20,7 +20,7 @@ export abstract class AbstractTestAPIDeletedFilter<T> {
     count: number;
     page: number;
     pageSize: number;
-    results: T[];
+    results: EntityType[];
   }>;
 
   executeTests() {

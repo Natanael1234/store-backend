@@ -11,7 +11,7 @@ import { FindManyOptions, Repository } from 'typeorm';
 import { getTestingModule } from '../../../../.jest/test-config.module';
 import { AbstractTestServiceActiveFilter } from '../../../../test/filtering/test-service-active-filter';
 import { AbstractTestServiceDeletedFilter } from '../../../../test/filtering/test-service-deleted-filter';
-import { TestServicePagination } from '../../../../test/filtering/test-service-pagination';
+import { AbestractTestServicePagination } from '../../../../test/filtering/test-service-pagination';
 import { AbstractTestServiceTextFilter } from '../../../../test/filtering/test-service-text-filter';
 import { TestPurpose } from '../../../../test/test-data';
 import { getActiveErrorDataList } from '../../../../test/test-data/test-active-data';
@@ -437,7 +437,7 @@ describe('UserService', () => {
     });
 
     describe('pagination', () => {
-      class TestUserServicePagination extends TestServicePagination<UserEntity> {
+      class TestUserServicePagination extends AbestractTestServicePagination<UserEntity> {
         async insertViaRepository(quantity: number) {
           const inserData: any = await TestUserData.buildNormalizedData(
             encryptionService,
