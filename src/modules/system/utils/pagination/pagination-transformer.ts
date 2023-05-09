@@ -1,35 +1,65 @@
-import { plainToInstance } from 'class-transformer';
-import { PaginationRequestDTO } from '../../dtos/request/pagination/pagination.request.dto';
-import { validateOrThrowError } from '../validation';
+import { PaginationConfig } from '../../dtos/request/pagination/configs/pagination.config';
 
-const defaultPageSize = 12;
-
-export function transformPaginationForQuery(
-  page: number,
-  pageSize: number,
-): {
-  take: number;
-  skip: number;
-} {
-  if (!page || page < 1) page = 1;
-  if (!pageSize || pageSize < 1) pageSize = defaultPageSize;
-  const skip = pageSize * (page - 1);
-  const take = pageSize;
-  return { take, skip };
+function limitValue(value: any, min: number, max?: number): any {
+  if (typeof value != 'number') return value;
+  if (min != null) {
+    value = Math.max(min, value);
+  }
+  if (max != null) {
+    value = Math.min(max, value);
+  }
+  return value;
 }
 
-export async function transformPaginationForQueryOrThrows(
-  pagination?: PaginationRequestDTO,
-  pageSize?: number,
-): Promise<{ take: number; skip: number }> {
-  if (!pageSize || pageSize < 1) pageSize = defaultPageSize;
-  if (!pagination) {
-    pagination = plainToInstance(PaginationRequestDTO, { page: 1 });
+function valueToNumber(
+  value,
+  defaultValue: number,
+  min: number,
+  max?: number,
+): number {
+  if (value === null || value === undefined) {
+    return limitValue(defaultValue, min, max);
+  } else if (Number.isInteger(value)) {
+    return limitValue(value, min, max);
+  } else if (typeof value == 'number') {
+    return value;
+  } else if (typeof value == 'string') {
+    const num = Number(value);
+    if (!isNaN(num) && Number.isInteger(num)) {
+      return limitValue(num, min, max);
+    } else if (!isNaN(num)) {
+      return num;
+    }
   }
-  await validateOrThrowError(pagination, PaginationRequestDTO);
-  const paginationForQuery = transformPaginationForQuery(
-    pagination?.page,
-    pageSize,
+  return NaN;
+}
+
+export function normalizePageValue(value: any) {
+  return valueToNumber(
+    value,
+    PaginationConfig.DEFAULT_PAGE,
+    PaginationConfig.MIN_PAGE,
   );
-  return paginationForQuery;
+}
+
+export function normalizePageSizeValue(value: any) {
+  return valueToNumber(
+    value,
+    PaginationConfig.DEFAULT_PAGE_SIZE,
+    PaginationConfig.MIN_PAGE_SIZE,
+    PaginationConfig.MAX_PAGE_SIZE,
+  );
+}
+
+export function normalizePaginationSkip(page: any, pageSize: any) {
+  pageSize = normalizePageSizeValue(pageSize);
+  if (pageSize == null || Number.isNaN(pageSize)) return NaN;
+  page = normalizePageValue(page);
+  if (page == null || Number.isNaN(page)) return NaN;
+  const skip = (page - 1) * pageSize;
+  return skip == 0 ? 0 : skip;
+}
+
+export function normalizePaginationTake(pageSize: any) {
+  return normalizePageSizeValue(pageSize);
 }

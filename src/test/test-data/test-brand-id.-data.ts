@@ -1,4 +1,4 @@
-import { BrandIdMessage } from '../../modules/stock/enums/brand-id-messages/brand-id-quantity-messages.enum';
+import { BrandIdMessage } from '../../modules/stock/enums/messages/brand-id-messages/brand-id-quantity-messages.enum';
 import {
   TestAcceptData,
   TestData,

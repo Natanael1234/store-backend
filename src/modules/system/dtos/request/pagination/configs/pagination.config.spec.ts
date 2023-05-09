@@ -1,6 +1,6 @@
 import { PaginationConfig } from './pagination.config';
 
-describe('PaginationRequestDTO', () => {
+describe('PaginationConfig', () => {
   it('should be defined', () => {
     expect(PaginationConfig).toBeDefined();
   });

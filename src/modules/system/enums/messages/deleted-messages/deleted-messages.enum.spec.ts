@@ -1,6 +1,6 @@
 import { DeletedMessage } from './deleted-messages.enum';
 
-describe('ActiveMessage', () => {
+describe('DeletedMessage', () => {
   it('should be defined', () => {
     expect(DeletedMessage).toBeDefined();
   });

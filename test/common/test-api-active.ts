@@ -4,12 +4,12 @@ import { ActiveFilter } from '../../src/modules/system/enums/filter/active-filte
 import { ActiveMessage } from '../../src/modules/system/enums/messages/active-messages/active-messages.enum';
 import { objectToJSON } from './instance-to-json';
 
-export abstract class AbstractTestAPIActiveFilter<T> {
+export abstract class AbstractTestAPIActiveFilter<EntityType> {
   abstract insertRegisters(active: boolean[]): Promise<any>;
 
   abstract findRegisters(
     findManyOptions: FindManyOptions,
-  ): Promise<[pages: T[], count: number]>;
+  ): Promise<[pages: EntityType[], count: number]>;
 
   abstract getPagesFromAPI(
     queryParameters: { active?: any },
@@ -18,7 +18,7 @@ export abstract class AbstractTestAPIActiveFilter<T> {
     count: number;
     page: number;
     pageSize: number;
-    results: T[];
+    results: EntityType[];
   }>;
 
   executeTests() {

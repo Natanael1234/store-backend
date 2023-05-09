@@ -3,14 +3,14 @@ import { FindManyOptions } from 'typeorm';
 import { PaginatedResponseDTO } from '../../modules/system/dtos/response/pagination/pagination.response.dto';
 import { PaginationMessage } from '../../modules/system/enums/messages/pagination-messages/pagination-messages.enum';
 
-export abstract class TestServicePagination<T> {
+export abstract class AbestractTestServicePagination<T> {
   abstract insertViaRepository(quantity: number): Promise<any>;
 
   abstract findViaRepository(
     findManyOptions: FindManyOptions,
   ): Promise<[results: T[], count: number]>;
 
-  abstract findViaService(pagination?: {
+  abstract findViaService(queryParams?: {
     page?: number;
     pageSize?: number;
   }): Promise<PaginatedResponseDTO<T>>;
@@ -46,7 +46,7 @@ export abstract class TestServicePagination<T> {
   }
 
   executeTests() {
-    it('should paginate serch registers without sending pagination params', async () => {
+    it('should paginate search registers without sending pagination params', async () => {
       await this.testPagination(null);
     });
 

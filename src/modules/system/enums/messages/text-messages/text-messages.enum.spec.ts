@@ -1,6 +1,6 @@
 import { TextMessage } from './text-messages.enum';
 
-describe('ActiveMessage', () => {
+describe('TextMessage', () => {
   it('should be defined', () => {
     expect(TextMessage).toBeDefined();
   });

@@ -5,12 +5,8 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindManyOptions, ILike, IsNull, Not, Repository } from 'typeorm';
-import { validateOrThrowError } from '../../../system/utils/validation';
-import { CreateProductRequestDTO } from '../../dtos/request/create-product/create-product.request.dto';
-import { UpdateProductRequestDTO } from '../../dtos/request/update-product/update-product.request.dto';
-
 import { plainToInstance } from 'class-transformer';
+import { FindManyOptions, ILike, IsNull, Not, Repository } from 'typeorm';
 import { FilteringRequestDTO } from '../../../system/dtos/request/filtering/filtering.request.dto';
 import { PaginationConfig } from '../../../system/dtos/request/pagination/configs/pagination.config';
 import { PaginationRequestDTO } from '../../../system/dtos/request/pagination/pagination.request.dto';
@@ -18,8 +14,11 @@ import { PaginatedResponseDTO } from '../../../system/dtos/response/pagination/p
 import { SuccessResponseDto } from '../../../system/dtos/response/pagination/success.response.dto';
 import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
-import { BrandMessage } from '../../enums/brand-messages/brand-messages.enum';
-import { ProductMessage } from '../../enums/product-messages/product-messages.enum';
+import { validateOrThrowError } from '../../../system/utils/validation';
+import { CreateProductRequestDTO } from '../../dtos/request/create-product/create-product.request.dto';
+import { UpdateProductRequestDTO } from '../../dtos/request/update-product/update-product.request.dto';
+import { BrandMessage } from '../../enums/messages/brand-messages/brand-messages.enum';
+import { ProductMessage } from '../../enums/messages/product-messages/product-messages.enum';
 import { BrandEntity } from '../../models/brand/brand.entity';
 import { ProductEntity } from '../../models/product/product.entity';
 

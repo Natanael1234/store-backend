@@ -1,4 +1,4 @@
-import { ModelMessage } from '../../modules/stock/enums/model-messages/model-messages.enum';
+import { ModelMessage } from '../../modules/stock/enums/messages/model-messages/model-messages.enum';
 import {
   TestAcceptData,
   TestData,

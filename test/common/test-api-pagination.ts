@@ -3,12 +3,12 @@ import { FindManyOptions } from 'typeorm';
 import { PaginationMessage } from '../../src/modules/system/enums/messages/pagination-messages/pagination-messages.enum';
 import { objectToJSON } from './instance-to-json';
 
-export abstract class AbstractTestApiPagination<T> {
+export abstract class AbstractTestApiPagination<EntityType> {
   public abstract insertRegisters(quantity: number): Promise<any>;
 
   public abstract findRegisters(
     findManyOptions: FindManyOptions,
-  ): Promise<[pages: T[], count: number]>;
+  ): Promise<[pages: EntityType[], count: number]>;
 
   public abstract getPagesFromAPI(
     queryParameters: {
@@ -20,7 +20,7 @@ export abstract class AbstractTestApiPagination<T> {
     count: number;
     page: number;
     pageSize: number;
-    results: T[];
+    results: EntityType[];
   }>;
 
   executeTests(options?: { ignoreNoRegisters }) {

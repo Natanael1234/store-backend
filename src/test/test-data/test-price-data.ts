@@ -1,4 +1,4 @@
-import { PriceMessage } from '../../modules/stock/enums/price-messages/price-messages.enum';
+import { PriceMessage } from '../../modules/stock/enums/messages/price-messages/price-messages.enum';
 import {
   TestAcceptData,
   TestData,

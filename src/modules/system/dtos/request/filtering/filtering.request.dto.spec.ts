@@ -36,7 +36,7 @@ describe('FilteringRequestDTO', () => {
       },
     },
   ];
-  const queryAccepts: AcceptType[] = [
+  const testTextSearchAcceptData: AcceptType[] = [
     {
       description:
         'should pass validation and transform properties when query is defined',
@@ -69,7 +69,7 @@ describe('FilteringRequestDTO', () => {
     },
   ];
 
-  const activeAccepts: AcceptType[] = [
+  const testActiveAcceptData: AcceptType[] = [
     {
       description:
         'should pass validation and transform properties when "active" is null',
@@ -121,7 +121,7 @@ describe('FilteringRequestDTO', () => {
       },
     },
   ];
-  const deletedAccepts: AcceptType[] = [
+  const testDeletedAcceptData: AcceptType[] = [
     {
       description:
         'should pass validation and transform properties when "deleted" is null',
@@ -176,9 +176,9 @@ describe('FilteringRequestDTO', () => {
 
   describe.each([
     { property: 'general', accepts: generalAccepts },
-    { property: 'query', accepts: queryAccepts },
-    { property: 'active', accepts: activeAccepts },
-    { property: 'deleted', accepts: deletedAccepts },
+    { property: 'query', accepts: testTextSearchAcceptData },
+    { property: 'active', accepts: testActiveAcceptData },
+    { property: 'deleted', accepts: testDeletedAcceptData },
   ])('$property', ({ accepts }) => {
     it.each(accepts)('$description', async ({ data, expectedResult }) => {
       const errors = await validateFirstError(data, FilteringRequestDTO);
@@ -190,7 +190,7 @@ describe('FilteringRequestDTO', () => {
 
   type ErrorType = { description: string; data: any; constraints: any };
 
-  const queryErrors: ErrorType[] = [
+  const testTextSearchErrorData: ErrorType[] = [
     {
       description: '"query" is boolean',
       data: { query: true },
@@ -218,7 +218,7 @@ describe('FilteringRequestDTO', () => {
     },
   ];
 
-  const activeErrors: ErrorType[] = [
+  const testActiveErrorData: ErrorType[] = [
     {
       description: '"active" is invalid string',
       data: { active: 'aCtivE' },
@@ -256,7 +256,7 @@ describe('FilteringRequestDTO', () => {
     },
   ];
 
-  const deletedErrors: ErrorType[] = [
+  const testDeletedErrorData: ErrorType[] = [
     {
       description: '"deleted" is invalid string',
       data: { deleted: 'dEleteD' },
@@ -295,9 +295,9 @@ describe('FilteringRequestDTO', () => {
   ];
 
   describe.each([
-    { property: 'query', errors: queryErrors },
-    { property: 'active', errors: activeErrors },
-    { property: 'deleted', errors: deletedErrors },
+    { property: 'query', errors: testTextSearchErrorData },
+    { property: 'active', errors: testActiveErrorData },
+    { property: 'deleted', errors: testDeletedErrorData },
   ])('$property', ({ property, errors }) => {
     it.each(errors)(
       'should fail when $description',

@@ -9,8 +9,7 @@ import { Role } from '../src/modules/authentication/enums/role/role.enum';
 import { AuthenticationService } from '../src/modules/authentication/services/authentication/authentication.service';
 import { CreateProductRequestDTO } from '../src/modules/stock/dtos/request/create-product/create-product.request.dto';
 import { UpdateProductRequestDTO } from '../src/modules/stock/dtos/request/update-product/update-product.request.dto';
-import { BrandMessage } from '../src/modules/stock/enums/brand-messages/brand-messages.enum';
-import { ProductMessage } from '../src/modules/stock/enums/product-messages/product-messages.enum';
+import { BrandMessage } from '../src/modules/stock/enums/messages/brand-messages/brand-messages.enum';
 import { BrandEntity } from '../src/modules/stock/models/brand/brand.entity';
 import { ProductEntity } from '../src/modules/stock/models/product/product.entity';
 import { SuccessResponseDto } from '../src/modules/system/dtos/response/pagination/success.response.dto';
@@ -52,6 +51,7 @@ import {
 import { TestDatabaseUtils } from '../src/test/test-database-utils';
 import { objectToJSON } from './common/instance-to-json';
 
+import { ProductMessage } from '../src/modules/stock/enums/messages/product-messages/product-messages.enum';
 import { TestBrandData } from '../src/test/brand/test-brand-data';
 import { TestProductData } from '../src/test/product/test-product-data';
 import { TestUserData } from '../src/test/user/test-user-data';
