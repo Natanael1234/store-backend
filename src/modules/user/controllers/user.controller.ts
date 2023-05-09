@@ -6,10 +6,10 @@ import { FilteringRequestDTO } from '../../system/dtos/request/filtering/filteri
 import { PaginationRequestDTO } from '../../system/dtos/request/pagination/pagination.request.dto';
 import { PaginatedResponseDTO } from '../../system/dtos/response/pagination/pagination.response.dto';
 import { Roles } from '../decorators/roles/roles.decorator';
-import { CreateUserRequestDTO } from '../dtos/create-user/create-user.request.dto';
-import { UpdatePasswordResponseDTO } from '../dtos/update-password.response.dto';
-import { UpdatePasswordRequestDTO } from '../dtos/update-password/update-password.request.dto';
-import { UpdateUserRequestDTO } from '../dtos/update-user/update-user.request.dto';
+import { CreateUserRequestDTO } from '../dtos/request/create-user/create-user.request.dto';
+import { UpdatePasswordRequestDTO } from '../dtos/request/update-password/update-password.request.dto';
+import { UpdateUserRequestDTO } from '../dtos/request/update-user/update-user.request.dto';
+import { UpdatePasswordResponseDTO } from '../dtos/response/update-password/update-password.response.dto';
 import { UserEntity } from '../models/user/user.entity';
 import { UserService } from '../services/user/user.service';
 

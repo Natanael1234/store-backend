@@ -29,7 +29,7 @@ import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/delet
 import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
 import { NameMessage } from '../../../system/enums/messages/name-messages/name-messages.enum';
 import { PasswordMessage } from '../../../system/enums/messages/password-messages/password-messages.enum';
-import { CreateUserRequestDTO } from '../../dtos/create-user/create-user.request.dto';
+import { CreateUserRequestDTO } from '../../dtos/request/create-user/create-user.request.dto';
 import { RoleMessage } from '../../enums/role-messages/role-messages.enum';
 import { UserMessage } from '../../enums/user-messages.ts/user-messages.enum';
 import { UserEntity } from '../../models/user/user.entity';
