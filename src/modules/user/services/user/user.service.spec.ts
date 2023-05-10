@@ -9,10 +9,11 @@ import { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { FindManyOptions, Repository } from 'typeorm';
 import { getTestingModule } from '../../../../.jest/test-config.module';
-import { AbstractTestServiceActiveFilter } from '../../../../test/filtering/test-service-active-filter';
-import { AbstractTestServiceDeletedFilter } from '../../../../test/filtering/test-service-deleted-filter';
-import { AbestractTestServicePagination } from '../../../../test/filtering/test-service-pagination';
-import { AbstractTestServiceTextFilter } from '../../../../test/filtering/test-service-text-filter';
+import { AbstractTestServiceActiveFilter } from '../../../../test/filtering/active/test-service-active-filter';
+import { AbstractTestServiceDeletedFilter } from '../../../../test/filtering/deleted/test-service-deleted-filter';
+import { AbestractTestServicePagination } from '../../../../test/filtering/pagination/test-service-pagination-filter';
+import { TestSortScenarioBuilder } from '../../../../test/filtering/sort/test-service-sort-filter';
+import { AbstractTestServiceTextFilter } from '../../../../test/filtering/text/test-service-text-filter';
 import { TestPurpose } from '../../../../test/test-data';
 import { getActiveErrorDataList } from '../../../../test/test-data/test-active-data';
 import { getEmailErrorDataList } from '../../../../test/test-data/test-email-data';
@@ -23,15 +24,18 @@ import { TestUserData } from '../../../../test/user/test-user-data';
 import { testValidateUser } from '../../../../test/user/test-user-utils';
 import { Role } from '../../../authentication/enums/role/role.enum';
 import { AuthenticationService } from '../../../authentication/services/authentication/authentication.service';
+import { PaginationConfig } from '../../../system/dtos/request/pagination/configs/pagination.config';
 import { EncryptionService } from '../../../system/encryption/services/encryption/encryption.service';
 import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
 import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
 import { NameMessage } from '../../../system/enums/messages/name-messages/name-messages.enum';
 import { PasswordMessage } from '../../../system/enums/messages/password-messages/password-messages.enum';
+import { SortMessage } from '../../../system/enums/messages/sort-messages/sort-messages.enum';
 import { CreateUserRequestDTO } from '../../dtos/request/create-user/create-user.request.dto';
-import { RoleMessage } from '../../enums/role-messages/role-messages.enum';
-import { UserMessage } from '../../enums/user-messages.ts/user-messages.enum';
+import { RoleMessage } from '../../enums/messages/role/role-messages.enum';
+import { UserMessage } from '../../enums/messages/user/user-messages.ts/user-messages.enum';
+import { UserOrder } from '../../enums/sort/user-order/user-order.enum';
 import { UserEntity } from '../../models/user/user.entity';
 import { UserService } from './user.service';
 
@@ -356,7 +360,7 @@ describe('UserService', () => {
       });
     });
 
-    describe('filtering', () => {
+    describe('query parameters', () => {
       describe('query', () => {
         class TestServiceTextFilter extends AbstractTestServiceTextFilter<UserEntity> {
           async insertViaRepository(texts: string[]) {
@@ -399,8 +403,8 @@ describe('UserService', () => {
             return userRepo.findAndCount(findManyOptions);
           }
 
-          findViaService(options?: { active?: ActiveFilter }) {
-            return userService.find(options, {});
+          findViaService(queryParameters?: { active?: ActiveFilter }) {
+            return userService.find(queryParameters);
           }
         }
 
@@ -427,35 +431,112 @@ describe('UserService', () => {
             return userRepo.findAndCount(findManyOptions);
           }
 
-          findViaService(options?: { deleted?: DeletedFilter }) {
-            return userService.find(options, {});
+          findViaService(queryParameters?: { deleted?: DeletedFilter }) {
+            return userService.find(queryParameters);
           }
         }
 
         new TestUserServiceDeleted().executeTests();
       });
-    });
 
-    describe('pagination', () => {
-      class TestUserServicePagination extends AbestractTestServicePagination<UserEntity> {
-        async insertViaRepository(quantity: number) {
-          const inserData: any = await TestUserData.buildNormalizedData(
-            encryptionService,
-            quantity,
-          );
-          await userRepo.insert(inserData);
+      describe('pagination', () => {
+        class TestUserServicePagination extends AbestractTestServicePagination<UserEntity> {
+          async insertViaRepository(quantity: number) {
+            const inserData: any = await TestUserData.buildNormalizedData(
+              encryptionService,
+              quantity,
+            );
+            await userRepo.insert(inserData);
+          }
+
+          findViaRepository(findManyOptions: FindManyOptions) {
+            findManyOptions.order = { name: 'ASC' };
+            return userRepo.findAndCount(findManyOptions);
+          }
+
+          findViaService(pagination?: { page?: number; pageSize?: number }) {
+            return userService.find(pagination);
+          }
         }
 
-        findViaRepository(findManyOptions: { skip: number; take: number }) {
-          return userRepo.findAndCount(findManyOptions);
+        new TestUserServicePagination().executeTests();
+      });
+
+      describe('sort', () => {
+        const testSortScenario = new TestSortScenarioBuilder<typeof UserOrder>(
+          UserOrder,
+          [UserOrder.NAME_ASC],
+          'api',
+        );
+
+        const userData = [];
+        let counter = 1;
+        for (let name of ['User 1', 'User 2']) {
+          for (let active of [true, false]) {
+            for (let i = 1; i <= 2; i++) {
+              userData.push({
+                name: name,
+                email: `user${counter++}@email.com`,
+                active,
+                roles: [Role.ROOT],
+                hash: { iv: 'iv', encryptedData: 'encrypted data' },
+              });
+            }
+          }
         }
 
-        findViaService(pagination?: { page?: number; pageSize?: number }) {
-          return userService.find({}, pagination);
-        }
-      }
+        it.each(testSortScenario.generateSuccessTestScenarios())(
+          `should order results when orderBy=$description`,
+          async ({ orderBySQL, orderBy }) => {
+            // prepare
+            await userRepo.insert(userData);
+            const repositoryResults = await userRepo.find({
+              order: orderBySQL,
+              take: PaginationConfig.DEFAULT_PAGE_SIZE,
+            });
 
-      new TestUserServicePagination().executeTests();
+            // execute
+            const apiResult = await userService.find({
+              orderBy: orderBy,
+              active: ActiveFilter.ALL,
+            });
+
+            // test
+            expect(apiResult).toEqual({
+              count: 8,
+              page: 1,
+              pageSize: 12,
+              results: repositoryResults,
+            });
+          },
+        );
+
+        it('should fail when receives invalid orderBy item string', async () => {
+          // prepare
+          await userRepo.insert(userData);
+
+          // execute
+          const fn = () =>
+            userService.find({
+              orderBy: [
+                'invalid_impossible_and_never_gonna_happen' as UserOrder,
+              ],
+              active: ActiveFilter.ALL,
+            });
+
+          await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+
+          try {
+            await fn();
+          } catch (ex) {
+            expect(ex.response).toEqual({
+              error: 'UnprocessableEntityException',
+              message: { orderBy: SortMessage.INVALID },
+              statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+            });
+          }
+        });
+      });
     });
   });
 

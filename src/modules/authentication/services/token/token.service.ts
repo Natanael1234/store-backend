@@ -8,7 +8,7 @@ import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { SignOptions, TokenExpiredError } from 'jsonwebtoken';
 import { AuthorizationMessage } from '../../../system/enums/messages/authorization-messages/authorization-messages.enum';
 import ms, { StringValue } from '../../../system/utils/time/ms/ms';
-import { UserMessage } from '../../../user/enums/user-messages.ts/user-messages.enum';
+import { UserMessage } from '../../../user/enums/messages/user/user-messages.ts/user-messages.enum';
 import { UserEntity } from '../../../user/models/user/user.entity';
 import { UserService } from '../../../user/services/user/user.service';
 import { JWTConfigs } from '../../configs/jwt.config';

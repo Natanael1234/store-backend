@@ -1,5 +1,5 @@
 import { FindManyOptions } from 'typeorm';
-import { PaginatedResponseDTO } from '../../modules/system/dtos/response/pagination/pagination.response.dto';
+import { PaginatedResponseDTO } from '../../../modules/system/dtos/response/pagination/pagination.response.dto';
 
 export abstract class AbstractTestServiceTextFilter<T> {
   abstract insertViaRepository(texts: string[]): Promise<any>;

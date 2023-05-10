@@ -9,7 +9,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { JsonWebTokenError } from 'jsonwebtoken';
 import { Repository } from 'typeorm';
 import { getTestingModule } from '../../../../.jest/test-config.module';
-import { UserMessage } from '../../../user/enums/user-messages.ts/user-messages.enum';
+import { UserMessage } from '../../../user/enums/messages/user/user-messages.ts/user-messages.enum';
 import { UserEntity } from '../../../user/models/user/user.entity';
 import { RefreshTokenMessage } from '../../enums/refresh-token-messages.ts/refresh-token-messages.enum';
 import { Role } from '../../enums/role/role.enum';

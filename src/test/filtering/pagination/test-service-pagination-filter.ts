@@ -1,7 +1,7 @@
 import { HttpStatus, UnprocessableEntityException } from '@nestjs/common';
 import { FindManyOptions } from 'typeorm';
-import { PaginatedResponseDTO } from '../../modules/system/dtos/response/pagination/pagination.response.dto';
-import { PaginationMessage } from '../../modules/system/enums/messages/pagination-messages/pagination-messages.enum';
+import { PaginatedResponseDTO } from '../../../modules/system/dtos/response/pagination/pagination.response.dto';
+import { PaginationMessage } from '../../../modules/system/enums/messages/pagination-messages/pagination-messages.enum';
 
 export abstract class AbestractTestServicePagination<T> {
   abstract insertViaRepository(quantity: number): Promise<any>;

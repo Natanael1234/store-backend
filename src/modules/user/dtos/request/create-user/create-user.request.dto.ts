@@ -17,7 +17,7 @@ import { ActiveMessage } from '../../../../system/enums/messages/active-messages
 import { EmailMessage } from '../../../../system/enums/messages/email-messages/email-messages.enum';
 import { NameMessage } from '../../../../system/enums/messages/name-messages/name-messages.enum';
 import { PasswordMessage } from '../../../../system/enums/messages/password-messages/password-messages.enum';
-import { RoleMessage } from '../../../enums/role-messages/role-messages.enum';
+import { RoleMessage } from '../../../enums/messages/role/role-messages.enum';
 
 export class CreateUserRequestDTO {
   @MaxLength(60, { message: NameMessage.MAX_LEN })

@@ -10,10 +10,10 @@ import { FindManyOptions, ILike, IsNull, Not, Repository } from 'typeorm';
 import { getTestingModule } from '../../../../.jest/test-config.module';
 
 import { TestBrandData } from '../../../../test/brand/test-brand-data';
-import { AbstractTestServiceActiveFilter } from '../../../../test/filtering/test-service-active-filter';
-import { AbstractTestServiceDeletedFilter } from '../../../../test/filtering/test-service-deleted-filter';
-import { AbestractTestServicePagination } from '../../../../test/filtering/test-service-pagination';
-import { AbstractTestServiceTextFilter } from '../../../../test/filtering/test-service-text-filter';
+import { AbstractTestServiceActiveFilter } from '../../../../test/filtering/active/test-service-active-filter';
+import { AbstractTestServiceDeletedFilter } from '../../../../test/filtering/deleted/test-service-deleted-filter';
+import { AbestractTestServicePagination } from '../../../../test/filtering/pagination/test-service-pagination-filter';
+import { AbstractTestServiceTextFilter } from '../../../../test/filtering/text/test-service-text-filter';
 import { TestProductData } from '../../../../test/product/test-product-data';
 import { testValidateProduct } from '../../../../test/product/test-product-utils';
 import { TestPurpose } from '../../../../test/test-data';

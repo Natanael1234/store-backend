@@ -1,6 +1,6 @@
 import { FindManyOptions, IsNull, Not } from 'typeorm';
-import { PaginatedResponseDTO } from '../../modules/system/dtos/response/pagination/pagination.response.dto';
-import { DeletedFilter } from '../../modules/system/enums/filter/deleted-filter/deleted-filter.enum';
+import { PaginatedResponseDTO } from '../../../modules/system/dtos/response/pagination/pagination.response.dto';
+import { DeletedFilter } from '../../../modules/system/enums/filter/deleted-filter/deleted-filter.enum';
 
 export abstract class AbstractTestServiceDeletedFilter<T> {
   abstract insertRegisters(deleted: boolean[]): Promise<any>;

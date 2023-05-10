@@ -1,4 +1,4 @@
-import { RoleMessage } from '../../modules/user/enums/role-messages/role-messages.enum';
+import { RoleMessage } from '../../modules/user/enums/messages/role/role-messages.enum';
 import { TestData, TestErrorData, TestPurpose } from '../test-data';
 
 export function getRolesErrorDataList(

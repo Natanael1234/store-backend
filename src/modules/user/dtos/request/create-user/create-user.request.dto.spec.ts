@@ -22,7 +22,7 @@ import { EmailMessage } from '../../../../system/enums/messages/email-messages/e
 import { NameMessage } from '../../../../system/enums/messages/name-messages/name-messages.enum';
 import { PasswordMessage } from '../../../../system/enums/messages/password-messages/password-messages.enum';
 import { validateFirstError } from '../../../../system/utils/validation';
-import { RoleMessage } from '../../../enums/role-messages/role-messages.enum';
+import { RoleMessage } from '../../../enums/messages/role/role-messages.enum';
 import { CreateUserRequestDTO } from './create-user.request.dto';
 
 describe('CreateUserRequestDto', () => {

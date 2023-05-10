@@ -15,7 +15,7 @@ import { AuthorizationMessage } from '../../../system/enums/messages/authorizati
 import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
 import { NameMessage } from '../../../system/enums/messages/name-messages/name-messages.enum';
 import { PasswordMessage } from '../../../system/enums/messages/password-messages/password-messages.enum';
-import { UserMessage } from '../../../user/enums/user-messages.ts/user-messages.enum';
+import { UserMessage } from '../../../user/enums/messages/user/user-messages.ts/user-messages.enum';
 import { UserEntity } from '../../../user/models/user/user.entity';
 import { UserService } from '../../../user/services/user/user.service';
 import { CredentialsMessage } from '../../enums/cretentials-messages.ts/credentials-messages.enum';
