@@ -52,7 +52,7 @@ export class TestDtoActiveFilter {
       },
       {
         description: '"active" is empty string',
-        data: { active: 'aCtivE' },
+        data: { active: '' },
         constraints: { isEnum: ActiveMessage.INVALID },
       },
       {

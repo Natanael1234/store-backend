@@ -8,12 +8,21 @@ import { PaginationMessage } from '../../../../system/enums/messages/pagination-
 import { SortMessage } from '../../../../system/enums/messages/sort-messages/sort-messages.enum';
 import { TextMessage } from '../../../../system/enums/messages/text-messages/text-messages.enum';
 import { getArrayTransformer } from '../../../../system/utils/array/array-transformer';
+import { getEnumTransformer } from '../../../../system/utils/enum/enum-transformer';
 import {
   normalizePageSizeValue,
   normalizePageValue,
 } from '../../../../system/utils/pagination/pagination-transformer';
 import { textSearchTransformer } from '../../../../system/utils/text-seach/text-search-transformer';
 import { BrandOrder } from '../../../enums/sort/brand-order/brand-order.enum';
+
+const activeEnumTransformer = getEnumTransformer(ActiveFilter, {
+  defaultValue: ActiveFilter.ACTIVE,
+});
+
+const deletedEnumTransformer = getEnumTransformer(DeletedFilter, {
+  defaultValue: DeletedFilter.NOT_DELETED,
+});
 
 const arrayTransformer = getArrayTransformer({
   defaultValues: [BrandOrder.NAME_ASC],
@@ -28,36 +37,12 @@ export class FindBranddRequestDTO {
   query?: string;
 
   @IsEnum(ActiveFilter, { message: ActiveMessage.INVALID })
-  @Transform((options) => {
-    if (options.value == null) {
-      return ActiveFilter.ACTIVE;
-    } else if (options.value == ActiveFilter.ACTIVE) {
-      return ActiveFilter.ACTIVE;
-    } else if (options.value == ActiveFilter.INACTIVE) {
-      return ActiveFilter.INACTIVE;
-    } else if (options.value == ActiveFilter.ALL) {
-      return ActiveFilter.ALL;
-    }
-    return options.value;
-  })
+  @Transform((options) => activeEnumTransformer(options.value))
   @Expose()
   active?: ActiveFilter;
 
   @IsEnum(DeletedFilter, { message: DeletedMessage.INVALID })
-  @Transform((options) => {
-    if (options.value == null) {
-      return DeletedFilter.NOT_DELETED;
-    } else if (typeof options.value == 'string') {
-      const value = options.value.toLowerCase();
-    } else if (options.value == DeletedFilter.DELETED) {
-      return DeletedFilter.DELETED;
-    } else if (options.value == DeletedFilter.NOT_DELETED) {
-      return DeletedFilter.NOT_DELETED;
-    } else if (options.value == DeletedFilter.ALL) {
-      return DeletedFilter.ALL;
-    }
-    return options.value;
-  })
+  @Transform((options) => deletedEnumTransformer(options.value))
   @Expose()
   deleted?: DeletedFilter;
 
