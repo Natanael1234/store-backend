@@ -20,7 +20,7 @@ import { ValidationPipe } from '../src/modules/system/pipes/custom-validation.pi
 import { UserEntity } from '../src/modules/user/models/user/user.entity';
 import { TestBrandData } from '../src/test/brand/test-brand-data';
 import { testValidateBrand } from '../src/test/brand/test-brand-utils';
-import { TestSortScenarioBuilder } from '../src/test/filtering/test-service-sort-filter';
+import { TestSortScenarioBuilder } from '../src/test/filtering/sort/test-service-sort-filter';
 import { TestProductData } from '../src/test/product/test-product-data';
 import { TestPurpose } from '../src/test/test-data';
 import {
@@ -110,7 +110,7 @@ describe('StockController (e2e)', () => {
     await moduleFixture.close();
   });
 
-  describe.skip('/brands (POST)', () => {
+  describe('/brands (POST)', () => {
     it('should create brand', async () => {
       const brandData = TestBrandData.dataForRepository;
       const expectedResults = [
@@ -209,7 +209,7 @@ describe('StockController (e2e)', () => {
     });
   });
 
-  describe.skip('/brands (PATCH)', () => {
+  describe('/brands (PATCH)', () => {
     it('should update brand', async () => {
       const brandData = TestBrandData.dataForRepository;
       await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
@@ -406,8 +406,8 @@ describe('StockController (e2e)', () => {
     });
 
     describe('query params', () => {
-      describe.skip('query', () => {
-        class BrandTestTextFilter extends AbstractTestAPITextFilter<BrandEntity> {
+      describe('text query', () => {
+        class TestTextFilter extends AbstractTestAPITextFilter<BrandEntity> {
           async insertRegisters(textToAppend: string[]) {
             const brandsData = TestBrandData.buildData(textToAppend.length);
             for (let i = 0; i < textToAppend.length; i++) {
@@ -429,10 +429,10 @@ describe('StockController (e2e)', () => {
           }
         }
 
-        new BrandTestTextFilter().executeTests();
+        new TestTextFilter().executeTests();
       });
 
-      describe.skip('active', () => {
+      describe('active', () => {
         class TestTextFilter extends AbstractTestAPIActiveFilter<BrandEntity> {
           async insertRegisters(actives: boolean[]) {
             const brandsData: any = TestBrandData.buildData(actives.length);
@@ -458,10 +458,10 @@ describe('StockController (e2e)', () => {
         new TestTextFilter().executeTests();
       });
 
-      describe.skip('deleted', () => {
-        class ProductTestDeletedFilter extends AbstractTestAPIDeletedFilter<BrandEntity> {
+      describe('deleted', () => {
+        class TestDeletedFilter extends AbstractTestAPIDeletedFilter<BrandEntity> {
           async insertRegisters(deleteds: boolean[]) {
-            const brandsData: any = TestBrandData.buildData(deleteds.length);
+            const brandsData: any[] = TestBrandData.buildData(deleteds.length);
             for (let i = 0; i < brandsData.length; i++) {
               if (deleteds[i]) {
                 brandsData[i].deletedAt = new Date();
@@ -483,11 +483,11 @@ describe('StockController (e2e)', () => {
           }
         }
 
-        new ProductTestDeletedFilter().executeTests();
+        new TestDeletedFilter().executeTests();
       });
 
-      describe.skip('pagination', () => {
-        class BrandTestPagination extends AbstractTestApiPagination<BrandEntity> {
+      describe('pagination', () => {
+        class TestPagination extends AbstractTestApiPagination<BrandEntity> {
           insertRegisters(quantity: number): Promise<any> {
             return brandRepo.insert(TestBrandData.buildData(quantity));
           }
@@ -505,7 +505,7 @@ describe('StockController (e2e)', () => {
           }
         }
 
-        new BrandTestPagination().executeTests();
+        new TestPagination().executeTests();
       });
 
       describe('sort', () => {
@@ -578,7 +578,7 @@ describe('StockController (e2e)', () => {
       });
     });
 
-    describe.skip('combined parameters', () => {
+    describe('combined parameters', () => {
       it('should return results filtered by all parameters', async () => {
         const brandsData: any = TestBrandData.buildData(20);
         for (let i = 0; i < brandsData.length; i++) {
@@ -699,7 +699,7 @@ describe('StockController (e2e)', () => {
     });
   });
 
-  describe.skip('/brands/brandId (GET)', () => {
+  describe('/brands/brandId (GET)', () => {
     it('should find brand for id', async () => {
       const brandData = TestBrandData.dataForRepository;
       await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
@@ -743,7 +743,7 @@ describe('StockController (e2e)', () => {
     });
   });
 
-  describe.skip('/brands/brandId (DELETE)', () => {
+  describe('/brands/brandId (DELETE)', () => {
     it('should update brand', async () => {
       const brandData = TestBrandData.dataForRepository;
       await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);

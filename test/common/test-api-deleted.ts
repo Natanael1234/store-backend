@@ -153,6 +153,7 @@ export abstract class AbstractTestAPIDeletedFilter<EntityType> {
     });
 
     it('should fail when deleted parameter is invalid', async () => {
+      await this.insertRegisters([true, false]);
       const ret = await this.getPagesFromAPI(
         { deleted: 'invalid' },
         HttpStatus.UNPROCESSABLE_ENTITY,

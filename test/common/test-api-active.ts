@@ -153,6 +153,7 @@ export abstract class AbstractTestAPIActiveFilter<EntityType> {
     });
 
     it('should fail when active parameter is invalid', async () => {
+      await this.insertRegisters([true]);
       const ret = await this.getPagesFromAPI(
         { active: 'invalid' },
         HttpStatus.UNPROCESSABLE_ENTITY,
