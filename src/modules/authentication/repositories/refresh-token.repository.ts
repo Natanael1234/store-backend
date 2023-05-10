@@ -3,10 +3,10 @@ import { NotFoundException } from '@nestjs/common/exceptions/not-found.exception
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { Repository } from 'typeorm';
+import { UserMessage } from '../../user/enums/messages/user/user-messages.ts/user-messages.enum';
 import { UserEntity } from '../../user/models/user/user.entity';
-import { RefreshTokenEntity } from '../models/refresh-token.entity';
 import { RefreshTokenMessage } from '../enums/refresh-token-messages.ts/refresh-token-messages.enum';
-import { UserMessage } from '../../user/enums/user-messages.ts/user-messages.enum';
+import { RefreshTokenEntity } from '../models/refresh-token.entity';
 
 @Injectable()
 export class RefreshTokenRepository extends Repository<RefreshTokenEntity> {

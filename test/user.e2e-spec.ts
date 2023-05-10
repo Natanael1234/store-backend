@@ -6,15 +6,21 @@ import { getTestingModule } from '../src/.jest/test-config.module';
 
 import { Role } from '../src/modules/authentication/enums/role/role.enum';
 import { AuthenticationService } from '../src/modules/authentication/services/authentication/authentication.service';
+import { PaginationConfig } from '../src/modules/system/dtos/request/pagination/configs/pagination.config';
 import { EncryptionService } from '../src/modules/system/encryption/services/encryption/encryption.service';
+import { ActiveFilter } from '../src/modules/system/enums/filter/active-filter/active-filter.enum';
 import { ActiveMessage } from '../src/modules/system/enums/messages/active-messages/active-messages.enum';
 import { EmailMessage } from '../src/modules/system/enums/messages/email-messages/email-messages.enum';
 import { NameMessage } from '../src/modules/system/enums/messages/name-messages/name-messages.enum';
 import { PasswordMessage } from '../src/modules/system/enums/messages/password-messages/password-messages.enum';
+import { SortMessage } from '../src/modules/system/enums/messages/sort-messages/sort-messages.enum';
 import { ValidationPipe } from '../src/modules/system/pipes/custom-validation.pipe';
-import { RoleMessage } from '../src/modules/user/enums/role-messages/role-messages.enum';
-import { UserMessage } from '../src/modules/user/enums/user-messages.ts/user-messages.enum';
+import { FindUserRequestDTO } from '../src/modules/user/dtos/request/find-users/find-users.request.dto';
+import { RoleMessage } from '../src/modules/user/enums/messages/role/role-messages.enum';
+import { UserMessage } from '../src/modules/user/enums/messages/user/user-messages.ts/user-messages.enum';
+import { UserOrder } from '../src/modules/user/enums/sort/user-order/user-order.enum';
 import { UserEntity } from '../src/modules/user/models/user/user.entity';
+import { TestSortScenarioBuilder } from '../src/test/filtering/sort/test-service-sort-filter';
 import { TestPurpose } from '../src/test/test-data';
 import { getActiveErrorDataList } from '../src/test/test-data/test-active-data';
 import { getEmailErrorDataList } from '../src/test/test-data/test-email-data';
@@ -23,7 +29,9 @@ import { getPasswordErrorDataList } from '../src/test/test-data/test.password-da
 import { TestUserData } from '../src/test/user/test-user-data';
 import { testValidateUser } from '../src/test/user/test-user-utils';
 import { objectToJSON } from './common/instance-to-json';
-import { AbstractTestApiPagination as TestE2EPagination } from './common/test-api-pagination';
+import { AbstractTestAPIActiveFilter } from './common/test-api-active';
+import { AbstractTestAPIDeletedFilter } from './common/test-api-deleted';
+import { AbstractTestApiPagination } from './common/test-api-pagination';
 import { AbstractTestAPITextFilter } from './common/test-api-text';
 import {
   TestRequestFunction,
@@ -939,7 +947,7 @@ describe('UserController (e2e)', () => {
       expect(await userRepo.find()).toEqual(repositoryResults);
     });
 
-    it.skip('should fail if not authenticated', async () => {
+    it('should fail if not authenticated', async () => {
       let registerData = TestUserData.registerData;
       await authenticationService.register(registerData[0]);
       await authenticationService.register(registerData[1]);
@@ -954,7 +962,7 @@ describe('UserController (e2e)', () => {
       expect(await userRepo.find()).toEqual(usersBefore);
     });
 
-    it.skip('should fail if user not authorized', async () => {
+    it('should fail if user not authorized', async () => {
       let registerData = TestUserData.registerData;
       const registeredUsers = [
         await authenticationService.register(registerData[0]),
@@ -973,75 +981,218 @@ describe('UserController (e2e)', () => {
       expect(await userRepo.find()).toEqual(usersBefore);
     });
 
-    describe('filtering', () => {
-      describe('query', () => {
-        class BrandTestTextFilter extends AbstractTestAPITextFilter<UserEntity> {
-          token: string;
+    describe('query parameters', () => {
+      async function auth(email: string, password: string) {
+        const auth = await authenticationService.login({ email, password });
+        return auth.data.payload.token;
+      }
+
+      describe('text query', () => {
+        let token: string;
+        class TestTextFilter extends AbstractTestAPITextFilter<UserEntity> {
           async insertRegisters(textToAppend: string[]) {
-            const usersData = TestUserData.buildData(textToAppend.length);
+            const usersData = await TestUserData.buildNormalizedData(
+              encryptionService,
+              textToAppend.length,
+            );
             for (let i = 0; i < textToAppend.length; i++) {
               usersData[i].name = textToAppend[i];
             }
-            usersData[0].roles = [Role.ROOT];
-            const normalizedUsersData = await TestUserData.normalizeData(
-              encryptionService,
-              usersData,
-            );
-
-            await userRepo.insert(normalizedUsersData);
-
-            const { email, password } = usersData[0];
-            const auth = await authenticationService.login({ email, password });
-            this.token = auth.data.payload.token;
+            await userRepo.insert(usersData);
+            token = await auth('user1@email.com', 'Abc12*');
           }
 
           findRegisters(findManyOptions: FindManyOptions) {
+            findManyOptions.order = { name: 'ASC' };
             return userRepo.findAndCount(findManyOptions);
           }
 
-          async getPagesFromAPI(
-            queryParameters: { query?: any },
+          getPagesFromAPI(
+            queryParameters: FindUserRequestDTO,
             httpStatus: number,
           ) {
-            return httpGet('/users', queryParameters, httpStatus, this.token);
+            queryParameters.active = ActiveFilter.ALL;
+            return httpGet('/users', queryParameters, httpStatus, token);
           }
         }
 
-        new BrandTestTextFilter().executeTests({ ignoreNoRegisters: true });
+        new TestTextFilter().executeTests({ ignoreNoRegisters: true });
       });
-    });
 
-    describe('pagination', () => {
-      class UserTestPagination extends TestE2EPagination<UserEntity> {
-        registerData: any[] = [];
-        token: string;
-        async insertRegisters(quantity: number): Promise<any> {
-          const usersData = TestUserData.buildData(quantity);
-          usersData[0].roles = [Role.ROOT];
-          const normalizedUsersData = await TestUserData.normalizeData(
-            encryptionService,
-            usersData,
+      describe('active', () => {
+        let token: string;
+        class TestTextFilter extends AbstractTestAPIActiveFilter<UserEntity> {
+          async insertRegisters(actives: boolean[]) {
+            const usersData = await TestUserData.buildNormalizedData(
+              encryptionService,
+              actives.length,
+            );
+            for (let i = 0; i < actives.length; i++) {
+              usersData[i].active = !!actives[i];
+            }
+            await userRepo.insert(usersData);
+            token = await auth('user1@email.com', 'Abc12*');
+          }
+
+          findRegisters(findManyOptions: FindManyOptions) {
+            findManyOptions.order = { name: 'ASC' };
+            return userRepo.findAndCount(findManyOptions);
+          }
+
+          getPagesFromAPI(
+            queryParameters: { active?: any },
+            httpStatus: number,
+          ) {
+            return httpGet('/users', queryParameters, httpStatus, token);
+          }
+        }
+
+        new TestTextFilter().executeTests();
+      });
+
+      describe('deleted', () => {
+        let token: string;
+        class TestDeletedFilter extends AbstractTestAPIDeletedFilter<UserEntity> {
+          async insertRegisters(deleteds: boolean[]) {
+            const usersData: any[] = await TestUserData.buildNormalizedData(
+              encryptionService,
+              deleteds.length,
+            );
+            for (let i = 0; i < usersData.length; i++) {
+              if (deleteds[i]) {
+                usersData[i].deletedAt = new Date();
+              }
+            }
+            await userRepo.insert(usersData);
+            const idx = usersData.findIndex((userData) => !userData.deletedAt);
+            token = await auth(`user2@email.com`, 'Abc12*');
+          }
+
+          findRegisters(findManyOptions: FindManyOptions) {
+            findManyOptions.order = { name: 'ASC' };
+            return userRepo.findAndCount(findManyOptions);
+          }
+
+          getPagesFromAPI(
+            queryParameters: { deleted?: any },
+            httpStatus: number,
+          ) {
+            return httpGet('/users', queryParameters, httpStatus, token);
+          }
+        }
+
+        new TestDeletedFilter().executeTests();
+      });
+
+      describe('pagination', () => {
+        let token: string;
+        class TestPagination extends AbstractTestApiPagination<UserEntity> {
+          async insertRegisters(quantity: number): Promise<any> {
+            const usersData = await TestUserData.buildNormalizedData(
+              encryptionService,
+              quantity,
+            );
+            await userRepo.insert(usersData);
+            token = await auth('user1@email.com', 'Abc12*');
+          }
+
+          findRegisters(findManyOptions: FindManyOptions) {
+            findManyOptions.order = { name: 'ASC' };
+            return userRepo.findAndCount(findManyOptions);
+          }
+
+          getPagesFromAPI(
+            queryParameters: { page?: any; pageSize?: any },
+            httpStatus: number,
+          ) {
+            return httpGet('/users', queryParameters, httpStatus, token);
+          }
+        }
+
+        new TestPagination().executeTests({ ignoreNoRegisters: true });
+      });
+
+      describe('sort', () => {
+        const testSortScenario = new TestSortScenarioBuilder<typeof UserOrder>(
+          UserOrder,
+          [UserOrder.NAME_ASC],
+          'api',
+        );
+
+        async function buildData() {
+          const usersData = [];
+          let count = 1;
+          for (let name of ['Brand 1', 'Brand 2']) {
+            for (let active of [true, false]) {
+              for (let i = 1; i <= 2; i++) {
+                usersData.push({
+                  name: name,
+                  email: `email${count++}@email.com`,
+                  active,
+                  hash: await encryptionService.encrypt('Abc12*'),
+                  roles: [Role.ROOT],
+                });
+              }
+            }
+          }
+          return usersData;
+        }
+
+        it.each(testSortScenario.generateSuccessTestScenarios())(
+          `should order results when orderBy=$description`,
+          async ({ orderBySQL, orderBy }) => {
+            // prepare
+            const usersData = await buildData();
+            await userRepo.insert(usersData);
+            let token = await auth('email1@email.com', 'Abc12*');
+
+            const repositoryResults = await userRepo.find({
+              order: orderBySQL,
+              take: PaginationConfig.DEFAULT_PAGE_SIZE,
+            });
+
+            // execute
+            const apiResult = await httpGet(
+              '/users',
+              { orderBy: orderBy, active: ActiveFilter.ALL },
+              HttpStatus.OK,
+              token,
+            );
+
+            // test
+            expect(apiResult).toEqual({
+              count: 8,
+              page: 1,
+              pageSize: 12,
+              results: objectToJSON(repositoryResults),
+            });
+          },
+        );
+
+        it('should fail when receives invalid orderBy item string', async () => {
+          // prepare
+          const usersData = await buildData();
+          await userRepo.insert(usersData);
+          let token = await auth('email1@email.com', 'Abc12*');
+
+          // execute
+          const apiResult = await httpGet(
+            '/brands',
+            {
+              orderBy: ['invalid_impossible_and_never_gonna_happen'],
+              active: ActiveFilter.ALL,
+            },
+            HttpStatus.UNPROCESSABLE_ENTITY,
+            token,
           );
-          await userRepo.insert(normalizedUsersData);
-          const auth = await authenticationService.login({
-            email: usersData[0].email,
-            password: usersData[0].password,
+
+          expect(apiResult).toEqual({
+            error: 'UnprocessableEntityException',
+            message: { orderBy: SortMessage.INVALID },
+            statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
           });
-          this.token = auth.data.payload.token;
-        }
-
-        findRegisters(findManyOptions: FindManyOptions) {
-          return userRepo.findAndCount(findManyOptions);
-        }
-
-        async getPagesFromAPI(
-          queryParameters: { page?: any; pageSize?: any },
-          httpStatus: number,
-        ) {
-          return httpGet('/users', queryParameters, httpStatus, this.token);
-        }
-      }
-      new UserTestPagination().executeTests({ ignoreNoRegisters: true });
+        });
+      });
     });
   });
 

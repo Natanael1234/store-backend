@@ -1,12 +1,12 @@
-import { BrandOrder } from './brand-order.enum';
+import { UserOrder } from './user-order.enum';
 
-describe('BrandOrder', () => {
+describe('UserOrder', () => {
   it('should be defined', () => {
-    expect(BrandOrder).toBeDefined();
+    expect(UserOrder).toBeDefined();
   });
 
   it('should have valid keys and values', () => {
-    expect({ ...BrandOrder }).toEqual({
+    expect({ ...UserOrder }).toEqual({
       NAME_ASC: 'name_asc',
       NAME_DESC: 'name_desc',
       ACTIVE_ASC: 'active_asc',

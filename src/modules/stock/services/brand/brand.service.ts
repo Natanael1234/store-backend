@@ -14,7 +14,7 @@ import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-
 import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
 import { validateOrThrowError } from '../../../system/utils/validation';
 import { CreateBrandRequestDTO } from '../../dtos/request/create-brand/create-brand.request.dto';
-import { FindBrandRequestDTO } from '../../dtos/request/find-brand/find-brand.request.dto';
+import { FindBranddRequestDTO } from '../../dtos/request/find-brands/find-brands.request.dto';
 import { UpdateBrandRequestDTO } from '../../dtos/request/update-brand/update-brand.request.dto';
 import { BrandMessage } from '../../enums/messages/brand-messages/brand-messages.enum';
 import { BrandOrder } from '../../enums/sort/brand-order/brand-order.enum';
@@ -55,12 +55,12 @@ export class BrandService {
   }
 
   async find(
-    findBrandDTO?: FindBrandRequestDTO,
+    findDTO?: FindBranddRequestDTO,
   ): Promise<PaginatedResponseDTO<BrandEntity>> {
-    findBrandDTO = plainToInstance(FindBrandRequestDTO, findBrandDTO || {});
-    await validateOrThrowError(findBrandDTO || {}, FindBrandRequestDTO);
+    findDTO = plainToInstance(FindBranddRequestDTO, findDTO || {});
+    await validateOrThrowError(findDTO || {}, FindBranddRequestDTO);
 
-    let { query, active, deleted, page, pageSize, orderBy } = findBrandDTO;
+    let { query, active, deleted, page, pageSize, orderBy } = findDTO;
     const findManyOptions: FindManyOptions = {};
 
     findManyOptions.where = {};

@@ -8,9 +8,9 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { ActiveMessage } from '../../../system/enums/messages/active-messages/active-messages.enum';
-import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
-import { NameMessage } from '../../../system/enums/messages/name-messages/name-messages.enum';
+import { ActiveMessage } from '../../../../system/enums/messages/active-messages/active-messages.enum';
+import { EmailMessage } from '../../../../system/enums/messages/email-messages/email-messages.enum';
+import { NameMessage } from '../../../../system/enums/messages/name-messages/name-messages.enum';
 
 export class UpdateUserRequestDTO {
   @MaxLength(60, { message: NameMessage.MAX_LEN })

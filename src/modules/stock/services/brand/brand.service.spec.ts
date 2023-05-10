@@ -10,11 +10,11 @@ import { FindManyOptions, ILike, IsNull, Not, Repository } from 'typeorm';
 import { getTestingModule } from '../../../../.jest/test-config.module';
 import { TestBrandData } from '../../../../test/brand/test-brand-data';
 import { testValidateBrand } from '../../../../test/brand/test-brand-utils';
-import { AbstractTestServiceActiveFilter } from '../../../../test/filtering/test-service-active-filter';
-import { AbstractTestServiceDeletedFilter } from '../../../../test/filtering/test-service-deleted-filter';
-import { AbestractTestServicePagination } from '../../../../test/filtering/test-service-pagination';
-import { TestSortScenarioBuilder } from '../../../../test/filtering/test-service-sort-filter';
-import { AbstractTestServiceTextFilter } from '../../../../test/filtering/test-service-text-filter';
+import { AbstractTestServiceActiveFilter } from '../../../../test/filtering/active/test-service-active-filter';
+import { AbstractTestServiceDeletedFilter } from '../../../../test/filtering/deleted/test-service-deleted-filter';
+import { AbestractTestServicePagination } from '../../../../test/filtering/pagination/test-service-pagination-filter';
+import { TestSortScenarioBuilder } from '../../../../test/filtering/sort/test-service-sort-filter';
+import { AbstractTestServiceTextFilter } from '../../../../test/filtering/text/test-service-text-filter';
 import { TestPurpose } from '../../../../test/test-data';
 import {
   getActiveAcceptableValues,
@@ -30,7 +30,7 @@ import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-
 import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
 import { SortMessage } from '../../../system/enums/messages/sort-messages/sort-messages.enum';
 import { CreateBrandRequestDTO } from '../../dtos/request/create-brand/create-brand.request.dto';
-import { FindBrandRequestDTO } from '../../dtos/request/find-brand/find-brand.request.dto';
+import { FindBranddRequestDTO } from '../../dtos/request/find-brands/find-brands.request.dto';
 import { UpdateBrandRequestDTO } from '../../dtos/request/update-brand/update-brand.request.dto';
 import { BrandMessage } from '../../enums/messages/brand-messages/brand-messages.enum';
 import { BrandOrder } from '../../enums/sort/brand-order/brand-order.enum';
@@ -307,7 +307,7 @@ describe('BrandService', () => {
             return brandRepo.findAndCount(findManyOptions);
           }
 
-          findViaService(queryParams?: FindBrandRequestDTO) {
+          findViaService(queryParams?: FindBranddRequestDTO) {
             return brandService.find(queryParams);
           }
         }
@@ -332,7 +332,7 @@ describe('BrandService', () => {
             return brandRepo.findAndCount(findManyOptions);
           }
 
-          findViaService(queryParams?: FindBrandRequestDTO) {
+          findViaService(queryParams?: FindBranddRequestDTO) {
             return brandService.find(queryParams);
           }
         }
@@ -357,7 +357,7 @@ describe('BrandService', () => {
             return brandRepo.findAndCount(findManyOptions);
           }
 
-          findViaService(queryParams?: FindBrandRequestDTO) {
+          findViaService(queryParams?: FindBranddRequestDTO) {
             return brandService.find(queryParams);
           }
         }
@@ -376,7 +376,7 @@ describe('BrandService', () => {
             return brandRepo.findAndCount(findManyOptions);
           }
 
-          findViaService(queryParams?: FindBrandRequestDTO) {
+          findViaService(queryParams?: FindBranddRequestDTO) {
             return brandService.find(queryParams);
           }
         }

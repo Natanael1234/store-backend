@@ -1,28 +1,28 @@
-import { TestPurpose } from '../../../../test/test-data';
+import { TestPurpose } from '../../../../../test/test-data';
 import {
   getActiveAcceptableValues,
   getActiveErrorDataList,
-} from '../../../../test/test-data/test-active-data';
+} from '../../../../../test/test-data/test-active-data';
 import {
   getEmailAcceptableValues,
   getEmailErrorDataList,
-} from '../../../../test/test-data/test-email-data';
+} from '../../../../../test/test-data/test-email-data';
 import {
   getNameAcceptableValues,
   getNameErrorDataList,
-} from '../../../../test/test-data/test-name-data';
-import { getRolesErrorDataList } from '../../../../test/test-data/test-roles-data';
+} from '../../../../../test/test-data/test-name-data';
+import { getRolesErrorDataList } from '../../../../../test/test-data/test-roles-data';
 import {
   getPasswordAcceptableValues,
   getPasswordErrorDataList,
-} from '../../../../test/test-data/test.password-data';
-import { TestUserData } from '../../../../test/user/test-user-data';
-import { Role } from '../../../authentication/enums/role/role.enum';
-import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
-import { NameMessage } from '../../../system/enums/messages/name-messages/name-messages.enum';
-import { PasswordMessage } from '../../../system/enums/messages/password-messages/password-messages.enum';
-import { validateFirstError } from '../../../system/utils/validation';
-import { RoleMessage } from '../../enums/role-messages/role-messages.enum';
+} from '../../../../../test/test-data/test.password-data';
+import { TestUserData } from '../../../../../test/user/test-user-data';
+import { Role } from '../../../../authentication/enums/role/role.enum';
+import { EmailMessage } from '../../../../system/enums/messages/email-messages/email-messages.enum';
+import { NameMessage } from '../../../../system/enums/messages/name-messages/name-messages.enum';
+import { PasswordMessage } from '../../../../system/enums/messages/password-messages/password-messages.enum';
+import { validateFirstError } from '../../../../system/utils/validation';
+import { RoleMessage } from '../../../enums/messages/role/role-messages.enum';
 import { CreateUserRequestDTO } from './create-user.request.dto';
 
 describe('CreateUserRequestDto', () => {

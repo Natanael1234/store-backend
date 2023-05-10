@@ -1,16 +1,16 @@
-import { TestBrandData } from '../../../../test/brand/test-brand-data';
-import { TestPurpose } from '../../../../test/test-data';
+import { TestBrandData } from '../../../../../test/brand/test-brand-data';
+import { TestPurpose } from '../../../../../test/test-data';
 import {
   getActiveAcceptableValues,
   getActiveErrorDataList,
-} from '../../../../test/test-data/test-active-data';
-import { getEmailErrorDataList } from '../../../../test/test-data/test-email-data';
-import { getNameErrorDataList } from '../../../../test/test-data/test-name-data';
-import { TestUserData } from '../../../../test/user/test-user-data';
-import { ActiveMessage } from '../../../system/enums/messages/active-messages/active-messages.enum';
-import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
-import { NameMessage } from '../../../system/enums/messages/name-messages/name-messages.enum';
-import { validateFirstError } from '../../../system/utils/validation';
+} from '../../../../../test/test-data/test-active-data';
+import { getEmailErrorDataList } from '../../../../../test/test-data/test-email-data';
+import { getNameErrorDataList } from '../../../../../test/test-data/test-name-data';
+import { TestUserData } from '../../../../../test/user/test-user-data';
+import { ActiveMessage } from '../../../../system/enums/messages/active-messages/active-messages.enum';
+import { EmailMessage } from '../../../../system/enums/messages/email-messages/email-messages.enum';
+import { NameMessage } from '../../../../system/enums/messages/name-messages/name-messages.enum';
+import { validateFirstError } from '../../../../system/utils/validation';
 import { UpdateUserRequestDTO } from './update-user.request.dto';
 
 const validate = (data) => validateFirstError(data, UpdateUserRequestDTO);

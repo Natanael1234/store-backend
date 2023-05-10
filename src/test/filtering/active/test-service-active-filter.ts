@@ -1,6 +1,6 @@
 import { FindManyOptions } from 'typeorm';
-import { PaginatedResponseDTO } from '../../modules/system/dtos/response/pagination/pagination.response.dto';
-import { ActiveFilter } from '../../modules/system/enums/filter/active-filter/active-filter.enum';
+import { PaginatedResponseDTO } from '../../../modules/system/dtos/response/pagination/pagination.response.dto';
+import { ActiveFilter } from '../../../modules/system/enums/filter/active-filter/active-filter.enum';
 
 export abstract class AbstractTestServiceActiveFilter<T> {
   abstract insertRegisters(actives: boolean[]): Promise<any>;
