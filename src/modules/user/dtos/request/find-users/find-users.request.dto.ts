@@ -1,6 +1,5 @@
 import { Expose, Transform } from 'class-transformer';
 import { IsEnum, IsInt, IsOptional, IsString } from 'class-validator';
-import { BrandOrder } from '../../../../stock/enums/sort/brand-order/brand-order.enum';
 import { ActiveFilter } from '../../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../../system/enums/filter/deleted-filter/deleted-filter.enum';
 import { ActiveMessage } from '../../../../system/enums/messages/active-messages/active-messages.enum';
@@ -17,7 +16,7 @@ import { textSearchTransformer } from '../../../../system/utils/text-seach/text-
 import { UserOrder } from '../../../enums/sort/user-order/user-order.enum';
 
 const arrayTransformer = getArrayTransformer({
-  defaultValues: [BrandOrder.NAME_ASC],
+  defaultValues: [UserOrder.NAME_ASC],
   removeDuplicated: true,
 });
 
@@ -72,7 +71,7 @@ export class FindUserRequestDTO {
   @Expose()
   pageSize?: number;
 
-  @IsEnum(BrandOrder, { each: true, message: SortMessage.INVALID })
+  @IsEnum(UserOrder, { each: true, message: SortMessage.INVALID })
   @Transform(({ value }) => arrayTransformer(value))
   @Expose()
   orderBy?: UserOrder[];

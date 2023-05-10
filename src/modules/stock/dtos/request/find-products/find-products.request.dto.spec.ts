@@ -1,4 +1,9 @@
 import { plainToInstance } from 'class-transformer';
+import { TestDtoActiveFilter } from '../../../../../test/filtering/active/test-dto-active-filter';
+import { TestDtoDeletedFilter } from '../../../../../test/filtering/deleted/test-dto-deleted-filter';
+import { TestDtoPagination } from '../../../../../test/filtering/pagination/test-dto-pagination-filter';
+import { TestDtoSort } from '../../../../../test/filtering/sort/test-dto-sort-filter';
+import { TestDtoTextFilter } from '../../../../../test/filtering/text/text-dto-text-filter';
 import { PaginationConfig } from '../../../../system/dtos/request/pagination/configs/pagination.config';
 import { ActiveFilter } from '../../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../../system/enums/filter/deleted-filter/deleted-filter.enum';
@@ -8,14 +13,8 @@ import { PaginationMessage } from '../../../../system/enums/messages/pagination-
 import { SortMessage } from '../../../../system/enums/messages/sort-messages/sort-messages.enum';
 import { TextMessage } from '../../../../system/enums/messages/text-messages/text-messages.enum';
 import { validateFirstError } from '../../../../system/utils/validation';
-
-import { TestDtoActiveFilter } from '../../../../../test/filtering/active/test-dto-active-filter';
-import { TestDtoDeletedFilter } from '../../../../../test/filtering/deleted/test-dto-deleted-filter';
-import { TestDtoPagination } from '../../../../../test/filtering/pagination/test-dto-pagination-filter';
-import { TestDtoSort } from '../../../../../test/filtering/sort/test-dto-sort-filter';
-import { TestDtoTextFilter } from '../../../../../test/filtering/text/text-dto-text-filter';
-import { BrandOrder } from '../../../enums/sort/brand-order/brand-order.enum';
-import { FindBrandRequestDTO } from './find-brands.request.dto';
+import { ProductOrder } from '../../../enums/sort/product-order/product-order.enum';
+import { FindProductRequestDTO } from './find-products.request.dto';
 
 const defaultDtoResult = {
   query: undefined,
@@ -23,23 +22,23 @@ const defaultDtoResult = {
   deleted: DeletedFilter.NOT_DELETED,
   page: PaginationConfig.DEFAULT_PAGE,
   pageSize: PaginationConfig.DEFAULT_PAGE_SIZE,
-  orderBy: [BrandOrder.NAME_ASC],
+  orderBy: [ProductOrder.NAME_ASC],
 };
 
 async function testAccepts(data: any, expectedResult: any) {
-  const dto = plainToInstance(FindBrandRequestDTO, data);
+  const dto = plainToInstance(FindProductRequestDTO, data);
   expect(dto).toEqual(expectedResult);
-  const errors = await validateFirstError(data, FindBrandRequestDTO);
+  const errors = await validateFirstError(data, FindProductRequestDTO);
   expect(errors).toHaveLength(0);
 }
 
 async function testErrors(data: any, constraints: { [type: string]: string }) {
-  const errors = await validateFirstError(data, FindBrandRequestDTO);
+  const errors = await validateFirstError(data, FindProductRequestDTO);
   expect(errors).toHaveLength(1);
   expect(errors[0].constraints).toEqual(constraints);
 }
 
-describe('FindBranddRequestDTO', () => {
+describe('FindProductsRequestDTO', () => {
   it('sould validate', async () => {
     const data = {
       query: 'test',
@@ -49,16 +48,16 @@ describe('FindBranddRequestDTO', () => {
       pageSize: 4,
       orderBy: ['name_desc', 'active_asc'],
     };
-    const dto = plainToInstance(FindBrandRequestDTO, data);
+    const dto = plainToInstance(FindProductRequestDTO, data);
     expect(dto).toEqual({
       query: 'test',
       active: ActiveFilter.ALL,
       deleted: DeletedFilter.NOT_DELETED,
       page: 2,
       pageSize: 4,
-      orderBy: [BrandOrder.NAME_DESC, BrandOrder.ACTIVE_ASC],
+      orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
     });
-    const errors = await validateFirstError(data, FindBrandRequestDTO);
+    const errors = await validateFirstError(data, FindProductRequestDTO);
     expect(errors).toHaveLength(0);
   });
 
@@ -68,9 +67,9 @@ describe('FindBranddRequestDTO', () => {
     it.each(textFilter.acceptData)(
       '$description',
       async ({ data, expectedResult }) => {
-        const dto = plainToInstance(FindBrandRequestDTO, data);
+        const dto = plainToInstance(FindProductRequestDTO, data);
         expect(dto).toEqual(expectedResult);
-        const errors = await validateFirstError(data, FindBrandRequestDTO);
+        const errors = await validateFirstError(data, FindProductRequestDTO);
         expect(errors).toHaveLength(0);
       },
     );
@@ -78,7 +77,7 @@ describe('FindBranddRequestDTO', () => {
     it.each(textFilter.errorData)(
       'should fail when $description',
       async ({ data, constraints }) => {
-        const errors = await validateFirstError(data, FindBrandRequestDTO);
+        const errors = await validateFirstError(data, FindProductRequestDTO);
         expect(errors).toHaveLength(1);
         expect(errors[0].constraints).toEqual(constraints);
       },
@@ -140,8 +139,8 @@ describe('FindBranddRequestDTO', () => {
   });
 
   describe('sort', () => {
-    const testSort = new TestDtoSort(defaultDtoResult, BrandOrder, [
-      BrandOrder.NAME_ASC,
+    const testSort = new TestDtoSort(defaultDtoResult, ProductOrder, [
+      ProductOrder.NAME_ASC,
     ]);
 
     it.each(testSort.acceptData)(
@@ -170,7 +169,7 @@ describe('FindBranddRequestDTO', () => {
         orderBy: ['invalid'],
       };
 
-      const errors = await validateFirstError(data, FindBrandRequestDTO);
+      const errors = await validateFirstError(data, FindProductRequestDTO);
       expect(errors).toHaveLength(6);
       expect(errors[0].constraints).toEqual({
         isString: TextMessage.STRING,

@@ -52,7 +52,11 @@ import { TestDatabaseUtils } from '../src/test/test-database-utils';
 import { objectToJSON } from './common/instance-to-json';
 
 import { ProductMessage } from '../src/modules/stock/enums/messages/product-messages/product-messages.enum';
+import { ProductOrder } from '../src/modules/stock/enums/sort/product-order/product-order.enum';
+import { PaginationConfig } from '../src/modules/system/dtos/request/pagination/configs/pagination.config';
+import { SortMessage } from '../src/modules/system/enums/messages/sort-messages/sort-messages.enum';
 import { TestBrandData } from '../src/test/brand/test-brand-data';
+import { TestSortScenarioBuilder } from '../src/test/filtering/sort/test-service-sort-filter';
 import { TestProductData } from '../src/test/product/test-product-data';
 import { TestUserData } from '../src/test/user/test-user-data';
 import { AbstractTestAPIActiveFilter } from './common/test-api-active';
@@ -669,8 +673,8 @@ describe('StockController (e2e)', () => {
         });
       });
 
-      describe('filtering', () => {
-        describe('query', () => {
+      describe('query parameters', () => {
+        describe('text query', () => {
           class ProductTestTextFilter extends AbstractTestAPITextFilter<ProductEntity> {
             async insertRegisters(textToAppend: string[]) {
               await brandRepo.insert(TestBrandData.buildData(1));
@@ -685,6 +689,7 @@ describe('StockController (e2e)', () => {
 
             findRegisters(findManyOptions: FindManyOptions) {
               findManyOptions.relations = { brand: true };
+              findManyOptions.order = { name: 'ASC' };
               return productRepo.findAndCount(findManyOptions);
             }
 
@@ -721,6 +726,7 @@ describe('StockController (e2e)', () => {
               findManyOptions: FindManyOptions,
             ): Promise<[pages: ProductEntity[], count: number]> {
               findManyOptions.relations = { brand: true };
+              findManyOptions.order = { name: 'ASC' };
               return productRepo.findAndCount(findManyOptions);
             }
 
@@ -760,6 +766,7 @@ describe('StockController (e2e)', () => {
 
             findRegisters(findManyOptions: FindManyOptions) {
               findManyOptions.relations = { brand: true };
+              findManyOptions.order = { name: 'ASC' };
               return productRepo.findAndCount(findManyOptions);
             }
 
@@ -778,149 +785,242 @@ describe('StockController (e2e)', () => {
 
           new ProductTestDeletedFilter().executeTests();
         });
-      });
 
-      describe('pagination', () => {
-        class ProductTestPagination extends AbstractTestApiPagination<ProductEntity> {
-          async insertRegisters(quantity: number): Promise<any> {
-            await brandRepo.insert(TestBrandData.buildData(1));
-            return productRepo.insert(TestProductData.buildData(quantity));
-          }
+        describe('pagination', () => {
+          class ProductTestPagination extends AbstractTestApiPagination<ProductEntity> {
+            async insertRegisters(quantity: number): Promise<any> {
+              await brandRepo.insert(TestBrandData.buildData(1));
+              return productRepo.insert(TestProductData.buildData(quantity));
+            }
 
-          findRegisters(findManyOptions: FindManyOptions) {
-            findManyOptions.relations = { brand: true };
-            return productRepo.findAndCount(findManyOptions);
-          }
+            findRegisters(findManyOptions: FindManyOptions) {
+              findManyOptions.relations = { brand: true };
+              findManyOptions.order = { name: 'ASC' };
+              return productRepo.findAndCount(findManyOptions);
+            }
 
-          getPagesFromAPI(
-            queryParameters: { page?: any; pageSize?: any },
-            httpStatus: number,
-          ) {
-            return httpGet('/products', queryParameters, httpStatus, rootToken);
-          }
-        }
-
-        new ProductTestPagination().executeTests();
-      });
-
-      describe('combined parameters', () => {
-        it('should return results filtered by all parameters', async () => {
-          await brandRepo.insert(TestBrandData.buildData(1));
-          const productsData: any = TestProductData.buildData(20);
-
-          for (let i = 0; i < productsData.length; i++) {
-            productsData[i].active = i == 2;
-            if (i != 4) {
-              productsData[i].deletedAt = new Date();
+            getPagesFromAPI(
+              queryParameters: { page?: any; pageSize?: any },
+              httpStatus: number,
+            ) {
+              return httpGet(
+                '/products',
+                queryParameters,
+                httpStatus,
+                rootToken,
+              );
             }
           }
 
-          await productRepo.insert(productsData);
-          const pages = [
-            await productRepo.find({
-              skip: 0,
-              take: 8,
-              where: {
-                active: false,
-                deletedAt: Not(IsNull()),
-              },
-              relations: { brand: true },
-              withDeleted: true,
-            }),
-            await productRepo.find({
-              skip: 8,
-              take: 8,
-              where: {
-                active: false,
-                deletedAt: Not(IsNull()),
-              },
-              relations: { brand: true },
-              withDeleted: true,
-            }),
-            await productRepo.find({
-              skip: 16,
-              take: 8,
-              where: {
-                active: false,
-                deletedAt: Not(IsNull()),
-              },
-              relations: { brand: true },
-              withDeleted: true,
-            }),
-          ];
+          new ProductTestPagination().executeTests();
+        });
 
-          const ret = [
-            await httpGet(
-              '/products',
-              {
+        describe('sort', () => {
+          const testSortScenario = new TestSortScenarioBuilder<
+            typeof ProductOrder
+          >(ProductOrder, [ProductOrder.NAME_ASC], 'api');
+
+          const productsData = [];
+          for (let name of ['Product 1', 'Product 2']) {
+            for (let active of [true, false]) {
+              for (let i = 1; i <= 2; i++) {
+                productsData.push({
+                  code: `CODE ${i + 1}`,
+                  name,
+                  model: `Model ${i + 1}`,
+                  price: 100,
+                  quantityInStock: 5,
+                  active,
+                  brandId: 1,
+                });
+              }
+            }
+          }
+
+          it.each(testSortScenario.generateSuccessTestScenarios())(
+            `should order results when orderBy=$description`,
+            async ({ orderBySQL, orderBy }) => {
+              // prepare
+              await brandRepo.insert(TestBrandData.buildData(1));
+              await productRepo.insert(productsData);
+              const repositoryResults = await productRepo.find({
+                order: orderBySQL,
+                take: PaginationConfig.DEFAULT_PAGE_SIZE,
+                relations: { brand: true },
+              });
+
+              // execute
+              const apiResult = await httpGet(
+                '/products',
+                { orderBy: orderBy, active: ActiveFilter.ALL },
+                HttpStatus.OK,
+                rootToken,
+              );
+
+              // test
+              expect(apiResult).toEqual({
+                count: 8,
                 page: 1,
-                pageSize: 8,
-                deleted: DeletedFilter.DELETED,
-                active: ActiveFilter.INACTIVE,
-              },
-              HttpStatus.OK,
-              rootToken,
-            ),
-            await httpGet(
+                pageSize: 12,
+                results: objectToJSON(repositoryResults),
+              });
+            },
+          );
+
+          it('should fail when receives invalid orderBy item string', async () => {
+            // prepare
+            await brandRepo.insert(TestBrandData.buildData(1));
+            await productRepo.insert(productsData);
+
+            // execute
+            const apiResult = await httpGet(
               '/products',
               {
-                page: 2,
-                pageSize: 8,
-                deleted: DeletedFilter.DELETED,
-                active: ActiveFilter.INACTIVE,
+                orderBy: ['invalid_impossible_and_never_gonna_happen'],
+                active: ActiveFilter.ALL,
               },
-              HttpStatus.OK,
+              HttpStatus.UNPROCESSABLE_ENTITY,
               rootToken,
-            ),
-            await httpGet(
-              '/products',
-              {
-                page: 3,
-                pageSize: 8,
-                deleted: DeletedFilter.DELETED,
-                active: ActiveFilter.INACTIVE,
+            );
+
+            expect(apiResult).toEqual({
+              error: 'UnprocessableEntityException',
+              message: {
+                orderBy: SortMessage.INVALID,
               },
-              HttpStatus.OK,
-              rootToken,
-            ),
-            await httpGet(
-              '/products',
-              {
-                page: 4,
-                pageSize: 8,
-                deleted: DeletedFilter.DELETED,
-                active: ActiveFilter.INACTIVE,
-              },
-              HttpStatus.OK,
-              rootToken,
-            ),
-          ];
-          expect(ret).toEqual([
-            {
+              statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+            });
+          });
+        });
+
+        describe('combined parameters', () => {
+          it('should return results filtered by all parameters', async () => {
+            await brandRepo.insert(TestBrandData.buildData(1));
+            const productsData: any = TestProductData.buildData(20);
+
+            for (let i = 0; i < productsData.length; i++) {
+              productsData[i].active = i == 2;
+              if (i != 4) {
+                productsData[i].deletedAt = new Date();
+              }
+            }
+
+            await productRepo.insert(productsData);
+            const repositoryResults = [
+              await productRepo.find({
+                skip: 0,
+                take: 8,
+                where: {
+                  active: false,
+                  deletedAt: Not(IsNull()),
+                },
+                order: { name: 'DESC' },
+                relations: { brand: true },
+                withDeleted: true,
+              }),
+              await productRepo.find({
+                skip: 8,
+                take: 8,
+                where: {
+                  active: false,
+                  deletedAt: Not(IsNull()),
+                },
+                order: { name: 'DESC' },
+                relations: { brand: true },
+                withDeleted: true,
+              }),
+              await productRepo.find({
+                skip: 16,
+                take: 8,
+                where: {
+                  active: false,
+                  deletedAt: Not(IsNull()),
+                },
+                order: { name: 'DESC' },
+                relations: { brand: true },
+                withDeleted: true,
+              }),
+            ];
+
+            const apiResults = [
+              await httpGet(
+                '/products',
+                {
+                  page: 1,
+                  pageSize: 8,
+                  deleted: DeletedFilter.DELETED,
+                  active: ActiveFilter.INACTIVE,
+                  orderBy: [ProductOrder.NAME_DESC],
+                },
+                HttpStatus.OK,
+                rootToken,
+              ),
+              await httpGet(
+                '/products',
+                {
+                  page: 2,
+                  pageSize: 8,
+                  deleted: DeletedFilter.DELETED,
+                  active: ActiveFilter.INACTIVE,
+                  orderBy: [ProductOrder.NAME_DESC],
+                },
+                HttpStatus.OK,
+                rootToken,
+              ),
+              await httpGet(
+                '/products',
+                {
+                  page: 3,
+                  pageSize: 8,
+                  deleted: DeletedFilter.DELETED,
+                  active: ActiveFilter.INACTIVE,
+                  orderBy: [ProductOrder.NAME_DESC],
+                },
+                HttpStatus.OK,
+                rootToken,
+              ),
+              await httpGet(
+                '/products',
+                {
+                  page: 4,
+                  pageSize: 8,
+                  deleted: DeletedFilter.DELETED,
+                  active: ActiveFilter.INACTIVE,
+                  orderBy: ProductOrder.NAME_DESC,
+                },
+                HttpStatus.OK,
+                rootToken,
+              ),
+            ];
+
+            expect(apiResults[0]).toEqual({
               count: 18,
               page: 1,
               pageSize: 8,
-              results: objectToJSON(pages[0]),
-            },
-            {
+              results: objectToJSON(repositoryResults[0]),
+            });
+
+            expect(apiResults[1]).toEqual({
               count: 18,
               page: 2,
               pageSize: 8,
-              results: objectToJSON(pages[1]),
-            },
-            {
+              results: objectToJSON(repositoryResults[1]),
+            });
+
+            expect(apiResults[2]).toEqual({
               count: 18,
               page: 3,
               pageSize: 8,
-              results: objectToJSON(pages[2]),
-            },
-            {
+              results: objectToJSON(repositoryResults[2]),
+            });
+
+            expect(apiResults[3]).toEqual({
               count: 18,
               page: 4,
               pageSize: 8,
               results: [],
-            },
-          ]);
+            });
+          });
         });
       });
     });

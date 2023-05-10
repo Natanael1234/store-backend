@@ -14,7 +14,7 @@ import {
   normalizePageValue,
 } from '../../../../system/utils/pagination/pagination-transformer';
 import { textSearchTransformer } from '../../../../system/utils/text-seach/text-search-transformer';
-import { BrandOrder } from '../../../enums/sort/brand-order/brand-order.enum';
+import { ProductOrder } from '../../../enums/sort/product-order/product-order.enum';
 
 const activeEnumTransformer = getEnumTransformer(ActiveFilter, {
   defaultValue: ActiveFilter.ACTIVE,
@@ -25,11 +25,11 @@ const deletedEnumTransformer = getEnumTransformer(DeletedFilter, {
 });
 
 const arrayTransformer = getArrayTransformer({
-  defaultValues: [BrandOrder.NAME_ASC],
+  defaultValues: [ProductOrder.NAME_ASC],
   removeDuplicated: true,
 });
 
-export class FindBrandRequestDTO {
+export class FindProductRequestDTO {
   @IsString({ message: TextMessage.STRING })
   @IsOptional()
   @Transform((options) => textSearchTransformer(options.value))
@@ -56,8 +56,8 @@ export class FindBrandRequestDTO {
   @Expose()
   pageSize?: number;
 
-  @IsEnum(BrandOrder, { each: true, message: SortMessage.INVALID })
+  @IsEnum(ProductOrder, { each: true, message: SortMessage.INVALID })
   @Transform(({ value }) => arrayTransformer(value))
   @Expose()
-  orderBy?: BrandOrder[];
+  orderBy?: ProductOrder[];
 }
