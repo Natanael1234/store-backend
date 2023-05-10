@@ -30,7 +30,7 @@ import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-
 import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
 import { SortMessage } from '../../../system/enums/messages/sort-messages/sort-messages.enum';
 import { CreateBrandRequestDTO } from '../../dtos/request/create-brand/create-brand.request.dto';
-import { FindBranddRequestDTO } from '../../dtos/request/find-brands/find-brands.request.dto';
+import { FindBrandRequestDTO } from '../../dtos/request/find-brands/find-brands.request.dto';
 import { UpdateBrandRequestDTO } from '../../dtos/request/update-brand/update-brand.request.dto';
 import { BrandMessage } from '../../enums/messages/brand-messages/brand-messages.enum';
 import { BrandOrder } from '../../enums/sort/brand-order/brand-order.enum';
@@ -307,7 +307,7 @@ describe('BrandService', () => {
             return brandRepo.findAndCount(findManyOptions);
           }
 
-          findViaService(queryParams?: FindBranddRequestDTO) {
+          findViaService(queryParams?: FindBrandRequestDTO) {
             return brandService.find(queryParams);
           }
         }
@@ -332,7 +332,7 @@ describe('BrandService', () => {
             return brandRepo.findAndCount(findManyOptions);
           }
 
-          findViaService(queryParams?: FindBranddRequestDTO) {
+          findViaService(queryParams?: FindBrandRequestDTO) {
             return brandService.find(queryParams);
           }
         }
@@ -357,7 +357,7 @@ describe('BrandService', () => {
             return brandRepo.findAndCount(findManyOptions);
           }
 
-          findViaService(queryParams?: FindBranddRequestDTO) {
+          findViaService(queryParams?: FindBrandRequestDTO) {
             return brandService.find(queryParams);
           }
         }
@@ -376,7 +376,7 @@ describe('BrandService', () => {
             return brandRepo.findAndCount(findManyOptions);
           }
 
-          findViaService(queryParams?: FindBranddRequestDTO) {
+          findViaService(queryParams?: FindBrandRequestDTO) {
             return brandService.find(queryParams);
           }
         }

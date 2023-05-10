@@ -10,12 +10,11 @@ import {
 } from '@nestjs/common';
 import { SkipAuthentication } from '../../../authentication/decorators/skip-authentication';
 import { Role } from '../../../authentication/enums/role/role.enum';
-import { FilteringRequestDTO } from '../../../system/dtos/request/filtering/filtering.request.dto';
-import { PaginationRequestDTO } from '../../../system/dtos/request/pagination/pagination.request.dto';
 import { PaginatedResponseDTO } from '../../../system/dtos/response/pagination/pagination.response.dto';
 import { SuccessResponseDto } from '../../../system/dtos/response/pagination/success.response.dto';
 import { Roles } from '../../../user/decorators/roles/roles.decorator';
 import { CreateProductRequestDTO } from '../../dtos/request/create-product/create-product.request.dto';
+import { FindProductRequestDTO } from '../../dtos/request/find-products/find-products.request.dto';
 import { UpdateProductRequestDTO } from '../../dtos/request/update-product/update-product.request.dto';
 import { ProductEntity } from '../../models/product/product.entity';
 import { ProductService } from '../../services/product/product.service';
@@ -43,10 +42,9 @@ export class ProductController {
   // @Roles(Role.ROOT, Role.ADMIN)
   @SkipAuthentication()
   find(
-    @Query() filtering: FilteringRequestDTO,
-    @Query() pagination: PaginationRequestDTO,
+    @Query() findDTO: FindProductRequestDTO,
   ): Promise<PaginatedResponseDTO<ProductEntity>> {
-    return this.productService.find(filtering, pagination);
+    return this.productService.find(findDTO);
   }
 
   @Get('/:productId')

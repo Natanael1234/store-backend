@@ -6,13 +6,21 @@ import {
 import { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
-import { FindManyOptions, ILike, IsNull, Not, Repository } from 'typeorm';
+import {
+  FindManyOptions,
+  FindOptionsWhere,
+  ILike,
+  IsNull,
+  Not,
+  Repository,
+} from 'typeorm';
 import { getTestingModule } from '../../../../.jest/test-config.module';
 
 import { TestBrandData } from '../../../../test/brand/test-brand-data';
 import { AbstractTestServiceActiveFilter } from '../../../../test/filtering/active/test-service-active-filter';
 import { AbstractTestServiceDeletedFilter } from '../../../../test/filtering/deleted/test-service-deleted-filter';
 import { AbestractTestServicePagination } from '../../../../test/filtering/pagination/test-service-pagination-filter';
+import { TestSortScenarioBuilder } from '../../../../test/filtering/sort/test-service-sort-filter';
 import { AbstractTestServiceTextFilter } from '../../../../test/filtering/text/test-service-text-filter';
 import { TestProductData } from '../../../../test/product/test-product-data';
 import { testValidateProduct } from '../../../../test/product/test-product-utils';
@@ -45,13 +53,17 @@ import {
   getQuantityInStockAcceptableValues,
   getQuantityInStockErrorDataList,
 } from '../../../../test/test-data/test-quantity-in-stock-data';
+import { PaginationConfig } from '../../../system/dtos/request/pagination/configs/pagination.config';
 import { SuccessResponseDto } from '../../../system/dtos/response/pagination/success.response.dto';
 import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
+import { SortMessage } from '../../../system/enums/messages/sort-messages/sort-messages.enum';
 import { CreateProductRequestDTO } from '../../dtos/request/create-product/create-product.request.dto';
+import { FindProductRequestDTO } from '../../dtos/request/find-products/find-products.request.dto';
 import { UpdateProductRequestDTO } from '../../dtos/request/update-product/update-product.request.dto';
 import { BrandMessage } from '../../enums/messages/brand-messages/brand-messages.enum';
 import { ProductMessage } from '../../enums/messages/product-messages/product-messages.enum';
+import { ProductOrder } from '../../enums/sort/product-order/product-order.enum';
 import { BrandEntity } from '../../models/brand/brand.entity';
 import { ProductEntity } from '../../models/product/product.entity';
 import { ProductService } from './product.service';
@@ -412,9 +424,13 @@ describe('StockService', () => {
         productData[1],
         productData[2],
       ]);
-      const products = await productRepo.find({ relations: { brand: true } });
+      const products = await productRepo.find({
+        relations: { brand: true },
+        take: 12,
+        order: { name: 'ASC' },
+      });
 
-      const ret = await productService.find();
+      const ret = await productService.find({});
 
       expect(ret).toEqual({
         count: 1,
@@ -433,51 +449,6 @@ describe('StockService', () => {
         results: [],
       });
     });
-  });
-
-  describe('find', () => {
-    async function findAndCountProductsFromRepository(options?: {
-      query?;
-      active?: ActiveFilter;
-      deleted?: DeletedFilter;
-      page?: number;
-      pageSize?: number;
-    }): Promise<{ results: ProductEntity[]; count: number }> {
-      options = options || {};
-      const query = options.query;
-      const page = options.page || 1;
-      const pageSize = options.pageSize || 12;
-      const active = options.active || ActiveFilter.ACTIVE;
-      const deleted = options.deleted || DeletedFilter.NOT_DELETED;
-
-      let findManyOptions: any = { where: {} };
-      // query
-      if (query && typeof query == 'string') {
-        const stringWithoutDuplicateSpaces = query.replace(/\s+/g, ' ');
-        const trimmedString = stringWithoutDuplicateSpaces.trim();
-        const likeString = `%${trimmedString.replace(' ', '%')}%`;
-        findManyOptions.where.name = ILike(likeString);
-      }
-      // active
-      if (active == ActiveFilter.ACTIVE) {
-        findManyOptions.where.active = true;
-      } else if (active == ActiveFilter.INACTIVE) {
-        findManyOptions.where.active = false;
-      }
-      // deleted
-      if (deleted == DeletedFilter.DELETED) {
-        findManyOptions.where.deletedAt = Not(IsNull());
-        findManyOptions.withDeleted = true;
-      } else if (deleted == DeletedFilter.ALL) {
-        findManyOptions.withDeleted = true;
-      }
-      findManyOptions.relations = { brand: true };
-
-      findManyOptions.take = pageSize;
-      findManyOptions.skip = (page - 1) * pageSize;
-      const [results, count] = await productRepo.findAndCount(findManyOptions);
-      return { results, count };
-    }
 
     it('should find products without parameters and pagination dtos', async () => {
       await brandRepo.insert(TestBrandData.buildData(1));
@@ -486,15 +457,20 @@ describe('StockService', () => {
       productData[4].deletedAt = new Date();
       await productRepo.insert(productData);
 
-      const { results, count } = await findAndCountProductsFromRepository({});
+      const repositoryResults = await productRepo.find({
+        where: { active: true },
+        relations: { brand: true },
+        take: 12,
+        order: { name: 'ASC' },
+      });
 
-      const ret = await productService.find();
+      const serviceResult = await productService.find();
 
-      expect(ret).toEqual({
+      expect(serviceResult).toEqual({
         count: 13,
         page: 1,
         pageSize: 12,
-        results,
+        results: repositoryResults,
       });
     });
 
@@ -509,57 +485,59 @@ describe('StockService', () => {
       });
     });
 
-    describe('filtering', () => {
+    describe('query parameters', () => {
       it.each([
         { description: 'null', data: null },
         { description: 'undefined', data: undefined },
       ])(
-        'should use default values when "filtering" is $description',
+        'should use default values when dto is $description',
         async ({ data }) => {
           await brandRepo.insert(TestBrandData.buildData(1));
           const productData: any[] = TestProductData.buildData(15);
           productData[3].active = false;
           productData[4].deletedAt = new Date();
           await productRepo.insert(productData);
-          const { results, count } = await findAndCountProductsFromRepository(
-            {},
-          );
 
-          const ret = await productService.find(data);
+          const repositoryResults = await productRepo.find({
+            where: { active: true },
+            relations: { brand: true },
+            take: 12,
+            order: { name: 'ASC' },
+          });
 
-          expect(ret).toEqual({
+          const serviceResult = await productService.find(data);
+
+          expect(serviceResult).toEqual({
             count: 13,
             page: 1,
             pageSize: 12,
-            results: results,
+            results: repositoryResults,
           });
         },
       );
 
-      describe('query', () => {
-        describe('query', () => {
-          class TestServiceTextFilter extends AbstractTestServiceTextFilter<ProductEntity> {
-            async insertViaRepository(texts: string[]) {
-              await brandRepo.insert(TestBrandData.buildData(1));
-              const productsData: any = TestProductData.buildData(texts.length);
-              for (let i = 0; i < productsData.length; i++) {
-                productsData[i].name = texts[i];
-              }
-              await productRepo.insert(productsData);
+      describe('text query', () => {
+        class TestServiceTextFilter extends AbstractTestServiceTextFilter<ProductEntity> {
+          async insertViaRepository(texts: string[]) {
+            await brandRepo.insert(TestBrandData.buildData(1));
+            const productsData: any = TestProductData.buildData(texts.length);
+            for (let i = 0; i < productsData.length; i++) {
+              productsData[i].name = texts[i];
             }
-
-            findViaRepository(findManyOptions: FindManyOptions<any>) {
-              findManyOptions.relations = { brand: true };
-              return productRepo.findAndCount(findManyOptions);
-            }
-
-            findViaService(options?: { query?: string }) {
-              return productService.find(options);
-            }
+            await productRepo.insert(productsData);
           }
 
-          new TestServiceTextFilter().executeTests();
-        });
+          findViaRepository(findManyOptions: FindManyOptions<any>) {
+            findManyOptions.relations = { brand: true };
+            return productRepo.findAndCount(findManyOptions);
+          }
+
+          findViaService(options?: { query?: string }) {
+            return productService.find(options);
+          }
+        }
+
+        new TestServiceTextFilter().executeTests();
       });
 
       describe('active', () => {
@@ -580,8 +558,8 @@ describe('StockService', () => {
             return productRepo.findAndCount(findManyOptions);
           }
 
-          findViaService(options?: { active?: ActiveFilter }) {
-            return productService.find(options, {});
+          findViaService(queryParameters?: FindProductRequestDTO) {
+            return productService.find(queryParameters);
           }
         }
 
@@ -608,164 +586,266 @@ describe('StockService', () => {
             return productRepo.findAndCount(findManyOptions);
           }
 
-          findViaService(options?: { deleted?: DeletedFilter }) {
-            return productService.find(options, {});
+          findViaService(queryParameters?: FindProductRequestDTO) {
+            return productService.find(queryParameters);
           }
         }
 
         new TestServiceDeleted().executeTests();
       });
-    });
 
-    describe('pagination', () => {
-      class TestUserServicePagination extends AbestractTestServicePagination<ProductEntity> {
-        async insertViaRepository(quantity: number) {
-          await brandRepo.insert(TestBrandData.buildData(1));
-          await productRepo.insert(TestProductData.buildData(quantity));
+      describe('pagination', () => {
+        class TestUserServicePagination extends AbestractTestServicePagination<ProductEntity> {
+          async insertViaRepository(quantity: number) {
+            await brandRepo.insert(TestBrandData.buildData(1));
+            await productRepo.insert(TestProductData.buildData(quantity));
+          }
+
+          findViaRepository(findManyOptions: FindManyOptions) {
+            findManyOptions.relations = { brand: true };
+            findManyOptions.order = { name: 'ASC' };
+            return productRepo.findAndCount(findManyOptions);
+          }
+
+          findViaService(queryParameters?: FindProductRequestDTO) {
+            return productService.find(queryParameters);
+          }
         }
 
-        findViaRepository(findManyOptions: FindManyOptions) {
-          findManyOptions.relations = { brand: true };
-          return productRepo.findAndCount(findManyOptions);
-        }
+        new TestUserServicePagination().executeTests();
+      });
 
-        findViaService(pagination?: { page?: number; pageSize?: number }) {
-          return productService.find({}, pagination);
-        }
-      }
+      describe('sort', () => {
+        const testSortScenario = new TestSortScenarioBuilder<
+          typeof ProductOrder
+        >(ProductOrder, [ProductOrder.NAME_ASC], 'api');
 
-      new TestUserServicePagination().executeTests();
-    });
-
-    describe('combined tests', () => {
-      let brandsData; //= TestBrandData.buildData(20);
-      beforeEach(async () => {
-        brandsData = [];
-        let j = 1;
-        for (let i = 0; i < 4; i++) {
-          for (let activeState of [true, false]) {
-            for (let deletedAt of [null, new Date()]) {
-              for (let text of ['EVEN', 'ODD']) {
-                brandsData.push({
-                  name: `Brand ${j++} ${text}`,
-                  active: activeState,
-                  deletedAt,
-                });
-              }
+        const brandData = TestBrandData.buildData(1);
+        const productData = [];
+        for (let name of ['Product 1', 'Product 2']) {
+          for (let active of [true, false]) {
+            for (let i = 1; i <= 2; i++) {
+              productData.push({
+                code: `CODE ${i + 1}`,
+                name,
+                model: `Model ${i + 1}`,
+                price: 100,
+                quantityInStock: 5,
+                active,
+                brandId: 1,
+              });
             }
           }
         }
-        const ret = await brandRepo.save(brandsData);
-      });
 
-      async function testCombinedParameters(options: {
-        active: ActiveFilter;
-        deleted: DeletedFilter;
-        page: number;
-        pageSize: number;
-      }) {
-        const { active, deleted, page, pageSize } = options;
-        const query = 'EVEN';
-        const { results, count } = await findAndCountProductsFromRepository({
-          query,
-          active,
-          deleted,
-          page,
-          pageSize,
-        });
+        it.each(testSortScenario.generateSuccessTestScenarios())(
+          `should order results when orderBy=$description`,
+          async ({ orderBySQL, orderBy }) => {
+            // prepare
+            await brandRepo.insert(brandData);
+            await productRepo.insert(productData);
 
-        const ret = await productService.find(
-          { query, active, deleted },
-          { page, pageSize },
+            const repositoryResults = await productRepo.find({
+              relations: { brand: true },
+              order: orderBySQL,
+              take: PaginationConfig.DEFAULT_PAGE_SIZE,
+            });
+
+            // execute
+            const apiResult = await productService.find({
+              orderBy,
+              active: ActiveFilter.ALL,
+            });
+
+            // test
+            expect(apiResult).toEqual({
+              count: 8,
+              page: 1,
+              pageSize: 12,
+              results: repositoryResults,
+            });
+          },
         );
 
-        expect(ret).toEqual({
-          count,
-          page,
-          pageSize,
-          results: results,
+        it('should fail when receives invalid orderBy item string', async () => {
+          // prepare
+          await brandRepo.insert(brandData);
+          await productRepo.insert(productData);
+
+          // execute
+          const fn = () =>
+            productService.find({
+              orderBy: [
+                'invalid_impossible_and_never_gonna_happen' as ProductOrder,
+              ],
+              active: ActiveFilter.ALL,
+            });
+
+          await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+
+          try {
+            await fn();
+          } catch (ex) {
+            expect(ex.response).toEqual({
+              error: 'UnprocessableEntityException',
+              message: { orderBy: SortMessage.INVALID },
+              statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+            });
+          }
         });
-      }
+      });
 
-      describe.each([
-        {
-          description: 'active and deleted',
-          active: ActiveFilter.ACTIVE,
-          deleted: DeletedFilter.DELETED,
-          pageSize: 3,
-        },
-        {
-          description: 'active and not deleted',
-          active: ActiveFilter.ACTIVE,
-          deleted: DeletedFilter.NOT_DELETED,
-          pageSize: 3,
-        },
-        {
-          description: 'active and deleted or not deleted',
-          active: ActiveFilter.ACTIVE,
-          deleted: DeletedFilter.ALL,
-          pageSize: 6,
-        },
+      describe('combined tests', () => {
+        let brandsData; //= TestBrandData.buildData(20);
+        beforeEach(async () => {
+          brandsData = [];
+          let j = 1;
+          for (let i = 0; i < 4; i++) {
+            for (let activeState of [true, false]) {
+              for (let deletedAt of [null, new Date()]) {
+                for (let text of ['EVEN', 'ODD']) {
+                  brandsData.push({
+                    name: `Brand ${j++} ${text}`,
+                    active: activeState,
+                    deletedAt,
+                  });
+                }
+              }
+            }
+          }
+          const ret = await brandRepo.save(brandsData);
+        });
 
-        {
-          description: 'inactive and deleted',
-          active: ActiveFilter.INACTIVE,
-          deleted: DeletedFilter.DELETED,
-          pageSize: 3,
-        },
-        {
-          description: 'inactive and not deleted',
-          active: ActiveFilter.INACTIVE,
-          deleted: DeletedFilter.NOT_DELETED,
-          pageSize: 3,
-        },
-        {
-          description: 'inactive and deleted or not deleted',
-          active: ActiveFilter.INACTIVE,
-          deleted: DeletedFilter.ALL,
-          pageSize: 6,
-        },
+        async function testCombinedParameters(options: FindProductRequestDTO) {
+          let { active, deleted, page, pageSize } = options;
+          let query = 'EVEN';
 
-        {
-          description: 'active or inactive and deleted',
-          active: ActiveFilter.ALL,
-          deleted: DeletedFilter.DELETED,
-          pageSize: 6,
-        },
-        {
-          description: 'active or inactive and not deleted',
-          active: ActiveFilter.ALL,
-          deleted: DeletedFilter.NOT_DELETED,
-          pageSize: 6,
-        },
-        {
-          description: 'active or inactive and deleted or not deleted',
-          active: ActiveFilter.ALL,
-          deleted: DeletedFilter.ALL,
-          pageSize: 12,
-        },
-      ])(
-        'Should do text filtering when brand is $description',
-        ({ description, active, deleted, pageSize }) => {
-          it(`should get first page when`, async () => {
-            await testCombinedParameters({
-              active,
-              deleted,
-              page: 1,
-              pageSize,
-            });
+          const where: FindOptionsWhere<ProductEntity> = {};
+          const findManyOptions: FindManyOptions<ProductEntity> = { where };
+
+          if (active == ActiveFilter.ACTIVE) {
+            where.active = true;
+          } else if (active == ActiveFilter.INACTIVE) {
+            where.active = false;
+          }
+
+          if (deleted == DeletedFilter.ALL) {
+            findManyOptions.withDeleted = true;
+          } else if (deleted == DeletedFilter.DELETED) {
+            findManyOptions.withDeleted = true;
+            where.deletedAt = Not(IsNull());
+          }
+
+          page = Math.max(page || PaginationConfig.MIN_PAGE);
+          pageSize = Math.max(
+            pageSize || PaginationConfig.MIN_PAGE_SIZE,
+            Math.min(pageSize, PaginationConfig.MAX_PAGE_SIZE),
+          );
+          findManyOptions.take = pageSize;
+          findManyOptions.skip = (page - 1) * pageSize;
+
+          where.name = ILike('%EVEN%');
+
+          const [repositoryResults, count] = await productRepo.findAndCount(
+            findManyOptions,
+          );
+
+          const serviceResult = await productService.find({
+            query,
+            active,
+            deleted,
+            page,
+            pageSize,
           });
 
-          it(`should get second page`, async () => {
-            await testCombinedParameters({
-              active,
-              deleted,
-              page: 2,
-              pageSize,
-            });
+          expect(serviceResult).toEqual({
+            count,
+            page,
+            pageSize,
+            results: repositoryResults,
           });
-        },
-      );
+        }
+
+        describe.each([
+          {
+            description: 'active and deleted',
+            active: ActiveFilter.ACTIVE,
+            deleted: DeletedFilter.DELETED,
+            pageSize: 3,
+          },
+          {
+            description: 'active and not deleted',
+            active: ActiveFilter.ACTIVE,
+            deleted: DeletedFilter.NOT_DELETED,
+            pageSize: 3,
+          },
+          {
+            description: 'active and deleted or not deleted',
+            active: ActiveFilter.ACTIVE,
+            deleted: DeletedFilter.ALL,
+            pageSize: 6,
+          },
+
+          {
+            description: 'inactive and deleted',
+            active: ActiveFilter.INACTIVE,
+            deleted: DeletedFilter.DELETED,
+            pageSize: 3,
+          },
+          {
+            description: 'inactive and not deleted',
+            active: ActiveFilter.INACTIVE,
+            deleted: DeletedFilter.NOT_DELETED,
+            pageSize: 3,
+          },
+          {
+            description: 'inactive and deleted or not deleted',
+            active: ActiveFilter.INACTIVE,
+            deleted: DeletedFilter.ALL,
+            pageSize: 6,
+          },
+
+          {
+            description: 'active or inactive and deleted',
+            active: ActiveFilter.ALL,
+            deleted: DeletedFilter.DELETED,
+            pageSize: 6,
+          },
+          {
+            description: 'active or inactive and not deleted',
+            active: ActiveFilter.ALL,
+            deleted: DeletedFilter.NOT_DELETED,
+            pageSize: 6,
+          },
+          {
+            description: 'active or inactive and deleted or not deleted',
+            active: ActiveFilter.ALL,
+            deleted: DeletedFilter.ALL,
+            pageSize: 12,
+          },
+        ])(
+          'Should do text filtering when brand is $description',
+          ({ description, active, deleted, pageSize }) => {
+            it(`should get first page when`, async () => {
+              await testCombinedParameters({
+                active,
+                deleted,
+                page: 1,
+                pageSize,
+              });
+            });
+
+            it(`should get second page`, async () => {
+              await testCombinedParameters({
+                active,
+                deleted,
+                page: 2,
+                pageSize,
+              });
+            });
+          },
+        );
+      });
     });
   });
 

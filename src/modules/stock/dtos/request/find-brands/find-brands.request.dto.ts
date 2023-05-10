@@ -29,7 +29,7 @@ const arrayTransformer = getArrayTransformer({
   removeDuplicated: true,
 });
 
-export class FindBranddRequestDTO {
+export class FindBrandRequestDTO {
   @IsString({ message: TextMessage.STRING })
   @IsOptional()
   @Transform((options) => textSearchTransformer(options.value))
