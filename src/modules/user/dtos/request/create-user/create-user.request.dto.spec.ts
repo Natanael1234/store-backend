@@ -39,7 +39,10 @@ describe('CreateUserRequestDto', () => {
 
   describe('name', () => {
     it.each(
-      getNameErrorDataList(TestUserData.creationData[2], TestPurpose.create),
+      getNameErrorDataList({
+        dtoData: TestUserData.creationData[2],
+        purpose: TestPurpose.create,
+      }),
     )(
       'should fail validation when name is $description',
       async ({ data, expectedErrors }) => {
@@ -52,7 +55,10 @@ describe('CreateUserRequestDto', () => {
     );
 
     it.each(
-      getNameAcceptableValues(TestUserData.creationData[2], TestPurpose.create),
+      getNameAcceptableValues({
+        dtoData: TestUserData.creationData[2],
+        purpose: TestPurpose.create,
+      }),
     )('Should validate when name is $description', async ({ data }) => {
       const errors = await validateFirstError(data, CreateUserRequestDTO);
       expect(errors).toHaveLength(0);
@@ -61,7 +67,10 @@ describe('CreateUserRequestDto', () => {
 
   describe('email', () => {
     it.each(
-      getEmailErrorDataList(TestUserData.creationData[2], TestPurpose.create),
+      getEmailErrorDataList({
+        dtoData: TestUserData.creationData[2],
+        purpose: TestPurpose.create,
+      }),
     )(
       'should fail validation when email is $description',
       async ({ data, expectedErrors }) => {
@@ -75,10 +84,10 @@ describe('CreateUserRequestDto', () => {
     );
 
     it.each(
-      getEmailAcceptableValues(
-        TestUserData.creationData[2],
-        TestPurpose.create,
-      ),
+      getEmailAcceptableValues({
+        dtoData: TestUserData.creationData[2],
+        purpose: TestPurpose.create,
+      }),
     )('Should validate when email is $description', async ({ data }) => {
       const errors = await validateFirstError(data, CreateUserRequestDTO);
       expect(errors).toHaveLength(0);
@@ -87,10 +96,10 @@ describe('CreateUserRequestDto', () => {
 
   describe('password', () => {
     it.each(
-      getPasswordErrorDataList(
-        TestUserData.creationData[2],
-        TestPurpose.create,
-      ),
+      getPasswordErrorDataList({
+        dtoData: TestUserData.creationData[2],
+        purpose: TestPurpose.create,
+      }),
     )(
       'should fail validation when password is $description',
       async ({ data, expectedErrors }) => {
@@ -103,10 +112,10 @@ describe('CreateUserRequestDto', () => {
     );
 
     it.each(
-      getPasswordAcceptableValues(
-        TestUserData.creationData[2],
-        TestPurpose.create,
-      ),
+      getPasswordAcceptableValues({
+        dtoData: TestUserData.creationData[2],
+        purpose: TestPurpose.create,
+      }),
     )('Should validate when password is $description', async ({ data }) => {
       const errors = await validateFirstError(data, CreateUserRequestDTO);
       expect(errors).toHaveLength(0);
@@ -115,7 +124,10 @@ describe('CreateUserRequestDto', () => {
 
   describe('roles', () => {
     it.each(
-      getRolesErrorDataList(TestUserData.creationData[2], TestPurpose.create),
+      getRolesErrorDataList({
+        dtoData: TestUserData.creationData[2],
+        purpose: TestPurpose.create,
+      }),
     )(
       'should fail when roles is $description',
       async ({ data, expectedErrors }) => {
@@ -129,7 +141,7 @@ describe('CreateUserRequestDto', () => {
   });
 
   describe('active', () => {
-    it.each(getActiveErrorDataList(TestUserData.creationData[2]))(
+    it.each(getActiveErrorDataList({ dtoData: TestUserData.creationData[2] }))(
       'should fail when active is $description',
       async ({ data, expectedErrors }) => {
         const errors = await validateFirstError(data, CreateUserRequestDTO);
@@ -140,13 +152,12 @@ describe('CreateUserRequestDto', () => {
       },
     );
 
-    it.each(getActiveAcceptableValues(TestUserData.creationData[2]))(
-      'should validate when active is $description',
-      async ({ data }) => {
-        const errors = await validateFirstError(data, CreateUserRequestDTO);
-        expect(errors).toHaveLength(0);
-      },
-    );
+    it.each(
+      getActiveAcceptableValues({ dtoData: TestUserData.creationData[2] }),
+    )('should validate when active is $description', async ({ data }) => {
+      const errors = await validateFirstError(data, CreateUserRequestDTO);
+      expect(errors).toHaveLength(0);
+    });
   });
 
   describe('multiple errors', () => {

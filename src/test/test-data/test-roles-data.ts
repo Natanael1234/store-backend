@@ -1,11 +1,13 @@
 import { RoleMessage } from '../../modules/user/enums/messages/role/role-messages.enum';
 import { TestData, TestErrorData, TestPurpose } from '../test-data';
 
-export function getRolesErrorDataList(
-  dtoData,
-  purpose: TestPurpose,
-): TestErrorData[] {
+export function getRolesErrorDataList(options: {
+  dtoData;
+  purpose: TestPurpose;
+}): TestErrorData[] {
   const property = 'roles';
+
+  const { purpose, dtoData } = options;
   const list = [
     TestData.buildErrorData({
       description: 'number',

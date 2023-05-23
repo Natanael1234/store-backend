@@ -48,37 +48,37 @@ export class TestDtoActiveFilter {
       {
         description: '"active" is invalid string',
         data: { active: 'aCtivE' },
-        constraints: { isEnum: ActiveMessage.INVALID },
+        constraints: { isEnum: ActiveMessage.TYPE },
       },
       {
         description: '"active" is empty string',
         data: { active: '' },
-        constraints: { isEnum: ActiveMessage.INVALID },
+        constraints: { isEnum: ActiveMessage.TYPE },
       },
       {
         description: '"active" is boolean',
         data: { active: true },
-        constraints: { isEnum: ActiveMessage.INVALID },
+        constraints: { isEnum: ActiveMessage.TYPE },
       },
       {
         description: '"active" is boolean string',
         data: { active: 'true' },
-        constraints: { isEnum: ActiveMessage.INVALID },
+        constraints: { isEnum: ActiveMessage.TYPE },
       },
       {
         description: '"active" is number',
         data: { active: 4334556 },
-        constraints: { isEnum: ActiveMessage.INVALID },
+        constraints: { isEnum: ActiveMessage.TYPE },
       },
       {
         description: '"active" is object',
         data: { active: {} },
-        constraints: { isEnum: ActiveMessage.INVALID },
+        constraints: { isEnum: ActiveMessage.TYPE },
       },
       {
         description: '"active" is array',
         data: { active: [] },
-        constraints: { isEnum: ActiveMessage.INVALID },
+        constraints: { isEnum: ActiveMessage.TYPE },
       },
     ];
     return data;

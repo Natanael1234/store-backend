@@ -1,6 +1,6 @@
-import { testValidateBrand } from '../brand/test-brand-utils';
+import { ProductEntity } from '../../modules/stock/models/product/product.entity';
 
-function getExpectedFields(brands: boolean) {
+function getExpectedFields(brand: boolean, category: boolean) {
   const fields = [
     'id',
     'code',
@@ -13,8 +13,10 @@ function getExpectedFields(brands: boolean) {
     'updated',
     'deletedAt',
     'brandId',
+    'categoryId',
   ];
-  if (brands) fields.push('brand');
+  if (brand) fields.push('brand');
+  if (category) fields.push('category');
 
   return fields.sort();
 }
@@ -32,12 +34,38 @@ export function testValidateProduct(product, expectedData) {
   expect(product.updated).toBeDefined();
   expect(product.deletedAt).toBeNull();
   expect(product.brandId).toEqual(expectedData.brandId);
+  expect(product.categoryId).toEqual(expectedData.categoryId);
 
-  const expectedFields = getExpectedFields(!!expectedData.brand);
+  const expectedFields = getExpectedFields(
+    !!expectedData.brand,
+    !!expectedData.category,
+  );
   expect(Object.keys(product).sort()).toEqual(expectedFields);
 
   if (expectedData.brand) {
-    testValidateBrand(product.brand, expectedData.brand);
     expect(Object.keys(product).sort()).toEqual(expectedFields);
+    expect(product.brand).toBeDefined();
+    expect(product.brand.id).toEqual(expectedData.brand.id);
+    expect(product.brand.name).toEqual(expectedData.brand.name);
+    expect(product.brand.active).toEqual(expectedData.brand.active);
+  }
+
+  if (expectedData.category) {
+    expect(Object.keys(product).sort()).toEqual(expectedFields);
+    expect(product.category).toBeDefined();
+    expect(product.category.id).toEqual(expectedData.category.id);
+    expect(product.category.name).toEqual(expectedData.category.name);
+    expect(product.category.active).toEqual(expectedData.category.active);
+    expect(product.category.parentId).toEqual(expectedData.category.parentId);
+  }
+}
+
+export function testValidateProductArray(
+  products: ProductEntity[],
+  expectedData: any[],
+) {
+  expect(products).toHaveLength(expectedData.length);
+  for (let i = 0; i < products.length; i++) {
+    testValidateProduct(products[i], expectedData[i]);
   }
 }

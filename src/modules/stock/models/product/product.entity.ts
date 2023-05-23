@@ -9,6 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { BrandEntity } from '../brand/brand.entity';
+import { CategoryEntity } from '../category/category.entity';
 
 @Entity({ name: 'products' })
 export class ProductEntity {
@@ -50,4 +51,13 @@ export class ProductEntity {
   })
   @JoinColumn({ name: 'brandId' })
   brand: BrandEntity;
+
+  @Column({ type: 'int', nullable: false })
+  categoryId?: number;
+
+  @ManyToOne(() => CategoryEntity, (category) => category.children, {
+    nullable: true, // TODO:
+  })
+  @JoinColumn({ name: 'categoryId' })
+  category?: CategoryEntity;
 }

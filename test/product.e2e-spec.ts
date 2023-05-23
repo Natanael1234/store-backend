@@ -1,37 +1,49 @@
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { instanceToPlain, plainToInstance } from 'class-transformer';
 import { FindManyOptions, IsNull, Not, Repository } from 'typeorm';
 import { getTestingModule } from '../src/.jest/test-config.module';
-
-import { instanceToPlain, plainToInstance } from 'class-transformer';
 import { Role } from '../src/modules/authentication/enums/role/role.enum';
 import { AuthenticationService } from '../src/modules/authentication/services/authentication/authentication.service';
 import { CreateProductRequestDTO } from '../src/modules/stock/dtos/request/create-product/create-product.request.dto';
 import { UpdateProductRequestDTO } from '../src/modules/stock/dtos/request/update-product/update-product.request.dto';
 import { BrandMessage } from '../src/modules/stock/enums/messages/brand-messages/brand-messages.enum';
+import { CategoryMessage } from '../src/modules/stock/enums/messages/category-messages/category-messages.enum';
+import { ProductMessage } from '../src/modules/stock/enums/messages/product-messages/product-messages.enum';
+import { ProductOrder } from '../src/modules/stock/enums/sort/product-order/product-order.enum';
 import { BrandEntity } from '../src/modules/stock/models/brand/brand.entity';
 import { ProductEntity } from '../src/modules/stock/models/product/product.entity';
+import { CategoryRepository } from '../src/modules/stock/repositories/categoy.repository';
+import { PaginationConfig } from '../src/modules/system/dtos/request/pagination/configs/pagination.config';
 import { SuccessResponseDto } from '../src/modules/system/dtos/response/pagination/success.response.dto';
 import { ActiveFilter } from '../src/modules/system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../src/modules/system/enums/filter/deleted-filter/deleted-filter.enum';
+import { SortMessage } from '../src/modules/system/enums/messages/sort-messages/sort-messages.enum';
 import { ValidationPipe } from '../src/modules/system/pipes/custom-validation.pipe';
 import { UserEntity } from '../src/modules/user/models/user/user.entity';
 import { UserService } from '../src/modules/user/services/user/user.service';
-import { testValidateProduct } from '../src/test/product/test-product-utils';
+import { TestBrandData } from '../src/test/brand/test-brand-data';
+import { TestCategoryData } from '../src/test/category/test-category-data';
+import { TestSortScenarioBuilder } from '../src/test/filtering/sort/test-service-sort-filter';
+import { TestProductData } from '../src/test/product/test-product-data';
+import {
+  testValidateProduct,
+  testValidateProductArray,
+} from '../src/test/product/test-product-utils';
 import { TestPurpose } from '../src/test/test-data';
 import {
   getActiveAcceptableValues,
   getActiveErrorDataList,
 } from '../src/test/test-data/test-active-data';
 import {
-  getBrandIdAcceptableValues,
-  getBrandIdErrorDataList,
-} from '../src/test/test-data/test-brand-id.-data';
-import {
   getCodeAcceptableValues,
   getCodeErrorDataList,
 } from '../src/test/test-data/test-code-data';
+import {
+  getFKAcceptableValues,
+  getFKErrorDataList,
+} from '../src/test/test-data/test-fk-data';
 import {
   getModelAcceptableValues,
   getModelErrorDataList,
@@ -49,16 +61,8 @@ import {
   getQuantityInStockErrorDataList,
 } from '../src/test/test-data/test-quantity-in-stock-data';
 import { TestDatabaseUtils } from '../src/test/test-database-utils';
-import { objectToJSON } from './common/instance-to-json';
-
-import { ProductMessage } from '../src/modules/stock/enums/messages/product-messages/product-messages.enum';
-import { ProductOrder } from '../src/modules/stock/enums/sort/product-order/product-order.enum';
-import { PaginationConfig } from '../src/modules/system/dtos/request/pagination/configs/pagination.config';
-import { SortMessage } from '../src/modules/system/enums/messages/sort-messages/sort-messages.enum';
-import { TestBrandData } from '../src/test/brand/test-brand-data';
-import { TestSortScenarioBuilder } from '../src/test/filtering/sort/test-service-sort-filter';
-import { TestProductData } from '../src/test/product/test-product-data';
 import { TestUserData } from '../src/test/user/test-user-data';
+import { objectToJSON } from './common/instance-to-json';
 import { AbstractTestAPIActiveFilter } from './common/test-api-active';
 import { AbstractTestAPIDeletedFilter } from './common/test-api-deleted';
 import { AbstractTestApiPagination } from './common/test-api-pagination';
@@ -71,11 +75,12 @@ import {
   getHTTPPostMethod,
 } from './common/test-request-utils';
 
-describe('StockController (e2e)', () => {
+describe('ProductController (e2e)', () => {
   let app: INestApplication;
   let moduleFixture: TestingModule;
 
   let brandRepo: Repository<BrandEntity>;
+  let categoryRepo: CategoryRepository;
   let productRepo: Repository<ProductEntity>;
   let userRepo: Repository<UserEntity>;
   let authenticationService: AuthenticationService;
@@ -119,6 +124,7 @@ describe('StockController (e2e)', () => {
     brandRepo = app.get<Repository<BrandEntity>>(
       getRepositoryToken(BrandEntity),
     );
+    categoryRepo = app.get<CategoryRepository>(CategoryRepository);
     productRepo = app.get<Repository<ProductEntity>>(
       getRepositoryToken(ProductEntity),
     );
@@ -142,14 +148,31 @@ describe('StockController (e2e)', () => {
   describe('/products', () => {
     describe('/products (POST)', () => {
       it('should create product', async () => {
-        const brandData = TestBrandData.dataForRepository;
-        await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
+        await brandRepo.insert(TestBrandData.dataForRepository);
+        await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
         const productData = TestProductData.dataForRepository;
         const brands = await brandRepo.find();
+        const categories = await categoryRepo.find();
         const expectedProductResults = [
-          { id: 1, ...productData[0] },
-          { id: 2, ...productData[1] },
-          { id: 3, ...productData[2], active: false },
+          {
+            id: 1,
+            ...productData[0],
+            brand: brands[0],
+            category: categories[0],
+          },
+          {
+            id: 2,
+            ...productData[1],
+            brand: brands[0],
+            category: categories[0],
+          },
+          {
+            id: 3,
+            ...productData[2],
+            active: false,
+            brand: brands[1],
+            category: categories[1],
+          },
         ];
         await testDatabaseUtils.reset();
 
@@ -178,29 +201,19 @@ describe('StockController (e2e)', () => {
         expect(changes.alteredTables).toEqual(['products']);
         expect(changes.after.products).toHaveLength(3);
 
-        expect(createdProducts).toHaveLength(3);
-        testValidateProduct(createdProducts[0], expectedProductResults[0]);
-        testValidateProduct(createdProducts[1], expectedProductResults[1]);
-        testValidateProduct(createdProducts[2], expectedProductResults[2]);
+        testValidateProductArray(createdProducts, expectedProductResults);
 
         expectedProductResults[0]['brand'] = brands[0];
         expectedProductResults[1]['brand'] = brands[0];
         expectedProductResults[2]['brand'] = brands[1];
-        testValidateProduct(
-          changes.after.products[0],
-          expectedProductResults[0],
-        );
-        testValidateProduct(
-          changes.after.products[1],
-          expectedProductResults[1],
-        );
-        testValidateProduct(
-          changes.after.products[2],
-          expectedProductResults[2],
+        testValidateProductArray(
+          changes.after.products,
+          expectedProductResults,
         );
       });
 
       it('should fail when brand does not exists', async () => {
+        await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
         const productData = TestProductData.dataForRepository;
         const data = { ...productData[0], brandId: 200 };
 
@@ -223,8 +236,8 @@ describe('StockController (e2e)', () => {
 
       describe('authentication', () => {
         it('should not allow unauthenticated', async () => {
-          const brandData = TestBrandData.dataForRepository;
-          await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
+          await brandRepo.insert(TestBrandData.dataForRepository);
+          await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
           const productData = TestProductData.dataForRepository;
           await httpPost('/products', productData[0], HttpStatus.UNAUTHORIZED);
         });
@@ -232,8 +245,8 @@ describe('StockController (e2e)', () => {
 
       describe('authorization', () => {
         it('should not allow basic user', async () => {
-          const brandData = TestBrandData.dataForRepository;
-          await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
+          await brandRepo.insert(TestBrandData.dataForRepository);
+          await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
           const productData = TestProductData.dataForRepository;
           await httpPost(
             '/products',
@@ -244,120 +257,290 @@ describe('StockController (e2e)', () => {
         });
       });
 
-      describe.each([
-        ...getCodeErrorDataList(
-          TestProductData.dataForRepository[1],
-          TestPurpose.create,
-        ),
-        ...getNameErrorDataList(
-          TestProductData.dataForRepository[1],
-          TestPurpose.create,
-        ),
-        ...getModelErrorDataList(
-          TestProductData.dataForRepository[1],
-          TestPurpose.create,
-        ),
-        ...getPriceErrorDataList(
-          TestProductData.dataForRepository[1],
-          TestPurpose.create,
-        ),
-        ...getQuantityInStockErrorDataList(
-          TestProductData.dataForRepository[1],
-        ),
-        ...getActiveErrorDataList(TestProductData.dataForRepository[1]),
-        ...getBrandIdErrorDataList(
-          TestProductData.dataForRepository[1],
-          TestPurpose.create,
-        ),
-      ])(
-        '$property',
-        ({ property, data, response, statusCode, description }) => {
-          it(`should fail when ${property} is ${description}`, async () => {
-            const brandData = TestBrandData.dataForRepository;
-            await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
-            await testDatabaseUtils.reset();
+      async function testCreateAccept(property: string, data: any) {
+        const dto = plainToInstance(CreateProductRequestDTO, { ...data });
+        const expected = { id: 1, ...data, [property]: dto[property] };
+        await brandRepo.insert(TestBrandData.dataForRepository);
+        await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
+        expected['brand'] = await brandRepo.findOneBy({ id: 1 });
+        expected['category'] = await categoryRepo.findOneBy({ id: 1 });
+        await testDatabaseUtils.reset();
 
-            const body = await httpPost(
-              '/products',
-              data,
-              statusCode,
-              rootToken,
-            );
+        const createdProduct = await httpPost(
+          '/products',
+          data,
+          HttpStatus.CREATED,
+          rootToken,
+        );
 
-            const changes = await testDatabaseUtils.checkChanges();
-            expect(changes.alteredDatabase).toBeFalsy();
-            expect(body).toEqual(response);
-          });
-        },
-      );
+        const changes = await testDatabaseUtils.checkChanges();
+        expect(changes.alteredTables).toStrictEqual(['products']);
+        testValidateProduct(createdProduct, expected);
+        expect(changes.after.products).toHaveLength(1);
+        testValidateProduct(createdProduct, expected);
+        testValidateProduct(changes.after.products[0], expected);
+      }
 
-      describe.each([
-        ...getCodeAcceptableValues(
-          TestProductData.dataForRepository[1],
-          TestPurpose.create,
-        ),
-        ...getNameAcceptableValues(
-          TestProductData.dataForRepository[1],
-          TestPurpose.create,
-        ),
-        ...getModelAcceptableValues(
-          TestProductData.dataForRepository[1],
-          TestPurpose.create,
-        ),
-        ...getPriceAcceptableValues(
-          TestProductData.dataForRepository[1],
-          TestPurpose.create,
-        ),
-        ...getQuantityInStockAcceptableValues(
-          TestProductData.dataForRepository[1],
-          TestPurpose.create,
-        ),
-        ...getActiveAcceptableValues(TestProductData.dataForRepository[1]),
-        ...getBrandIdAcceptableValues(
-          TestProductData.dataForRepository[1],
-          TestPurpose.create,
-        ),
-      ])('$property', ({ data, property, description }) => {
-        it(`should validate when ${property} is ${description}`, async () => {
-          const expectedResult = plainToInstance(CreateProductRequestDTO, {
-            id: 1,
-            ...data,
-          });
-          const brandData = TestBrandData.dataForRepository;
-          await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
-          const brands = await brandRepo.find();
-          await testDatabaseUtils.reset();
+      async function testCreateReject(
+        data: any,
+        statusCode: number,
+        response: any,
+      ) {
+        await brandRepo.insert(TestBrandData.dataForRepository);
+        await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
+        await testDatabaseUtils.reset();
 
-          const createdProduct = await httpPost(
-            '/products',
-            data,
-            HttpStatus.CREATED,
-            rootToken,
+        const body = await httpPost('/products', data, statusCode, rootToken);
+
+        const changes = await testDatabaseUtils.checkChanges();
+        expect(changes.alteredDatabase).toBeFalsy();
+        expect(body).toEqual(response);
+      }
+
+      describe('code', () => {
+        const accepts = getCodeAcceptableValues({
+          dtoData: TestProductData.dataForRepository[0],
+          purpose: TestPurpose.create,
+        });
+        it.each(accepts)(
+          'should accept create product request when code is $description',
+          async ({ data }) => {
+            await testCreateAccept('code', data);
+          },
+        );
+
+        const rejects = getCodeErrorDataList({
+          dtoData: TestProductData.dataForRepository[0],
+          purpose: TestPurpose.create,
+        });
+        it.each(rejects)(
+          'should reject create product request when code is $description',
+          async ({ data, response, statusCode }) => {
+            await testCreateReject(data, statusCode, response);
+          },
+        );
+      });
+
+      describe('name', () => {
+        const accepts = getNameAcceptableValues({
+          dtoData: TestProductData.dataForRepository[0],
+          purpose: TestPurpose.create,
+        });
+        it.each(accepts)(
+          'should accept create product request when name is $description',
+          async ({ data }) => {
+            await testCreateAccept('name', data);
+          },
+        );
+
+        const rejects = getCodeErrorDataList({
+          dtoData: TestProductData.dataForRepository[0],
+          purpose: TestPurpose.create,
+        });
+        it.each(rejects)(
+          'should reject create product request when name is $description',
+          async ({ data, response, statusCode }) => {
+            await testCreateReject(data, statusCode, response);
+          },
+        );
+      });
+
+      describe('model', () => {
+        const accepts = getModelAcceptableValues({
+          dtoData: TestProductData.dataForRepository[0],
+          purpose: TestPurpose.create,
+        });
+        it.each(accepts)(
+          'should accept create product request when model is $description',
+          async ({ data }) => {
+            await testCreateAccept('model', data);
+          },
+        );
+
+        const rejects = getModelErrorDataList({
+          dtoData: TestProductData.dataForRepository[0],
+          purpose: TestPurpose.create,
+        });
+        it.each(rejects)(
+          'should reject create product request when model is $description',
+          async ({ data, response, statusCode }) => {
+            await testCreateReject(data, statusCode, response);
+          },
+        );
+      });
+
+      describe('price', () => {
+        const accepts = getPriceAcceptableValues({
+          dtoData: TestProductData.dataForRepository[0],
+          purpose: TestPurpose.create,
+        });
+        it.each(accepts)(
+          'should accept create product request when price is $description',
+          async ({ data }) => {
+            await testCreateAccept('price', data);
+          },
+        );
+
+        const rejects = getPriceErrorDataList({
+          dtoData: TestProductData.dataForRepository[0],
+          purpose: TestPurpose.create,
+        });
+        it.each(rejects)(
+          'should reject create product request when price is $description',
+          async ({ data, response, statusCode }) => {
+            await testCreateReject(data, statusCode, response);
+          },
+        );
+      });
+
+      describe('quantityInStock', () => {
+        const accepts = getQuantityInStockAcceptableValues({
+          dtoData: TestProductData.dataForRepository[0],
+          purpose: TestPurpose.create,
+        });
+        it.each(accepts)(
+          'should accept create product request when quantityInStock is $description',
+          async ({ data }) => {
+            await testCreateAccept('quantityInStock', data);
+          },
+        );
+
+        const rejects = getQuantityInStockErrorDataList({
+          dtoData: TestProductData.dataForRepository[0],
+        });
+        it.each(rejects)(
+          'should reject create product request when quantityInStock is $description',
+          async ({ data, response, statusCode }) => {
+            await testCreateReject(data, statusCode, response);
+          },
+        );
+      });
+
+      describe('active', () => {
+        const accepts = getActiveAcceptableValues({
+          dtoData: TestProductData.dataForRepository[0],
+        });
+        it.each(accepts)(
+          'should accept create product request when active is $description',
+          async ({ data }) => {
+            await testCreateAccept('active', data);
+          },
+        );
+
+        const rejects = getActiveErrorDataList({
+          dtoData: TestProductData.dataForRepository[0],
+        });
+        it.each(rejects)(
+          'should reject create product request when active is $description',
+          async ({ data, response, statusCode }) => {
+            await testCreateReject(data, statusCode, response);
+          },
+        );
+      });
+
+      describe('brandId', () => {
+        const accepts = getFKAcceptableValues({
+          property: 'brandId',
+          dtoData: TestProductData.dataForRepository[0],
+          allowUndefined: false,
+          allowNull: false,
+        });
+        it.each(accepts)(
+          'should accept create product request when brandId is $description',
+          async ({ data }) => {
+            await testCreateAccept('brandId', data);
+          },
+        );
+
+        const rejects = getFKErrorDataList({
+          property: 'brandId',
+          dtoData: TestProductData.dataForRepository[0],
+          allowUndefined: false,
+          allowNull: false,
+          messages: {
+            invalid: BrandMessage.BRAND_ID_TYPE,
+            type: BrandMessage.BRAND_ID_TYPE,
+            undefined: BrandMessage.REQUIRED_BRAND_ID,
+            null: BrandMessage.NULL_BRAND_ID,
+          },
+        });
+        it.each(rejects)(
+          'should reject create product request when brandId is $description',
+          async ({ data, response, statusCode }) => {
+            await testCreateReject(data, statusCode, response);
+          },
+        );
+
+        it('should reject create product request when brand is not found', async () => {
+          await testCreateReject(
+            { ...TestProductData.dataForRepository[0], brandId: 200 },
+            HttpStatus.NOT_FOUND,
+            {
+              error: 'Not Found',
+              message: BrandMessage.NOT_FOUND,
+              statusCode: HttpStatus.NOT_FOUND,
+            },
           );
+        });
+      });
 
-          const changes = await testDatabaseUtils.checkChanges();
-          expect(changes.alteredTables).toStrictEqual(['products']);
-          testValidateProduct(createdProduct, expectedResult);
-          expect(changes.after.products).toHaveLength(1);
-          testValidateProduct(createdProduct, expectedResult);
-          expectedResult['brand'] = brands[0];
-          testValidateProduct(changes.after.products[0], expectedResult);
+      describe('categoryId', () => {
+        const accepts = getFKAcceptableValues({
+          property: 'categoryId',
+          dtoData: TestProductData.dataForRepository[0],
+          allowUndefined: false,
+          allowNull: false,
+        });
+        it.each(accepts)(
+          'should accept create product request when categoryId is $description',
+          async ({ data }) => {
+            await testCreateAccept('categoryId', data);
+          },
+        );
+
+        const rejects = getFKErrorDataList({
+          property: 'categoryId',
+          dtoData: TestProductData.dataForRepository[0],
+          allowUndefined: false,
+          allowNull: false,
+          messages: {
+            invalid: CategoryMessage.CATEGORY_ID_TYPE,
+            type: CategoryMessage.CATEGORY_ID_TYPE,
+            undefined: CategoryMessage.REQUIRED_CATEGORY_ID,
+            null: CategoryMessage.NULL_CATEGORY_ID,
+          },
+        });
+
+        it.each(rejects)(
+          'should reject create product request when categoryId is $description',
+          async ({ data, response, statusCode }) => {
+            await testCreateReject(data, statusCode, response);
+          },
+        );
+
+        it('should reject create product request when category is not found', async () => {
+          await testCreateReject(
+            { ...TestProductData.dataForRepository[0], categoryId: 200 },
+            HttpStatus.NOT_FOUND,
+            {
+              error: 'Not Found',
+              message: CategoryMessage.NOT_FOUND,
+              statusCode: HttpStatus.NOT_FOUND,
+            },
+          );
         });
       });
     });
 
     describe('/products (PATCH)', () => {
       it('should update product', async () => {
-        const brandData = TestBrandData.dataForRepository;
-        await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
-        const productData = TestProductData.dataForRepository;
-        await productRepo.insert([
-          productData[0],
-          productData[1],
-          productData[2],
-        ]);
+        const brandsData = TestBrandData.dataForRepository.slice(0, 3);
+        await brandRepo.insert(brandsData);
+        const categoriesData = TestCategoryData.dataForRepository;
+        await categoryRepo.bulkCreate(categoriesData);
+        const productData = TestProductData.dataForRepository.slice(0, 3);
+        await productRepo.insert(productData);
         await testDatabaseUtils.reset();
-
         const data = {
           code: 'newcode',
           name: 'New Name',
@@ -366,14 +549,25 @@ describe('StockController (e2e)', () => {
           quantityInStock: 2000,
           active: true,
           brandId: 3,
+          categoryId: 3,
         };
-        const expectedResults = [
-          { id: 1, ...productData[0] },
-          { id: 2, ...data },
-          { id: 3, ...productData[2], active: false, quantityInStock: 0 },
-        ];
 
-        const updatedProduct = await httpPatch(
+        const expected = await productRepo.find({
+          relations: { brand: true, category: true },
+        });
+
+        expected[1].code = data.code;
+        expected[1].name = data.name;
+        expected[1].model = data.model;
+        expected[1].price = data.price;
+        expected[1].quantityInStock = data.quantityInStock;
+        expected[1].active = data.active;
+        expected[1].brandId = data.brandId;
+        expected[1].categoryId = data.categoryId;
+        expected[1].brand = await brandRepo.findOneBy({ id: 3 });
+        expected[1].category = await categoryRepo.findOneBy({ id: 3 });
+
+        const updated = await httpPatch(
           '/products/2',
           data,
           HttpStatus.OK,
@@ -382,44 +576,16 @@ describe('StockController (e2e)', () => {
 
         const changes = await testDatabaseUtils.checkChanges();
         expect(changes.alteredTables).toEqual(['products']);
-
-        testValidateProduct(updatedProduct, expectedResults[1]);
-        expect(changes.after.products).toHaveLength(3);
-        expectedResults[0]['brand'] = changes.after.brands[0];
-        expectedResults[1]['brand'] = changes.after.brands[2];
-        expectedResults[2]['brand'] = changes.after.brands[1];
-        testValidateProduct(changes.after.products[0], expectedResults[0]);
-        testValidateProduct(changes.after.products[1], expectedResults[1]);
-        testValidateProduct(changes.after.products[2], expectedResults[2]);
-      });
-
-      it('should fail when brand does not exists', async () => {
-        const productData = TestProductData.dataForRepository;
-        const data = { ...productData[0], brandId: 200 };
-
-        await testDatabaseUtils.reset();
-
-        const body = await httpPatch(
-          '/products/1',
-          data,
-          HttpStatus.NOT_FOUND,
-          rootToken,
-        );
-        const changes = await testDatabaseUtils.checkChanges();
-        expect(changes.alteredDatabase).toBeFalsy();
-        expect(body).toEqual({
-          error: 'Not Found',
-          message: BrandMessage.NOT_FOUND,
-          statusCode: HttpStatus.NOT_FOUND,
-        });
+        testValidateProduct(updated, expected[1]);
+        testValidateProductArray(changes.after.products, expected);
       });
 
       describe('authentication', () => {
         it('should not allow unauthenticated', async () => {
-          const brandData = TestBrandData.dataForRepository;
-          await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
-          const productData = TestProductData.dataForRepository;
-          await productRepo.insert([productData[0], productData[1]]);
+          await brandRepo.insert(TestBrandData.dataForRepository.slice(0, 3));
+          await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
+          const productData = TestProductData.dataForRepository.slice(0, 2);
+          await productRepo.insert(productData);
           await httpPatch(
             '/products/2',
             productData[2],
@@ -430,9 +596,9 @@ describe('StockController (e2e)', () => {
 
       describe('authorization', () => {
         it('should not allow basic user', async () => {
-          const brandData = TestBrandData.dataForRepository;
-          await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
-          const productData = TestProductData.dataForRepository;
+          await brandRepo.insert(TestBrandData.dataForRepository.slice(0, 3));
+          await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
+          const productData = TestProductData.dataForRepository.slice(0, 3);
           await productRepo.insert([productData[0], productData[1]]);
           await httpPatch(
             '/products/2',
@@ -443,164 +609,335 @@ describe('StockController (e2e)', () => {
         });
       });
 
-      describe.each([
-        ...getCodeErrorDataList(
-          TestProductData.dataForRepository[1],
-          TestPurpose.update,
-        ),
-        ...getNameErrorDataList(
-          TestProductData.dataForRepository[1],
-          TestPurpose.update,
-        ),
-        ...getModelErrorDataList(
-          TestProductData.dataForRepository[1],
-          TestPurpose.update,
-        ),
-        ...getPriceErrorDataList(
-          TestProductData.dataForRepository[1],
-          TestPurpose.update,
-        ),
-        ...getQuantityInStockErrorDataList(
-          TestProductData.dataForRepository[1],
-        ),
-        ...getActiveErrorDataList(TestProductData.dataForRepository[1]),
-        ...getBrandIdErrorDataList(
-          TestProductData.dataForRepository[1],
-          TestPurpose.update,
-        ),
-      ])(
-        '$property',
-        ({ data, response, property, description, statusCode }) => {
-          it(`should fail when ${property} is ${description}`, async () => {
-            const brandData = TestBrandData.dataForRepository;
-            await brandRepo.insert([brandData[0], brandData[1]]);
-            const productData = TestProductData.dataForRepository;
-            await productRepo.insert([productData[0], productData[1]]);
-            await testDatabaseUtils.reset();
+      async function testUpdateAccept(property, data, description) {
+        await brandRepo.insert(TestBrandData.dataForRepository);
+        await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
 
-            const body = await httpPatch(
-              '/products/2',
-              data,
-              statusCode,
-              rootToken,
-            );
-            const changes = await testDatabaseUtils.checkChanges();
+        const productsData = TestProductData.dataForRepository.slice(0, 3);
+        await productRepo.insert(productsData);
 
-            expect(changes.alteredDatabase).toBeFalsy();
-            expect(body).toEqual(response);
-          });
-        },
-      );
+        await testDatabaseUtils.reset();
 
-      describe.each([
-        ...getCodeAcceptableValues(
-          TestProductData.dataForRepository[1],
-          TestPurpose.update,
-        ),
-        ...getNameAcceptableValues(
-          TestProductData.dataForRepository[1],
-          TestPurpose.update,
-        ),
-        ...getModelAcceptableValues(
-          TestProductData.dataForRepository[1],
-          TestPurpose.update,
-        ),
-        ...getPriceAcceptableValues(
-          TestProductData.dataForRepository[1],
-          TestPurpose.update,
-        ),
-        ...getQuantityInStockAcceptableValues(
-          TestProductData.dataForRepository[1],
-          TestPurpose.update,
-        ),
-        ...getActiveAcceptableValues(TestProductData.dataForRepository[1]),
-        ...getBrandIdAcceptableValues(
-          TestProductData.dataForRepository[1],
-          TestPurpose.update,
-        ),
-      ])('$property', ({ property, data, description }) => {
-        it(`should validate when ${property} is ${description}`, async () => {
-          const brandData = TestBrandData.dataForRepository;
-          await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
+        const dto = plainToInstance(UpdateProductRequestDTO, data);
+        const expected = await productRepo.find({
+          relations: { brand: true, category: true },
+        });
+
+        if (dto[property] !== undefined) {
+          expected[1][property] = dto[property];
+          if (property == 'brandId') {
+            expected[1].brand = await brandRepo.findOneBy({
+              id: dto[property],
+            });
+          }
+          if (property == 'categoryId') {
+            expected[1].category = await categoryRepo.findOneBy({
+              id: dto[property],
+            });
+          }
+        }
+
+        // ensures register alteration
+        if (property != 'name') {
+          data.name = 'New Name';
+          expected[1].name = data.name;
+        } else if (property != 'code') {
+          data.code = 'new code';
+          expected[1].code = data.code;
+        }
+
+        const updated = await httpPatch(
+          '/products/2',
+          data,
+          HttpStatus.OK,
+          rootToken,
+        );
+
+        const changes = await testDatabaseUtils.checkChanges();
+        expect(changes.alteredTables).toEqual(['products']);
+        testValidateProduct(updated, expected[1]);
+        expect(changes.after.products).toHaveLength(3);
+        testValidateProductArray(changes.after.products, expected);
+      }
+
+      async function testUpdateReject(data, statusCode, response) {
+        await brandRepo.insert(TestBrandData.dataForRepository);
+        await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
+        const productData = TestProductData.dataForRepository;
+        await productRepo.insert([productData[0], productData[1]]);
+        await testDatabaseUtils.reset();
+
+        const body = await httpPatch(
+          '/products/2',
+          data,
+          statusCode,
+          rootToken,
+        );
+
+        const changes = await testDatabaseUtils.checkChanges();
+        expect(changes.alteredDatabase).toBeFalsy();
+        expect(body).toEqual(response);
+      }
+
+      describe('code', () => {
+        const accepts = getCodeAcceptableValues({
+          dtoData: TestProductData.dataForRepository[1],
+          purpose: TestPurpose.update,
+        });
+        it.each(accepts)(
+          'should accept update product request when code is $description',
+          async ({ property, data, description }) => {
+            await testUpdateAccept(property, data, description);
+          },
+        );
+
+        const rejects = getCodeErrorDataList({
+          dtoData: TestProductData.dataForRepository[1],
+          purpose: TestPurpose.update,
+        });
+        it.each(rejects)(
+          'should reject update product request when code is $description',
+          async ({ data, statusCode, response }) => {
+            await testUpdateReject(data, statusCode, response);
+          },
+        );
+      });
+
+      describe('name', () => {
+        const accepts = getNameAcceptableValues({
+          dtoData: TestProductData.dataForRepository[1],
+          purpose: TestPurpose.update,
+        });
+        it.each(accepts)(
+          'should accept update product request when name is $description',
+          async ({ property, data, description }) => {
+            await testUpdateAccept(property, data, description);
+          },
+        );
+
+        const rejects = getNameErrorDataList({
+          dtoData: TestProductData.dataForRepository[1],
+          purpose: TestPurpose.update,
+        });
+        it.each(rejects)(
+          'should reject update product request when name is $description',
+          async ({ data, statusCode, response }) => {
+            await testUpdateReject(data, statusCode, response);
+          },
+        );
+      });
+
+      describe('model', () => {
+        const accepts = getModelAcceptableValues({
+          dtoData: TestProductData.dataForRepository[1],
+          purpose: TestPurpose.update,
+        });
+        it.each(accepts)(
+          'should accept update product request when model is $description',
+          async ({ property, data, description }) => {
+            await testUpdateAccept(property, data, description);
+          },
+        );
+
+        const rejects = getModelErrorDataList({
+          dtoData: TestProductData.dataForRepository[1],
+          purpose: TestPurpose.update,
+        });
+        it.each(rejects)(
+          'should reject update product request when model is $description',
+          async ({ data, statusCode, response }) => {
+            await testUpdateReject(data, statusCode, response);
+          },
+        );
+      });
+
+      describe('price', () => {
+        const accepts = getPriceAcceptableValues({
+          dtoData: TestProductData.dataForRepository[1],
+          purpose: TestPurpose.update,
+        });
+        it.each(accepts)(
+          'should accept update product request when price is $description',
+          async ({ property, data, description }) => {
+            await testUpdateAccept(property, data, description);
+          },
+        );
+
+        const rejects = getPriceErrorDataList({
+          dtoData: TestProductData.dataForRepository[1],
+          purpose: TestPurpose.update,
+        });
+
+        it.each(rejects)(
+          'should reject update product request when price is $description',
+          async ({ data, statusCode, response }) => {
+            await testUpdateReject(data, statusCode, response);
+          },
+        );
+      });
+
+      describe('quantityInStock', () => {
+        const accepts = [
+          getQuantityInStockAcceptableValues({
+            dtoData: TestProductData.dataForRepository[1],
+            purpose: TestPurpose.update,
+          }),
+        ];
+        it.each(accepts)(
+          'should accept update product request when quantityInStock is $description',
+          async ({ property, data, description }) => {
+            await testUpdateAccept(property, data, description);
+          },
+        );
+
+        const rejects = [
+          getQuantityInStockErrorDataList({
+            dtoData: TestProductData.dataForRepository[1],
+          }),
+        ];
+        it.each(rejects)(
+          'should reject update product request when quantityInStock is $description',
+          async ({ data, statusCode, response }) => {
+            await testUpdateReject(data, statusCode, response);
+          },
+        );
+      });
+
+      describe('active', () => {
+        const accepts = [
+          getActiveAcceptableValues({
+            dtoData: TestProductData.dataForRepository[1],
+          }),
+        ];
+        it.each(accepts)(
+          'should accept update product request when active is $description',
+          async ({ property, data, description }) => {
+            await testUpdateAccept(property, data, description);
+          },
+        );
+
+        const rejects = [
+          getActiveErrorDataList({
+            dtoData: TestProductData.dataForRepository[1],
+          }),
+        ];
+        it.each(rejects)(
+          'should reject update product request when active is $description',
+          async ({ data, statusCode, response }) => {
+            await testUpdateReject(data, statusCode, response);
+          },
+        );
+      });
+
+      describe('brandId', () => {
+        const accepts = getFKAcceptableValues({
+          property: 'brandId',
+          dtoData: TestProductData.dataForRepository[1],
+          allowUndefined: true,
+          allowNull: false,
+        });
+        it.each(accepts)(
+          'should accept update product request when brandId is $description',
+          async ({ property, data, description }) => {
+            await testUpdateAccept(property, data, description);
+          },
+        );
+
+        const rejects = getFKErrorDataList({
+          property: 'brandId',
+          dtoData: TestProductData.dataForRepository[1],
+          allowUndefined: true,
+          allowNull: false,
+          messages: {
+            invalid: BrandMessage.BRAND_ID_TYPE,
+            type: BrandMessage.BRAND_ID_TYPE,
+            undefined: BrandMessage.REQUIRED_BRAND_ID,
+            null: BrandMessage.NULL_BRAND_ID,
+          },
+        });
+        it.each(rejects)(
+          'should reject update product request when brandId is $description',
+          async ({ data, statusCode, response }) => {
+            await testUpdateReject(data, statusCode, response);
+          },
+        );
+
+        it('should reject update product request when brand does not exists', async () => {
           const productData = TestProductData.dataForRepository;
-          await productRepo.insert([
-            productData[0],
-            productData[1],
-            productData[2],
-          ]);
-          const products = await productRepo.find();
+          const data = { ...productData[0], brandId: 200 };
 
           await testDatabaseUtils.reset();
-          const productUpdateDTO = plainToInstance(
-            UpdateProductRequestDTO,
-            data,
-          );
-          const expectedProductResults = [
-            plainToInstance(UpdateProductRequestDTO, {
-              id: 1,
-              ...productData[0],
-            }),
-            plainToInstance(UpdateProductRequestDTO, {
-              id: 2,
-              ...data,
-              active: productUpdateDTO.active,
-            }),
-            plainToInstance(UpdateProductRequestDTO, {
-              id: 3,
-              ...productData[2],
-              active: false,
-            }),
-          ];
-          if (data[property] == null) {
-            expectedProductResults[1][property] = products[1][property];
-          }
 
-          expectedProductResults[1].active = productUpdateDTO.active;
-
-          const updatedProduct = await httpPatch(
-            '/products/2',
+          const body = await httpPatch(
+            '/products/1',
             data,
-            HttpStatus.OK,
+            HttpStatus.NOT_FOUND,
             rootToken,
           );
-
           const changes = await testDatabaseUtils.checkChanges();
-          // não altera a base para o registro selecionado com os valores recebidos
-          if (data[property] === undefined) {
-            expect(changes.alteredTables).toEqual([]);
-          } else if (property == 'brandId' && description == 'min value') {
-            expect(changes.alteredTables).toEqual([]);
-          } else if (property == 'active' && description == 'null') {
-            expect(changes.alteredTables).toEqual([]);
-          } else if (property == 'active' && description == 'string false') {
-            expect(changes.alteredTables).toEqual([]);
-          } else if (property == 'active' && description == 'boolean false') {
-            expect(changes.alteredTables).toEqual([]);
-          } else {
-            expect(changes.alteredTables).toEqual(['products']);
-          }
+          expect(changes.alteredDatabase).toBeFalsy();
+          expect(body).toEqual({
+            error: 'Not Found',
+            message: BrandMessage.NOT_FOUND,
+            statusCode: HttpStatus.NOT_FOUND,
+          });
+        });
+      });
 
-          testValidateProduct(updatedProduct, expectedProductResults[1]);
+      describe('categoryId', () => {
+        const accepts = getFKAcceptableValues({
+          property: 'categoryId',
+          dtoData: TestProductData.dataForRepository[1],
+          allowUndefined: true,
+          allowNull: false,
+        });
+        it.each(accepts)(
+          'should accept update product request when categoryId is $description',
+          async ({ property, data, description }) => {
+            await testUpdateAccept(property, data, description);
+          },
+        );
 
-          expect(changes.before.products).toHaveLength(3);
-          expect(changes.after.products).toHaveLength(3);
-          expectedProductResults[0]['brand'] = changes.before.brands[0];
-          expectedProductResults[1]['brand'] = changes.before.brands.find(
-            (brand) => expectedProductResults[1].brandId == brand.id,
+        const rejects = [
+          getFKErrorDataList({
+            property: 'categoryId',
+            dtoData: TestProductData.dataForRepository[1],
+            allowUndefined: true,
+            allowNull: false,
+            messages: {
+              invalid: CategoryMessage.CATEGORY_ID_TYPE,
+              type: CategoryMessage.CATEGORY_ID_TYPE,
+              undefined: CategoryMessage.REQUIRED_CATEGORY_ID,
+              null: CategoryMessage.NULL_CATEGORY_ID,
+            },
+          }),
+        ];
+        it.each(rejects)(
+          'should reject update product request when categoryId is $description',
+          async ({ data, statusCode, response }) => {
+            await testUpdateReject(data, statusCode, response);
+          },
+        );
+
+        it('should reject update product request when caategory does not exists', async () => {
+          const productData = TestProductData.dataForRepository;
+          const data = { ...productData[0], categoryId: 200 };
+
+          await testDatabaseUtils.reset();
+
+          const body = await httpPatch(
+            '/products/1',
+            data,
+            HttpStatus.NOT_FOUND,
+            rootToken,
           );
-          expectedProductResults[2]['brand'] = changes.before.brands[1];
-          testValidateProduct(
-            changes.after.products[0],
-            expectedProductResults[0],
-          );
-          testValidateProduct(
-            changes.after.products[1],
-            expectedProductResults[1],
-          );
-          testValidateProduct(
-            changes.after.products[2],
-            expectedProductResults[2],
-          );
+          const changes = await testDatabaseUtils.checkChanges();
+          expect(changes.alteredDatabase).toBeFalsy();
+          expect(body).toEqual({
+            error: 'Not Found',
+            message: BrandMessage.NOT_FOUND,
+            statusCode: HttpStatus.NOT_FOUND,
+          });
         });
       });
     });
@@ -609,6 +946,7 @@ describe('StockController (e2e)', () => {
       describe('authentication', () => {
         it('should allow unauthenticated', async () => {
           await brandRepo.insert(TestBrandData.buildData(1));
+          await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
           await productRepo.insert(TestProductData.buildData(1));
           await httpGet('/products', {}, HttpStatus.OK);
         });
@@ -617,18 +955,21 @@ describe('StockController (e2e)', () => {
       describe('authorization', () => {
         it('should allow basic user', async () => {
           await brandRepo.insert(TestBrandData.buildData(1));
+          await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
           await productRepo.insert(TestProductData.buildData(1));
           await httpGet('/products', {}, HttpStatus.OK, userToken);
         });
 
         it('should allow admin', async () => {
           await brandRepo.insert(TestBrandData.buildData(1));
+          await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
           await productRepo.insert(TestProductData.buildData(1));
           await httpGet('/products', {}, HttpStatus.OK, adminToken);
         });
 
         it('should allow root', async () => {
           await brandRepo.insert(TestBrandData.buildData(1));
+          await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
           await productRepo.insert(TestProductData.buildData(1));
           await httpGet('/products', {}, HttpStatus.OK, rootToken);
         });
@@ -636,16 +977,15 @@ describe('StockController (e2e)', () => {
 
       it('should find products', async () => {
         await brandRepo.insert(TestBrandData.buildData(1));
+        await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
         const productData: any = TestProductData.buildData(4);
         productData[0].active = false;
         productData[2].deletedAt = new Date();
         await productRepo.insert(productData);
         const products = (
           await productRepo.find({
-            where: {
-              active: true,
-            },
-            relations: { brand: true },
+            where: { active: true },
+            relations: { brand: true, category: true },
           })
         ).map((product) => {
           const plain = instanceToPlain(product);
@@ -678,6 +1018,8 @@ describe('StockController (e2e)', () => {
           class ProductTestTextFilter extends AbstractTestAPITextFilter<ProductEntity> {
             async insertRegisters(textToAppend: string[]) {
               await brandRepo.insert(TestBrandData.buildData(1));
+              await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
+
               const productsData = TestProductData.buildData(
                 textToAppend.length,
               );
@@ -687,8 +1029,8 @@ describe('StockController (e2e)', () => {
               await productRepo.insert(productsData);
             }
 
-            findRegisters(findManyOptions: FindManyOptions) {
-              findManyOptions.relations = { brand: true };
+            findRegisters(findManyOptions: FindManyOptions<ProductEntity>) {
+              findManyOptions.relations = { brand: true, category: true };
               findManyOptions.order = { name: 'ASC' };
               return productRepo.findAndCount(findManyOptions);
             }
@@ -713,6 +1055,7 @@ describe('StockController (e2e)', () => {
           class TestProductActiveFilter extends AbstractTestAPIActiveFilter<ProductEntity> {
             async insertRegisters(actives: boolean[]): Promise<any> {
               await brandRepo.insert(TestBrandData.buildData(1));
+              await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
               const productsData: any = TestProductData.buildData(
                 actives.length,
               );
@@ -723,9 +1066,9 @@ describe('StockController (e2e)', () => {
             }
 
             findRegisters(
-              findManyOptions: FindManyOptions,
+              findManyOptions: FindManyOptions<ProductEntity>,
             ): Promise<[pages: ProductEntity[], count: number]> {
-              findManyOptions.relations = { brand: true };
+              findManyOptions.relations = { brand: true, category: true };
               findManyOptions.order = { name: 'ASC' };
               return productRepo.findAndCount(findManyOptions);
             }
@@ -755,6 +1098,7 @@ describe('StockController (e2e)', () => {
           class ProductTestDeletedFilter extends AbstractTestAPIDeletedFilter<ProductEntity> {
             async insertRegisters(deleteds: boolean[]) {
               await brandRepo.insert(TestBrandData.buildData(1));
+              await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
               const productsData = TestProductData.buildData(deleteds.length);
               for (let i = 0; i < productsData.length; i++) {
                 if (deleteds[i]) {
@@ -764,8 +1108,8 @@ describe('StockController (e2e)', () => {
               await productRepo.insert(productsData);
             }
 
-            findRegisters(findManyOptions: FindManyOptions) {
-              findManyOptions.relations = { brand: true };
+            findRegisters(findManyOptions: FindManyOptions<ProductEntity>) {
+              findManyOptions.relations = { brand: true, category: true };
               findManyOptions.order = { name: 'ASC' };
               return productRepo.findAndCount(findManyOptions);
             }
@@ -790,11 +1134,12 @@ describe('StockController (e2e)', () => {
           class ProductTestPagination extends AbstractTestApiPagination<ProductEntity> {
             async insertRegisters(quantity: number): Promise<any> {
               await brandRepo.insert(TestBrandData.buildData(1));
+              await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
               return productRepo.insert(TestProductData.buildData(quantity));
             }
 
-            findRegisters(findManyOptions: FindManyOptions) {
-              findManyOptions.relations = { brand: true };
+            findRegisters(findManyOptions: FindManyOptions<ProductEntity>) {
+              findManyOptions.relations = { brand: true, category: true };
               findManyOptions.order = { name: 'ASC' };
               return productRepo.findAndCount(findManyOptions);
             }
@@ -832,6 +1177,7 @@ describe('StockController (e2e)', () => {
                   quantityInStock: 5,
                   active,
                   brandId: 1,
+                  categoryId: 1,
                 });
               }
             }
@@ -842,11 +1188,13 @@ describe('StockController (e2e)', () => {
             async ({ orderBySQL, orderBy }) => {
               // prepare
               await brandRepo.insert(TestBrandData.buildData(1));
+
+              await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
               await productRepo.insert(productsData);
               const repositoryResults = await productRepo.find({
                 order: orderBySQL,
                 take: PaginationConfig.DEFAULT_PAGE_SIZE,
-                relations: { brand: true },
+                relations: { brand: true, category: true },
               });
 
               // execute
@@ -870,6 +1218,7 @@ describe('StockController (e2e)', () => {
           it('should fail when receives invalid orderBy item string', async () => {
             // prepare
             await brandRepo.insert(TestBrandData.buildData(1));
+            await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
             await productRepo.insert(productsData);
 
             // execute
@@ -896,6 +1245,7 @@ describe('StockController (e2e)', () => {
         describe('combined parameters', () => {
           it('should return results filtered by all parameters', async () => {
             await brandRepo.insert(TestBrandData.buildData(1));
+            await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
             const productsData: any = TestProductData.buildData(20);
 
             for (let i = 0; i < productsData.length; i++) {
@@ -915,7 +1265,7 @@ describe('StockController (e2e)', () => {
                   deletedAt: Not(IsNull()),
                 },
                 order: { name: 'DESC' },
-                relations: { brand: true },
+                relations: { brand: true, category: true },
                 withDeleted: true,
               }),
               await productRepo.find({
@@ -926,7 +1276,7 @@ describe('StockController (e2e)', () => {
                   deletedAt: Not(IsNull()),
                 },
                 order: { name: 'DESC' },
-                relations: { brand: true },
+                relations: { brand: true, category: true },
                 withDeleted: true,
               }),
               await productRepo.find({
@@ -937,7 +1287,7 @@ describe('StockController (e2e)', () => {
                   deletedAt: Not(IsNull()),
                 },
                 order: { name: 'DESC' },
-                relations: { brand: true },
+                relations: { brand: true, category: true },
                 withDeleted: true,
               }),
             ];
@@ -1027,14 +1377,14 @@ describe('StockController (e2e)', () => {
 
     describe('/products/productId (GET)', () => {
       it('should find product', async () => {
-        const brandData = TestBrandData.dataForRepository;
-        await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
-        const productData = TestProductData.dataForRepository;
-        await productRepo.insert([
-          productData[0],
-          productData[1],
-          { ...productData[2], active: false, quantityInStock: 5 },
-        ]);
+        await brandRepo.insert(TestBrandData.dataForRepository.slice(0, 3));
+        await categoryRepo.bulkCreate(TestBrandData.dataForRepository);
+        await productRepo.insert(TestProductData.dataForRepository.slice(0, 3));
+        const productData = TestProductData.dataForRepository.slice(0, 3);
+        productData[2].active = false;
+        productData[2].quantityInStock = 5;
+        await productRepo.insert(productData);
+
         await testDatabaseUtils.reset();
 
         const foundProduct = await httpGet(
@@ -1051,14 +1401,14 @@ describe('StockController (e2e)', () => {
       });
 
       it('should fail when product does not exists', async () => {
-        const brandData = TestBrandData.dataForRepository;
-        await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
-        const productData = TestProductData.dataForRepository;
-        await productRepo.insert([
-          productData[0],
-          productData[1],
-          { ...productData[2], active: false, quantityInStock: 5 },
-        ]);
+        await brandRepo.insert(TestBrandData.dataForRepository.slice(0, 3));
+        await categoryRepo.bulkCreate(TestBrandData.dataForRepository);
+        await productRepo.insert(TestProductData.dataForRepository.slice(0, 3));
+        const productData = TestProductData.dataForRepository.slice(0, 3);
+        productData[2].active = false;
+        productData[2].quantityInStock = 5;
+        await productRepo.insert(productData);
+
         await testDatabaseUtils.reset();
 
         const body = await httpGet(
@@ -1078,28 +1428,22 @@ describe('StockController (e2e)', () => {
 
       describe('authentication', () => {
         it('should allow unauthenticated', async () => {
-          const brandData = TestBrandData.dataForRepository;
-          await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
-          const productData = TestProductData.dataForRepository;
-          await productRepo.insert([
-            productData[0],
-            productData[1],
-            productData[2],
-          ]);
+          await brandRepo.insert(TestBrandData.dataForRepository.slice(0, 3));
+          await categoryRepo.bulkCreate(TestBrandData.dataForRepository);
+          await productRepo.insert(
+            TestProductData.dataForRepository.slice(0, 3),
+          );
           await httpGet('/products/2', {}, HttpStatus.OK);
         });
       });
 
       describe('authorization', () => {
         it('should allow basic user', async () => {
-          const brandData = TestBrandData.dataForRepository;
-          await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
-          const productData = TestProductData.dataForRepository;
-          await productRepo.insert([
-            productData[0],
-            productData[1],
-            productData[2],
-          ]);
+          await brandRepo.insert(TestBrandData.dataForRepository.slice(0, 3));
+          await categoryRepo.bulkCreate(TestBrandData.dataForRepository);
+          await productRepo.insert(
+            TestProductData.dataForRepository.slice(0, 3),
+          );
           await httpGet('/products/2', {}, HttpStatus.OK, userToken);
         });
       });
@@ -1107,14 +1451,12 @@ describe('StockController (e2e)', () => {
 
     describe('/products/:productId (DELETE)', () => {
       it('should delete product', async () => {
-        const brandData = TestBrandData.dataForRepository;
-        await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
-        const productData = TestProductData.dataForRepository;
-        await productRepo.insert([
-          productData[0],
-          productData[1],
-          { ...productData[2], active: false, quantityInStock: 5 },
-        ]);
+        await brandRepo.insert(TestBrandData.dataForRepository.slice(0, 3));
+        await categoryRepo.bulkCreate(TestBrandData.dataForRepository);
+        const productsData = TestProductData.dataForRepository.slice(0, 3);
+        productsData[2].active = false;
+        productsData[2].quantityInStock = 5;
+        await productRepo.insert(productsData);
         await testDatabaseUtils.reset();
 
         const response = await httpDelete(
@@ -1136,14 +1478,12 @@ describe('StockController (e2e)', () => {
       });
 
       it('should fail when product does not exists', async () => {
-        const brandData = TestBrandData.dataForRepository;
-        await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
-        const productData = TestProductData.dataForRepository;
-        await productRepo.insert([
-          productData[0],
-          productData[1],
-          { ...productData[2], active: false, quantityInStock: 5 },
-        ]);
+        await categoryRepo.bulkCreate(TestBrandData.dataForRepository);
+        await brandRepo.insert(TestBrandData.dataForRepository.slice(0, 3));
+        const productsData = TestProductData.dataForRepository.slice(0, 3);
+        productsData[2].active = false;
+        productsData[2].quantityInStock = 5;
+        await productRepo.insert(productsData);
         await testDatabaseUtils.reset();
 
         const body = await httpDelete(
@@ -1163,28 +1503,22 @@ describe('StockController (e2e)', () => {
 
       describe('authentication', () => {
         it('should not allow unauthenticated', async () => {
-          const brandData = TestBrandData.dataForRepository;
-          await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
-          const productData = TestProductData.dataForRepository;
-          await productRepo.insert([
-            productData[0],
-            productData[1],
-            productData[2],
-          ]);
+          await brandRepo.insert(TestBrandData.dataForRepository.slice(0, 3));
+          await categoryRepo.bulkCreate(TestBrandData.dataForRepository);
+          await productRepo.insert(
+            TestProductData.dataForRepository.slice(0, 3),
+          );
           await httpDelete('/products/2', {}, HttpStatus.UNAUTHORIZED);
         });
       });
 
       describe('authorization', () => {
         it('should not allow basic user', async () => {
-          const brandData = TestBrandData.dataForRepository;
-          await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
-          const productData = TestProductData.dataForRepository;
-          await productRepo.insert([
-            productData[0],
-            productData[1],
-            productData[2],
-          ]);
+          await brandRepo.insert(TestBrandData.dataForRepository.slice(0, 3));
+          await categoryRepo.bulkCreate(TestBrandData.dataForRepository);
+          await productRepo.insert(
+            TestProductData.dataForRepository.slice(0, 3),
+          );
           await httpDelete('/products/2', {}, HttpStatus.FORBIDDEN, userToken);
         });
       });

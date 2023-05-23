@@ -1,6 +1,5 @@
 import { Transform } from 'class-transformer';
 import {
-  IsBoolean,
   IsEmail,
   IsNotEmpty,
   IsOptional,
@@ -11,6 +10,10 @@ import {
 import { ActiveMessage } from '../../../../system/enums/messages/active-messages/active-messages.enum';
 import { EmailMessage } from '../../../../system/enums/messages/email-messages/email-messages.enum';
 import { NameMessage } from '../../../../system/enums/messages/name-messages/name-messages.enum';
+import { getBooleanTransformer } from '../../../../system/utils/boolean/boolean-transformer';
+import { IsBool } from '../../../../system/validators/active-validator/bool.validator';
+
+const booleanTransformer = getBooleanTransformer();
 
 export class UpdateUserRequestDTO {
   @MaxLength(60, { message: NameMessage.MAX_LEN })
@@ -34,23 +37,11 @@ export class UpdateUserRequestDTO {
   // @IsOptional()
   // roles?: Role[];
 
-  @IsBoolean({ message: ActiveMessage.BOOLEAN })
-  @Transform(({ value }) => {
-    if (value == null) {
-      return false;
-    } else if (typeof value == 'string') {
-      value = value.toLowerCase();
-      if (value == 'true') {
-        return true;
-      } else if (value == 'false') {
-        return false;
-      }
-      return value;
-    } else if (typeof value == 'boolean') {
-      return value;
-    }
-    return value;
+  @IsBool({
+    requiredMessage: ActiveMessage.REQUIRED,
+    invalidTypeMessage: ActiveMessage.TYPE,
+    optional: true,
   })
-  @IsOptional()
+  @Transform(({ value }) => booleanTransformer(value))
   active?: boolean;
 }

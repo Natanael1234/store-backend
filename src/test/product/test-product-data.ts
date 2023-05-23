@@ -9,6 +9,7 @@ export class TestProductData {
         quantityInStock: 5,
         active: true,
         brandId: 1,
+        categoryId: 1,
       },
       {
         code: '00000002',
@@ -18,6 +19,7 @@ export class TestProductData {
         quantityInStock: 4,
         active: false,
         brandId: 1,
+        categoryId: 1,
       },
       {
         code: '00000003',
@@ -25,6 +27,7 @@ export class TestProductData {
         model: 'Model 3',
         price: 20,
         brandId: 2,
+        categoryId: 2,
       },
     ];
   }
@@ -41,6 +44,7 @@ export class TestProductData {
         quantityInStock: 4,
         active: true,
         brandId: 1,
+        categoryId: 1,
       };
     }
     return arr;

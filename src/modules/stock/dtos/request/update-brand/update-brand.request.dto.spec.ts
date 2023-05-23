@@ -24,10 +24,10 @@ describe('UpdateBrandRequestDTO', () => {
 
   describe('name', () => {
     it.each(
-      getNameErrorDataList(
-        TestBrandData.dataForRepository[1],
-        TestPurpose.update,
-      ),
+      getNameErrorDataList({
+        dtoData: TestBrandData.dataForRepository[1],
+        purpose: TestPurpose.update,
+      }),
     )(
       'should fail validation when name is $description',
       async ({ data, expectedErrors }) => {
@@ -40,10 +40,10 @@ describe('UpdateBrandRequestDTO', () => {
     );
 
     it.each(
-      getNameAcceptableValues(
-        TestBrandData.dataForRepository[1],
-        TestPurpose.update,
-      ),
+      getNameAcceptableValues({
+        dtoData: TestBrandData.dataForRepository[1],
+        purpose: TestPurpose.update,
+      }),
     )('should validate when name is $description', async ({ data }) => {
       const errors = await validateFirstError(data, UpdateBrandRequestDTO);
       expect(errors).toHaveLength(0);
@@ -51,7 +51,9 @@ describe('UpdateBrandRequestDTO', () => {
   });
 
   describe('active', () => {
-    it.each(getActiveErrorDataList(TestBrandData.dataForRepository[1]))(
+    it.each(
+      getActiveErrorDataList({ dtoData: TestBrandData.dataForRepository[1] }),
+    )(
       'should fail when active is $description',
       async ({ data, expectedErrors }) => {
         const errors = await validateFirstError(data, UpdateBrandRequestDTO);
@@ -62,12 +64,13 @@ describe('UpdateBrandRequestDTO', () => {
       },
     );
 
-    it.each(getActiveAcceptableValues(TestBrandData.dataForRepository[1]))(
-      'should validate when active is $description',
-      async ({ data }) => {
-        const errors = await validateFirstError(data, UpdateBrandRequestDTO);
-        expect(errors).toHaveLength(0);
-      },
-    );
+    it.each(
+      getActiveAcceptableValues({
+        dtoData: TestBrandData.dataForRepository[1],
+      }),
+    )('should validate when active is $description', async ({ data }) => {
+      const errors = await validateFirstError(data, UpdateBrandRequestDTO);
+      expect(errors).toHaveLength(0);
+    });
   });
 });

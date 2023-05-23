@@ -6,11 +6,12 @@ import {
   TestPurpose,
 } from '../test-data';
 
-export function getModelErrorDataList(
-  dtoData,
-  purpose: TestPurpose,
-): TestErrorData[] {
+export function getModelErrorDataList(options: {
+  dtoData;
+  purpose: TestPurpose;
+}): TestErrorData[] {
   const property = 'model';
+  const { dtoData, purpose } = options;
   const list = [
     TestData.buildErrorData({
       description: 'number',
@@ -93,11 +94,12 @@ export function getModelErrorDataList(
   return list;
 }
 
-export function getModelAcceptableValues(
-  dtoData,
-  purpose: TestPurpose,
-): TestAcceptData[] {
+export function getModelAcceptableValues(options: {
+  dtoData;
+  purpose: TestPurpose;
+}): TestAcceptData[] {
   const property = 'model';
+  const { dtoData, purpose } = options;
   const minLen = 'x'.repeat(6);
   const maxLen = 'x'.repeat(60);
   const list = [

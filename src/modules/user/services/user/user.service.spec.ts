@@ -107,10 +107,10 @@ describe('UserService', () => {
     describe('fields', () => {
       describe('name', () => {
         it.each(
-          getNameErrorDataList(
-            TestUserData.creationData[2],
-            TestPurpose.create,
-          ),
+          getNameErrorDataList({
+            dtoData: TestUserData.creationData[2],
+            purpose: TestPurpose.create,
+          }),
         )(
           'should fail when name is $description',
           async ({ data, exception: expectedException }) => {
@@ -150,10 +150,10 @@ describe('UserService', () => {
 
       describe('email', () => {
         it.each(
-          getEmailErrorDataList(
-            TestUserData.creationData[2],
-            TestPurpose.create,
-          ),
+          getEmailErrorDataList({
+            dtoData: TestUserData.creationData[2],
+            purpose: TestPurpose.create,
+          }),
         )(
           'should fail when email is $description',
           async ({ data, exception: expectedException }) => {
@@ -216,10 +216,10 @@ describe('UserService', () => {
 
       describe('password', () => {
         it.each(
-          getPasswordErrorDataList(
-            TestUserData.creationData[2],
-            TestPurpose.create,
-          ),
+          getPasswordErrorDataList({
+            dtoData: TestUserData.creationData[2],
+            purpose: TestPurpose.create,
+          }),
         )(
           'should fail when name is $description',
           async ({ data, exception }) => {
@@ -259,10 +259,10 @@ describe('UserService', () => {
 
       describe('roles', () => {
         it.each(
-          getRolesErrorDataList(
-            TestUserData.creationData[2],
-            TestPurpose.create,
-          ),
+          getRolesErrorDataList({
+            dtoData: TestUserData.creationData[2],
+            purpose: TestPurpose.create,
+          }),
         )(
           'should fail when roles is $description',
           async ({ data, exception }) => {
@@ -280,7 +280,9 @@ describe('UserService', () => {
       });
 
       describe('active', () => {
-        it.each(getActiveErrorDataList(TestUserData.creationData[2]))(
+        it.each(
+          getActiveErrorDataList({ dtoData: TestUserData.creationData[2] }),
+        )(
           'should fail when active is $description',
           async ({ data, exception }) => {
             const usersBefore = await userRepo.find();
@@ -673,7 +675,10 @@ describe('UserService', () => {
 
       describe('name', () => {
         it.each(
-          getNameErrorDataList(TestUserData.updateData[2], TestPurpose.update),
+          getNameErrorDataList({
+            dtoData: TestUserData.updateData[2],
+            purpose: TestPurpose.update,
+          }),
         )(
           'sould fail when name is $description',
           async ({ data, ExceptionClass, response }) => {
@@ -741,7 +746,10 @@ describe('UserService', () => {
 
       describe('email', () => {
         it.each(
-          getEmailErrorDataList(TestUserData.updateData[2], TestPurpose.update),
+          getEmailErrorDataList({
+            dtoData: TestUserData.updateData[2],
+            purpose: TestPurpose.update,
+          }),
         )(
           'should fail when email is $description',
           async ({ data, ExceptionClass, response }) => {
@@ -1064,10 +1072,10 @@ describe('UserService', () => {
         });
 
         it.each(
-          getPasswordErrorDataList(
-            TestUserData.updateData[2],
-            TestPurpose.create,
-          ),
+          getPasswordErrorDataList({
+            dtoData: TestUserData.updateData[2],
+            purpose: TestPurpose.create,
+          }),
         )('should fail when password is $description', async ({ data }) => {
           const registerData = TestUserData.registerData;
 

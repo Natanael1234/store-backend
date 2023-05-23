@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { RefreshTokenEntity } from '../modules/authentication/models/refresh-token.entity';
 import { RefreshTokenRepository } from '../modules/authentication/repositories/refresh-token.repository';
 import { BrandEntity } from '../modules/stock/models/brand/brand.entity';
+import { CategoryEntity } from '../modules/stock/models/category/category.entity';
 import { ProductEntity } from '../modules/stock/models/product/product.entity';
 import { UserEntity } from '../modules/user/models/user/user.entity';
 
@@ -13,6 +14,7 @@ export type TestDatabaseSnapshot = {
   refreshTokens: RefreshTokenEntity[];
   products: ProductEntity[];
   brands: BrandEntity[];
+  categories: CategoryEntity[];
 };
 
 export type TestDatabaseSnapshotDiff = {
@@ -20,20 +22,31 @@ export type TestDatabaseSnapshotDiff = {
   refreshTokens: RefreshTokenEntity[];
   products: ProductEntity[];
   brands: BrandEntity[];
+  categories: CategoryEntity[];
 
   alteredUsers: boolean;
   alteredRefreshTokens: boolean;
   alteredProducts: boolean;
   alteredBrands: boolean;
+  alteredCategories: boolean;
 
   alteredDatabase: boolean;
 };
 
+export type TestDatabaseChanges = {
+  before: TestDatabaseSnapshot;
+  after: TestDatabaseSnapshot;
+  diff: TestDatabaseSnapshotDiff;
+  alteredDatabase: boolean;
+  alteredTables: string[];
+};
 export class TestDatabaseUtils {
   userRepo: Repository<UserEntity>;
   refreshTokenRepo: RefreshTokenRepository;
   productRepo: Repository<ProductEntity>;
   brandRepo: Repository<BrandEntity>;
+  categoryRepo: Repository<CategoryEntity>;
+  Repo: Repository<BrandEntity>;
   lastSnapshot: TestDatabaseSnapshot;
   diffs: TestDatabaseSnapshotDiff[] = [];
 
@@ -50,12 +63,16 @@ export class TestDatabaseUtils {
       getRepositoryToken(BrandEntity),
     );
 
+    this.categoryRepo = appSource.get<Repository<CategoryEntity>>(
+      getRepositoryToken(CategoryEntity),
+    );
+
     this.refreshTokenRepo = appSource.get<RefreshTokenRepository>(
       RefreshTokenRepository,
     );
   }
 
-  async checkChanges() {
+  async checkChanges(): Promise<TestDatabaseChanges> {
     const before = this.lastSnapshot;
     const after = await this.getDatabaseSnapshot();
     const diff = this.getDiff(this.lastSnapshot, after);
@@ -64,6 +81,7 @@ export class TestDatabaseUtils {
     if (diff.alteredRefreshTokens) alteredTables.push('refreshTokens');
     if (diff.alteredBrands) alteredTables.push('brands');
     if (diff.alteredProducts) alteredTables.push('products');
+    if (diff.alteredCategories) alteredTables.push('categories');
 
     this.lastSnapshot = after;
     this.diffs.push(diff);
@@ -84,8 +102,13 @@ export class TestDatabaseUtils {
     return {
       users: await this.userRepo.find(),
       refreshTokens: [],
-      products: await this.productRepo.find({ relations: { brand: true } }),
+      products: await this.productRepo.find({
+        relations: { brand: true, category: true },
+      }),
       brands: await this.brandRepo.find(),
+      categories: await this.categoryRepo.find({
+        relations: { parent: true },
+      }),
     };
   }
 
@@ -98,14 +121,22 @@ export class TestDatabaseUtils {
       refreshTokens: [],
       brands: [],
       products: [],
+      categories: [],
       alteredUsers: false,
       alteredRefreshTokens: false,
       alteredBrands: false,
       alteredProducts: false,
+      alteredCategories: false,
       alteredDatabase: false,
     };
     if (!snapshot1) {
-      snapshot1 = { users: [], refreshTokens: [], products: [], brands: [] };
+      snapshot1 = {
+        users: [],
+        refreshTokens: [],
+        products: [],
+        brands: [],
+        categories: [],
+      };
     }
     if (JSON.stringify(snapshot1.users) != JSON.stringify(snapshot2.users)) {
       diff.users = snapshot2.users;
@@ -130,6 +161,14 @@ export class TestDatabaseUtils {
     ) {
       diff.products = snapshot2.products;
       diff.alteredProducts = true;
+      diff.alteredDatabase = true;
+    }
+    if (
+      JSON.stringify(snapshot1.categories) !=
+      JSON.stringify(snapshot2.categories)
+    ) {
+      diff.categories = snapshot2.categories;
+      diff.alteredCategories = true;
       diff.alteredDatabase = true;
     }
     return diff;

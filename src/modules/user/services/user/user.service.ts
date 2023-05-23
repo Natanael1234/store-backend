@@ -36,6 +36,7 @@ export class UserService {
 
   public async create(userDto: CreateUserRequestDTO): Promise<UserEntity> {
     if (!userDto) throw new BadRequestException(UserMessage.DATA_REQUIRED);
+    userDto = plainToInstance(CreateUserRequestDTO, userDto);
     await validateOrThrowError(userDto, CreateUserRequestDTO);
     if (await this.checkIfEmailAlreadyInUse(userDto.email))
       throw new ConflictException(EmailMessage.INVALID);
@@ -56,6 +57,7 @@ export class UserService {
     if (!userDto) throw new BadRequestException(UserMessage.DATA_REQUIRED);
     if (!userId)
       throw new UnprocessableEntityException(UserMessage.ID_REQUIRED);
+    userDto = plainToInstance(UpdateUserRequestDTO, userDto);
     await validateOrThrowError(userDto, UpdateUserRequestDTO);
     const existentUser = await this.findForId(userId);
     if (!existentUser) throw new NotFoundException(UserMessage.NOT_FOUND);

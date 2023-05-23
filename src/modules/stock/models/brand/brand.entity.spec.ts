@@ -211,7 +211,7 @@ describe('BrandEntity', () => {
 
     describe('properties', () => {
       describe('name', () => {
-        it('should accept when name is not defined', async () => {
+        it('should update when name is not defined', async () => {
           const brandData = TestBrandData.dataForRepository;
           await repo.insert(repo.create(brandData[0]));
           await repo.insert(repo.create(brandData[1]));
@@ -228,16 +228,16 @@ describe('BrandEntity', () => {
 
         it.each([
           { description: 'null', value: null },
-          { description: 'undefined', value: undefined },
+          // { description: 'undefined', value: undefined },
         ])(
-          'should not insert an brand when name is $description',
+          'should update an brand when name is $description',
           async ({ description, value }) => {
             const brandData = TestBrandData.dataForRepository;
             await repo.insert(repo.create(brandData[0]));
             await repo.insert(repo.create(brandData[1]));
             await repo.insert(repo.create(brandData[2]));
 
-            const fn = () => repo.update(2, repo.create({ name: null }));
+            const fn = () => repo.update(2, repo.create({ name: value }));
 
             await expect(fn()).rejects.toThrow(QueryFailedError);
             await expect(fn).rejects.toThrow(

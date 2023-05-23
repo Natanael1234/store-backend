@@ -31,6 +31,7 @@ export class BrandService {
 
   async create(brandDto: CreateBrandRequestDTO): Promise<BrandEntity> {
     if (!brandDto) throw new BadRequestException('Data is required'); // TODO: move message to enum
+    brandDto = plainToInstance(CreateBrandRequestDTO, brandDto);
     await validateOrThrowError(brandDto, CreateBrandRequestDTO);
     delete brandDto['id'];
     const brand = this.brandRepo.create(brandDto);
@@ -42,8 +43,9 @@ export class BrandService {
     brandDto: UpdateBrandRequestDTO,
   ): Promise<BrandEntity> {
     if (!brandId)
-      throw new UnprocessableEntityException(BrandMessage.ID_REQUIRED);
+      throw new UnprocessableEntityException(BrandMessage.REQUIRED_BRAND_ID);
     if (!brandDto) throw new BadRequestException('Data is required'); // TODO: move message to enum
+    brandDto = plainToInstance(UpdateBrandRequestDTO, brandDto);
     await validateOrThrowError(brandDto, UpdateBrandRequestDTO);
     const existentBrand = await this.brandRepo.findOne({
       where: { id: brandId },
@@ -108,7 +110,7 @@ export class BrandService {
 
   async findById(brandId: number) {
     if (!brandId)
-      throw new UnprocessableEntityException(BrandMessage.ID_REQUIRED);
+      throw new UnprocessableEntityException(BrandMessage.REQUIRED_BRAND_ID);
     const brand = await this.brandRepo.findOne({
       where: { id: brandId },
     });
@@ -118,7 +120,7 @@ export class BrandService {
 
   async delete(brandId: number): Promise<SuccessResponseDto> {
     if (!brandId)
-      throw new UnprocessableEntityException(BrandMessage.ID_REQUIRED);
+      throw new UnprocessableEntityException(BrandMessage.REQUIRED_BRAND_ID);
     const brand = await this.brandRepo.findOne({
       where: { id: brandId },
     });

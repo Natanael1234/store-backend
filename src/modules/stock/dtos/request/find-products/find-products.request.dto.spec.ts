@@ -175,7 +175,7 @@ describe('FindProductsRequestDTO', () => {
         isString: TextMessage.STRING,
       });
       expect(errors[1].constraints).toEqual({
-        isEnum: ActiveMessage.INVALID,
+        isEnum: ActiveMessage.TYPE,
       });
       expect(errors[2].constraints).toEqual({
         isEnum: DeletedMessage.INVALID,

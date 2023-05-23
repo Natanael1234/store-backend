@@ -36,7 +36,7 @@ export class FindProductRequestDTO {
   @Expose()
   query?: string;
 
-  @IsEnum(ActiveFilter, { message: ActiveMessage.INVALID })
+  @IsEnum(ActiveFilter, { message: ActiveMessage.TYPE })
   @Transform((options) => activeEnumTransformer(options.value))
   @Expose()
   active?: ActiveFilter;
