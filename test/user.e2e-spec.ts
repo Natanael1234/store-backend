@@ -22,7 +22,10 @@ import { UserOrder } from '../src/modules/user/enums/sort/user-order/user-order.
 import { UserEntity } from '../src/modules/user/models/user/user.entity';
 import { TestSortScenarioBuilder } from '../src/test/filtering/sort/test-service-sort-filter';
 import { TestPurpose } from '../src/test/test-data';
-import { getActiveErrorDataList } from '../src/test/test-data/test-active-data';
+import {
+  getActiveAcceptableValues,
+  getActiveErrorDataList,
+} from '../src/test/test-data/test-active-data';
 import { getEmailErrorDataList } from '../src/test/test-data/test-email-data';
 import { getNameErrorDataList } from '../src/test/test-data/test-name-data';
 import { getPasswordErrorDataList } from '../src/test/test-data/test.password-data';
@@ -40,8 +43,6 @@ import {
   getHTTPPatchMethod,
   getHTTPPostMethod,
 } from './common/test-request-utils';
-
-const endpoint = '/users';
 
 describe('UserController (e2e)', () => {
   let app: INestApplication;
@@ -90,7 +91,7 @@ describe('UserController (e2e)', () => {
 
         const usersBefore = await userRepo.find();
         const body = await httpPost(
-          endpoint,
+          '/users',
           createData[1],
           HttpStatus.UNAUTHORIZED,
         );
@@ -121,8 +122,8 @@ describe('UserController (e2e)', () => {
         const token = registeredUser.data.payload.token;
 
         const apiUsers = [
-          await httpPost(endpoint, createData[1], HttpStatus.CREATED, token),
-          await httpPost(endpoint, createData[2], HttpStatus.CREATED, token),
+          await httpPost('/users', createData[1], HttpStatus.CREATED, token),
+          await httpPost('/users', createData[2], HttpStatus.CREATED, token),
         ];
         const repositoryUsers = await userRepo.find();
 
@@ -150,7 +151,7 @@ describe('UserController (e2e)', () => {
 
         const usersBefore = await userRepo.find();
         const body = await httpPost(
-          endpoint,
+          '/users',
           createData[1],
           HttpStatus.FORBIDDEN,
           token,
@@ -167,10 +168,10 @@ describe('UserController (e2e)', () => {
     describe('dto', () => {
       describe('name', () => {
         it.each(
-          getNameErrorDataList(
-            TestUserData.creationData[2],
-            TestPurpose.create,
-          ),
+          getNameErrorDataList({
+            dtoData: TestUserData.creationData[2],
+            purpose: TestPurpose.create,
+          }),
         )(
           'should fail if name is $description',
           async ({ data, statusCode, response }) => {
@@ -181,7 +182,7 @@ describe('UserController (e2e)', () => {
             const token = registeredUSer.data.payload.token;
             const usersBefore = await userRepo.find();
 
-            const body = await httpPost(endpoint, data, statusCode, token);
+            const body = await httpPost('/users', data, statusCode, token);
 
             await expect(body).toEqual(response);
             expect(await userRepo.find()).toEqual(usersBefore);
@@ -215,8 +216,8 @@ describe('UserController (e2e)', () => {
           }
 
           const apiUsers = [
-            await httpPost(endpoint, data[0], HttpStatus.CREATED, token),
-            await httpPost(endpoint, data[1], HttpStatus.CREATED, token),
+            await httpPost('/users', data[0], HttpStatus.CREATED, token),
+            await httpPost('/users', data[1], HttpStatus.CREATED, token),
           ];
           const repositoryUsers = await userRepo.find();
 
@@ -243,7 +244,7 @@ describe('UserController (e2e)', () => {
           const usersBefore = await userRepo.find();
 
           const body = await httpPost(
-            endpoint,
+            '/users',
             data,
             HttpStatus.CONFLICT,
             token,
@@ -258,10 +259,10 @@ describe('UserController (e2e)', () => {
         });
 
         it.each(
-          getEmailErrorDataList(
-            TestUserData.creationData[2],
-            TestPurpose.create,
-          ),
+          getEmailErrorDataList({
+            dtoData: TestUserData.creationData[2],
+            purpose: TestPurpose.create,
+          }),
         )(
           'should fail if email is $description',
           async ({ data, statusCode, response }) => {
@@ -272,7 +273,7 @@ describe('UserController (e2e)', () => {
             const token = registeredUSer.data.payload.token;
             const usersBefore = await userRepo.find();
 
-            const body = await httpPost(endpoint, data, statusCode, token);
+            const body = await httpPost('/users', data, statusCode, token);
 
             await expect(body).toEqual(response);
             expect(await userRepo.find()).toEqual(usersBefore);
@@ -300,7 +301,7 @@ describe('UserController (e2e)', () => {
           }
 
           const createdUser = await httpPost(
-            endpoint,
+            '/users',
             data,
             HttpStatus.CREATED,
             token,
@@ -330,7 +331,7 @@ describe('UserController (e2e)', () => {
           const usersBefore = await userRepo.find();
 
           const body = await httpPost(
-            endpoint,
+            '/users',
             data,
             HttpStatus.CONFLICT,
             token,
@@ -347,10 +348,10 @@ describe('UserController (e2e)', () => {
 
       describe('password', () => {
         it.each(
-          getPasswordErrorDataList(
-            TestUserData.creationData[2],
-            TestPurpose.create,
-          ),
+          getPasswordErrorDataList({
+            dtoData: TestUserData.creationData[2],
+            purpose: TestPurpose.create,
+          }),
         )(
           'should fail when password is $description',
           async ({ data, statusCode, response }) => {
@@ -361,7 +362,7 @@ describe('UserController (e2e)', () => {
             const token = registeredUSer.data.payload.token;
             const usersBefore = await userRepo.find();
 
-            const body = await httpPost(endpoint, data, statusCode, token);
+            const body = await httpPost('/users', data, statusCode, token);
 
             await expect(body).toEqual(response);
             expect(await userRepo.find()).toEqual(usersBefore);
@@ -395,8 +396,8 @@ describe('UserController (e2e)', () => {
           ];
 
           const createdUsers = [
-            await httpPost(endpoint, data[0], HttpStatus.CREATED, token),
-            await httpPost(endpoint, data[1], HttpStatus.CREATED, token),
+            await httpPost('/users', data[0], HttpStatus.CREATED, token),
+            await httpPost('/users', data[1], HttpStatus.CREATED, token),
           ];
           const usersAfter = await userRepo.find();
 
@@ -410,7 +411,10 @@ describe('UserController (e2e)', () => {
       });
 
       describe('active', () => {
-        it.each(getActiveErrorDataList(TestUserData.creationData[2]))(
+        const rejects = getActiveErrorDataList({
+          dtoData: TestUserData.creationData[2],
+        });
+        it.each(rejects)(
           'should fail if active is $description',
           async ({ data, statusCode, response }) => {
             let registerData = TestUserData.registerData;
@@ -420,39 +424,29 @@ describe('UserController (e2e)', () => {
             const token = registeredUSer.data.payload.token;
             const usersBefore = await userRepo.find();
 
-            const body = await httpPost(endpoint, data, statusCode, token);
+            const body = await httpPost('/users', data, statusCode, token);
 
             await expect(body).toEqual(response);
             expect(await userRepo.find()).toEqual(usersBefore);
           },
         );
 
-        it.each([
-          { description: 'true', active: true, expectedValue: true },
-          { description: 'false', active: false, expectedValue: false },
-          { description: 'string true', active: 'true', expectedValue: true },
-          {
-            description: 'string false',
-            active: 'false',
-            expectedValue: false,
-          },
-          { description: 'null', active: null, expectedValue: false },
-          { description: 'undefined', active: undefined, expectedValue: false },
-        ])(
+        const accepts = getActiveAcceptableValues({
+          dtoData: TestUserData.creationData[2],
+        });
+
+        it.each(accepts)(
           'should validate when active is $description',
-          async ({ active }) => {
+          async ({ data }) => {
             const registerData = TestUserData.registerData;
-            const createData = TestUserData.creationData;
 
             const registeredUSer = await authenticationService.register(
               registerData[0],
             );
             const token = registeredUSer.data.payload.token;
 
-            const data = { ...createData[1], active };
-
             const createdUser = await httpPost(
-              endpoint,
+              '/users',
               data,
               HttpStatus.CREATED,
               token,
@@ -487,7 +481,7 @@ describe('UserController (e2e)', () => {
           const usersBefore = await userRepo.find();
 
           const body = await httpPost(
-            endpoint,
+            '/users',
             data,
             HttpStatus.UNPROCESSABLE_ENTITY,
             token,
@@ -500,7 +494,7 @@ describe('UserController (e2e)', () => {
               name: NameMessage.MIN_LEN,
               password: PasswordMessage.MIN_LEN,
               roles: RoleMessage.MIN_LEN,
-              active: ActiveMessage.BOOLEAN,
+              active: ActiveMessage.TYPE,
             },
             statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
           });
@@ -524,7 +518,7 @@ describe('UserController (e2e)', () => {
         const usersBefore = await userRepo.find();
 
         const body = await httpPatch(
-          endpoint + '/2',
+          '/users/2',
           updateData,
           HttpStatus.UNAUTHORIZED,
         );
@@ -566,7 +560,7 @@ describe('UserController (e2e)', () => {
         const token = registeredUsers[0].data.payload.token;
 
         const retUpdate = await httpPatch(
-          endpoint + '/2',
+          '/users/2',
           data,
           HttpStatus.OK,
           token,
@@ -600,7 +594,7 @@ describe('UserController (e2e)', () => {
         const token = registeredUsers[1].data.payload.token;
 
         const body = await httpPatch(
-          endpoint + '/2',
+          '/users/2',
           updateData,
           HttpStatus.FORBIDDEN,
           token,
@@ -618,7 +612,10 @@ describe('UserController (e2e)', () => {
     describe('dto', () => {
       describe('name', () => {
         it.each(
-          getNameErrorDataList(TestUserData.updateData[2], TestPurpose.update),
+          getNameErrorDataList({
+            dtoData: TestUserData.updateData[2],
+            purpose: TestPurpose.update,
+          }),
         )(
           'should fail if name is $description',
           async ({ data, statusCode, response }) => {
@@ -631,12 +628,7 @@ describe('UserController (e2e)', () => {
             const token = registeredUSer[0].data.payload.token;
             const usersBefore = await userRepo.find();
 
-            const body = await httpPatch(
-              endpoint + '/2',
-              data,
-              statusCode,
-              token,
-            );
+            const body = await httpPatch('/users/2', data, statusCode, token);
 
             await expect(body).toEqual(response);
             expect(await userRepo.find()).toEqual(usersBefore);
@@ -665,7 +657,7 @@ describe('UserController (e2e)', () => {
           const token = registeredUSer[0].data.payload.token;
 
           const body = await httpPatch(
-            endpoint + '/2',
+            '/users/2',
             { name, email },
             HttpStatus.OK,
             token,
@@ -693,7 +685,7 @@ describe('UserController (e2e)', () => {
           const token = registeredUSer[0].data.payload.token;
 
           const body = await httpPatch(
-            endpoint + '/2',
+            '/users/2',
             { name },
             HttpStatus.OK,
             token,
@@ -705,7 +697,10 @@ describe('UserController (e2e)', () => {
 
       describe('email', () => {
         it.each(
-          getEmailErrorDataList(TestUserData.updateData[2], TestPurpose.update),
+          getEmailErrorDataList({
+            dtoData: TestUserData.updateData[2],
+            purpose: TestPurpose.update,
+          }),
         )(
           'should fail if email is $description',
           async ({ data, statusCode, response }) => {
@@ -718,12 +713,7 @@ describe('UserController (e2e)', () => {
             const token = registeredUSer[0].data.payload.token;
             const usersBefore = await userRepo.find();
 
-            const body = await httpPatch(
-              endpoint + '/2',
-              data,
-              statusCode,
-              token,
-            );
+            const body = await httpPatch('/users/2', data, statusCode, token);
 
             await expect(body).toEqual(response);
             expect(await userRepo.find()).toEqual(usersBefore);
@@ -744,7 +734,7 @@ describe('UserController (e2e)', () => {
           const token = registeredUsers[0].data.payload.token;
 
           const body = await httpPatch(
-            endpoint + '/100',
+            '/users/100',
             updateData,
             HttpStatus.NOT_FOUND,
             token,
@@ -769,7 +759,7 @@ describe('UserController (e2e)', () => {
           const usersBefore = await userRepo.find();
 
           const body = await httpPatch(
-            endpoint + '/2',
+            '/users/2',
             data,
             HttpStatus.CONFLICT,
             token,
@@ -820,18 +810,8 @@ describe('UserController (e2e)', () => {
           ];
 
           const updatedUsers = [
-            await httpPatch(
-              endpoint + '/2',
-              updateData[0],
-              HttpStatus.OK,
-              token,
-            ),
-            await httpPatch(
-              endpoint + '/3',
-              updateData[1],
-              HttpStatus.OK,
-              token,
-            ),
+            await httpPatch('/users/2', updateData[0], HttpStatus.OK, token),
+            await httpPatch('/users/3', updateData[1], HttpStatus.OK, token),
           ];
 
           const repositoryUsers = await userRepo.find();
@@ -873,12 +853,7 @@ describe('UserController (e2e)', () => {
           const token = registeredUsers[0].data.payload.token;
 
           const updatedUsers = [
-            await httpPatch(
-              endpoint + '/2',
-              updateData[0],
-              HttpStatus.OK,
-              token,
-            ),
+            await httpPatch('/users/2', updateData[0], HttpStatus.OK, token),
           ];
 
           const repositoryUsers = await userRepo.find();
@@ -904,7 +879,7 @@ describe('UserController (e2e)', () => {
           const usersBefore = await userRepo.find();
 
           const body = await httpPatch(
-            endpoint + '/2',
+            '/users/2',
             data,
             HttpStatus.UNPROCESSABLE_ENTITY,
             token,
@@ -915,7 +890,7 @@ describe('UserController (e2e)', () => {
             message: {
               email: EmailMessage.INVALID,
               name: NameMessage.MIN_LEN,
-              active: ActiveMessage.BOOLEAN,
+              active: ActiveMessage.TYPE,
             },
             statusCode: 422,
           });
@@ -935,7 +910,7 @@ describe('UserController (e2e)', () => {
       ];
       const token = registeredUsers[0].data.payload.token;
       const repositoryResults = await userRepo.find();
-      const apiResult = await httpGet(endpoint, {}, HttpStatus.OK, token);
+      const apiResult = await httpGet('/users', {}, HttpStatus.OK, token);
 
       expect(apiResult).toEqual({
         count: 3,
@@ -954,7 +929,7 @@ describe('UserController (e2e)', () => {
       await authenticationService.register(registerData[2]);
       const usersBefore = await userRepo.find();
 
-      const body = await httpGet(endpoint, {}, HttpStatus.UNAUTHORIZED);
+      const body = await httpGet('/users', {}, HttpStatus.UNAUTHORIZED);
       expect(body).toEqual({
         message: 'Unauthorized',
         statusCode: HttpStatus.UNAUTHORIZED,
@@ -972,7 +947,7 @@ describe('UserController (e2e)', () => {
       const token = registeredUsers[2].data.payload.token;
       const usersBefore = await userRepo.find();
 
-      const body = await httpGet(endpoint, {}, HttpStatus.FORBIDDEN, token);
+      const body = await httpGet('/users', {}, HttpStatus.FORBIDDEN, token);
       expect(body).toEqual({
         message: 'Forbidden resource',
         error: 'Forbidden',
@@ -1154,7 +1129,7 @@ describe('UserController (e2e)', () => {
             // execute
             const apiResult = await httpGet(
               '/users',
-              { orderBy: orderBy, active: ActiveFilter.ALL },
+              { orderBy: JSON.stringify(orderBy), active: ActiveFilter.ALL },
               HttpStatus.OK,
               token,
             );
@@ -1179,7 +1154,9 @@ describe('UserController (e2e)', () => {
           const apiResult = await httpGet(
             '/brands',
             {
-              orderBy: ['invalid_impossible_and_never_gonna_happen'],
+              orderBy: JSON.stringify([
+                'invalid_impossible_and_never_gonna_happen',
+              ]),
               active: ActiveFilter.ALL,
             },
             HttpStatus.UNPROCESSABLE_ENTITY,
@@ -1210,7 +1187,7 @@ describe('UserController (e2e)', () => {
       );
       const usersBefore = await userRepo.find();
 
-      const apiUser = await httpGet(endpoint + '/2', {}, HttpStatus.OK, token);
+      const apiUser = await httpGet('/users/2', {}, HttpStatus.OK, token);
 
       expect(apiUser).toBeDefined();
       expect(apiUser).toEqual(repositoryUser);
@@ -1222,7 +1199,7 @@ describe('UserController (e2e)', () => {
       await authenticationService.register(registerData[0]);
       await authenticationService.register(registerData[1]);
       await authenticationService.register(registerData[2]);
-      const body = await httpGet(endpoint + '/2', {}, HttpStatus.UNAUTHORIZED);
+      const body = await httpGet('/users/2', {}, HttpStatus.UNAUTHORIZED);
       const usersBefore = await userRepo.find();
 
       expect(body).toEqual({
@@ -1240,12 +1217,7 @@ describe('UserController (e2e)', () => {
         await authenticationService.register(registerData[2]),
       ];
       const token = registeredUsers[2].data.payload.token;
-      const body = await httpGet(
-        endpoint + '/2',
-        {},
-        HttpStatus.FORBIDDEN,
-        token,
-      );
+      const body = await httpGet('/users/2', {}, HttpStatus.FORBIDDEN, token);
       const usersBefore = await userRepo.find();
 
       expect(body).toEqual({
@@ -1266,12 +1238,7 @@ describe('UserController (e2e)', () => {
       const token = registeredUsers[0].data.payload.token;
       const usersBefore = await userRepo.find();
 
-      const body = await httpGet(
-        endpoint + '/100',
-        {},
-        HttpStatus.NOT_FOUND,
-        token,
-      );
+      const body = await httpGet('/users/100', {}, HttpStatus.NOT_FOUND, token);
 
       expect(body).toEqual({
         error: 'Not Found',
@@ -1299,7 +1266,7 @@ describe('UserController (e2e)', () => {
           .getMany();
 
         const body = await httpPatch(
-          endpoint + '/password',
+          '/users/password',
           { password },
           HttpStatus.UNAUTHORIZED,
         );
@@ -1338,7 +1305,7 @@ describe('UserController (e2e)', () => {
             .getMany();
 
           const body = await httpPatch(
-            endpoint + '/password',
+            '/users/password',
             { password },
             HttpStatus.OK,
             token,
@@ -1373,10 +1340,10 @@ describe('UserController (e2e)', () => {
     describe('dto', () => {
       describe('password', () => {
         it.each(
-          getPasswordErrorDataList(
-            TestUserData.updateData[2],
-            TestPurpose.create,
-          ),
+          getPasswordErrorDataList({
+            dtoData: TestUserData.updateData[2],
+            purpose: TestPurpose.create,
+          }),
         )(
           'should fail when password is $description',
           async ({ data, response }) => {
@@ -1394,7 +1361,7 @@ describe('UserController (e2e)', () => {
               .getMany();
 
             const body = await httpPatch(
-              endpoint + '/password',
+              '/users/password',
               { password: data.password },
               HttpStatus.UNPROCESSABLE_ENTITY,
               token,
@@ -1414,15 +1381,15 @@ describe('UserController (e2e)', () => {
     });
   });
 
-  describe('/users/password/reset (PATCH)', () => {
+  describe.skip('/users/password/reset (PATCH)', () => {
     it.skip('should reset password', async () => {});
   });
 
-  describe('/users/password/recover (PATCH)', () => {
+  describe.skip('/users/password/recover (PATCH)', () => {
     it.skip('should request password recovery link by email password', async () => {});
   });
 
-  describe('/users/password/recreate (PATCH)', () => {
+  describe.skip('/users/password/recreate (PATCH)', () => {
     it.skip('should change password by link', async () => {});
   });
 });

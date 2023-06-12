@@ -21,7 +21,6 @@ import { UserEntity } from '../src/modules/user/models/user/user.entity';
 import { TestBrandData } from '../src/test/brand/test-brand-data';
 import { testValidateBrand } from '../src/test/brand/test-brand-utils';
 import { TestSortScenarioBuilder } from '../src/test/filtering/sort/test-service-sort-filter';
-import { TestProductData } from '../src/test/product/test-product-data';
 import { TestPurpose } from '../src/test/test-data';
 import {
   getActiveAcceptableValues,
@@ -46,7 +45,7 @@ import {
   getHTTPPostMethod,
 } from './common/test-request-utils';
 
-describe('StockController (e2e)', () => {
+describe('BrandController (e2e)', () => {
   let app: INestApplication;
   let moduleFixture: TestingModule;
   let brandRepo: Repository<BrandEntity>;
@@ -159,15 +158,17 @@ describe('StockController (e2e)', () => {
     });
 
     describe.each([
-      ...getNameErrorDataList(
-        TestBrandData.dataForRepository[1],
-        TestPurpose.create,
-      ),
-      ...getActiveErrorDataList(TestBrandData.dataForRepository[1]),
+      ...getNameErrorDataList({
+        dtoData: TestBrandData.dataForRepository[1],
+        purpose: TestPurpose.create,
+      }),
+      ...getActiveErrorDataList({
+        dtoData: TestBrandData.dataForRepository[1],
+      }),
     ])('$property', ({ property, data, response, statusCode, description }) => {
       it(`should fail when ${property} is ${description}`, async () => {
-        const brandData = TestBrandData.dataForRepository;
-        await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
+        const brandiesData = TestBrandData.dataForRepository.slice(0, 3);
+        await brandRepo.insert(brandiesData);
         await testDatabaseUtils.reset();
 
         const body = await httpPost('/brands', data, statusCode, rootToken);
@@ -179,11 +180,13 @@ describe('StockController (e2e)', () => {
     });
 
     describe.each([
-      ...getNameAcceptableValues(
-        TestBrandData.dataForRepository[1],
-        TestPurpose.create,
-      ),
-      ...getActiveAcceptableValues(TestBrandData.dataForRepository[1]),
+      ...getNameAcceptableValues({
+        dtoData: TestBrandData.dataForRepository[1],
+        purpose: TestPurpose.create,
+      }),
+      ...getActiveAcceptableValues({
+        dtoData: TestBrandData.dataForRepository[1],
+      }),
     ])('$property', ({ data, property, description }) => {
       it(`should validate when ${property} is ${description}`, async () => {
         const expectedResult = plainToInstance(CreateBrandRequestDTO, {
@@ -211,14 +214,14 @@ describe('StockController (e2e)', () => {
 
   describe('/brands (PATCH)', () => {
     it('should update brand', async () => {
-      const brandData = TestBrandData.dataForRepository;
-      await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
+      const brandiesData = TestBrandData.dataForRepository.slice(0, 3);
+      await brandRepo.insert(brandiesData);
 
       const updateData = { name: 'New Name', active: true };
       const expectedResults = [
-        { id: 1, name: brandData[0].name, active: !!brandData[0].active },
+        { id: 1, name: brandiesData[0].name, active: !!brandiesData[0].active },
         { id: 2, name: updateData.name, active: !!updateData.active },
-        { id: 3, name: brandData[2].name, active: !!brandData[2].active },
+        { id: 3, name: brandiesData[2].name, active: !!brandiesData[2].active },
       ];
       await testDatabaseUtils.reset();
 
@@ -240,19 +243,19 @@ describe('StockController (e2e)', () => {
 
     describe('authentication', () => {
       it('should not allow unauthenticated', async () => {
-        const brandData = TestBrandData.dataForRepository;
-        await brandRepo.insert([brandData[0], brandData[1]]);
-        await httpPatch('/brands/1', brandData[2], HttpStatus.UNAUTHORIZED);
+        const brandiesData = TestBrandData.dataForRepository.slice(0, 2);
+        await brandRepo.insert(brandiesData);
+        await httpPatch('/brands/1', brandiesData[2], HttpStatus.UNAUTHORIZED);
       });
     });
 
     describe('authorization', () => {
       it('should not allow basic user', async () => {
-        const brandData = TestBrandData.dataForRepository;
-        await brandRepo.insert([brandData[0], brandData[1]]);
+        const brandiesData = TestBrandData.dataForRepository.slice(0, 3);
+        await brandRepo.insert(brandiesData);
         await httpPatch(
           '/brands/1',
-          brandData[2],
+          brandiesData[2],
           HttpStatus.FORBIDDEN,
           userToken,
         );
@@ -260,15 +263,17 @@ describe('StockController (e2e)', () => {
     });
 
     describe.each([
-      ...getNameErrorDataList(
-        TestBrandData.dataForRepository[1],
-        TestPurpose.update,
-      ),
-      ...getActiveErrorDataList(TestBrandData.dataForRepository[1]),
+      ...getNameErrorDataList({
+        dtoData: TestBrandData.dataForRepository[1],
+        purpose: TestPurpose.update,
+      }),
+      ...getActiveErrorDataList({
+        dtoData: TestBrandData.dataForRepository[1],
+      }),
     ])('$property', ({ property, description, data, response }) => {
       it(`should fail when ${property} is ${description}`, async () => {
-        const brandData = TestBrandData.dataForRepository;
-        await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
+        const brandiesData = TestBrandData.dataForRepository.slice(0, 1);
+        await brandRepo.insert(brandiesData);
         await testDatabaseUtils.reset();
 
         const body = await httpPatch(
@@ -285,24 +290,26 @@ describe('StockController (e2e)', () => {
     });
 
     describe.each([
-      ...getNameAcceptableValues(
-        TestBrandData.dataForRepository[1],
-        TestPurpose.update,
-      ),
-      ...getActiveAcceptableValues(TestBrandData.dataForRepository[1]),
+      ...getNameAcceptableValues({
+        dtoData: TestBrandData.dataForRepository[1],
+        purpose: TestPurpose.update,
+      }),
+      ...getActiveAcceptableValues({
+        dtoData: TestBrandData.dataForRepository[1],
+      }),
     ])('$property', ({ description, property, data }) => {
       it(`should validate when $property is ${description}`, async () => {
-        const brandData = TestBrandData.dataForRepository;
-        await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
+        const brandsData = TestBrandData.dataForRepository.slice(0, 3);
+        await brandRepo.insert(brandsData);
         await testDatabaseUtils.reset();
 
         const expectedBrandResults = [
-          plainToInstance(UpdateBrandRequestDTO, { id: 1, ...brandData[0] }),
+          plainToInstance(UpdateBrandRequestDTO, { id: 1, ...brandsData[0] }),
           plainToInstance(UpdateBrandRequestDTO, { id: 2, ...data }),
-          plainToInstance(UpdateBrandRequestDTO, { id: 3, ...brandData[2] }),
+          plainToInstance(UpdateBrandRequestDTO, { id: 3, ...brandsData[2] }),
         ];
         if (data[property] == null) {
-          expectedBrandResults[1][property] = brandData[1][property];
+          expectedBrandResults[1][property] = brandsData[1][property];
         }
 
         const updatedBrand = await httpPatch(
@@ -342,28 +349,28 @@ describe('StockController (e2e)', () => {
   describe('/brands (GET)', () => {
     describe('authentication', () => {
       it('should allow unauthenticated', async () => {
-        const brandData = TestBrandData.dataForRepository;
-        await brandRepo.insert([brandData[0]]);
+        const brandiesData = TestBrandData.dataForRepository.slice(0, 1);
+        await brandRepo.insert(brandiesData);
         await httpGet('/brands', {}, HttpStatus.OK);
       });
     });
 
     describe('authorization', () => {
       it('should allow basic user', async () => {
-        const brandData = TestBrandData.dataForRepository;
-        await brandRepo.insert([brandData[0]]);
+        const brandiesData = TestBrandData.dataForRepository.slice(0, 1);
+        await brandRepo.insert(brandiesData);
         await httpGet('/brands', {}, HttpStatus.OK, userToken);
       });
 
       it('should allow admin', async () => {
-        const brandData = TestBrandData.dataForRepository;
-        await brandRepo.insert([brandData[0]]);
+        const brandiesData = TestBrandData.dataForRepository.slice(0, 1);
+        await brandRepo.insert(brandiesData);
         await httpGet('/brands', {}, HttpStatus.OK, adminToken);
       });
 
       it('should allow root', async () => {
-        const brandData = TestBrandData.dataForRepository;
-        await brandRepo.insert([brandData[0]]);
+        const brandiesData = TestBrandData.dataForRepository.slice(0, 1);
+        await brandRepo.insert(brandiesData);
         await httpGet('/brands', {}, HttpStatus.OK, rootToken);
       });
     });
@@ -537,7 +544,7 @@ describe('StockController (e2e)', () => {
             // execute
             const apiResult = await httpGet(
               '/brands',
-              { orderBy: orderBy, active: ActiveFilter.ALL },
+              { orderBy: JSON.stringify(orderBy), active: ActiveFilter.ALL },
               HttpStatus.OK,
               rootToken,
             );
@@ -560,7 +567,9 @@ describe('StockController (e2e)', () => {
           const apiResult = await httpGet(
             '/brands',
             {
-              orderBy: ['invalid_impossible_and_never_gonna_happen'],
+              orderBy: JSON.stringify([
+                'invalid_impossible_and_never_gonna_happen',
+              ]),
               active: ActiveFilter.ALL,
             },
             HttpStatus.UNPROCESSABLE_ENTITY,
@@ -701,14 +710,14 @@ describe('StockController (e2e)', () => {
 
   describe('/brands/brandId (GET)', () => {
     it('should find brand for id', async () => {
-      const brandData = TestBrandData.dataForRepository;
-      await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
+      const brandiesData = TestBrandData.dataForRepository.slice(0, 3);
+      await brandRepo.insert(brandiesData);
       await httpGet('/brands/2', {}, HttpStatus.OK, rootToken);
     });
 
     it('should fail when brand does not exists', async () => {
-      const brandData = TestBrandData.dataForRepository;
-      await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
+      const brandiesData = TestBrandData.dataForRepository.slice(0, 3);
+      await brandRepo.insert(brandiesData);
       await testDatabaseUtils.reset();
 
       const body = await httpGet(
@@ -728,25 +737,25 @@ describe('StockController (e2e)', () => {
 
     describe('authentication', () => {
       it('should allow unauthenticated', async () => {
-        const brandData = TestBrandData.dataForRepository;
-        await brandRepo.insert([brandData[0]]);
+        const brandiesData = TestBrandData.dataForRepository.slice(0, 1);
+        await brandRepo.insert(brandiesData);
         await httpGet('/brands/1', {}, HttpStatus.OK);
       });
     });
 
     describe('authorization', () => {
       it('should allow basic user', async () => {
-        const brandData = TestBrandData.dataForRepository;
-        await brandRepo.insert([brandData[0]]);
+        const brandiesData = TestBrandData.dataForRepository.slice(0, 1);
+        await brandRepo.insert(brandiesData);
         await httpGet('/brands/1', {}, HttpStatus.OK, userToken);
       });
     });
   });
 
   describe('/brands/brandId (DELETE)', () => {
-    it('should update brand', async () => {
-      const brandData = TestBrandData.dataForRepository;
-      await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
+    it('should soft-delete brand', async () => {
+      const brandiesData = TestBrandData.dataForRepository.slice(0, 3);
+      await brandRepo.insert(brandiesData);
       await testDatabaseUtils.reset();
 
       const deletedBrand = await httpDelete(
@@ -765,8 +774,8 @@ describe('StockController (e2e)', () => {
     });
 
     it('should fail when brand does not exists', async () => {
-      const brandData = TestBrandData.dataForRepository;
-      await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
+      const brandiesData = TestBrandData.dataForRepository;
+      await brandRepo.insert(brandiesData);
       await testDatabaseUtils.reset();
 
       const body = await httpDelete(
@@ -786,29 +795,16 @@ describe('StockController (e2e)', () => {
 
     describe('authentication', () => {
       it('should not allow unauthenticated', async () => {
-        const brandData = TestBrandData.dataForRepository;
-        await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
-        const productData = TestProductData.dataForRepository;
-        await brandRepo.insert([
-          productData[0],
-          productData[1],
-          productData[2],
-        ]);
-
+        const brandiesData = TestBrandData.dataForRepository.slice(0, 3);
+        await brandRepo.insert(brandiesData);
         await httpDelete('/brands/1', {}, HttpStatus.UNAUTHORIZED);
       });
     });
 
     describe('authorization', () => {
       it('should not allow basic user', async () => {
-        const brandData = TestBrandData.dataForRepository;
-        await brandRepo.insert([brandData[0], brandData[1], brandData[2]]);
-        const productData = TestProductData.dataForRepository;
-        await brandRepo.insert([
-          productData[0],
-          productData[1],
-          productData[2],
-        ]);
+        const brandiesData = TestBrandData.dataForRepository.slice(0, 3);
+        await brandRepo.insert(brandiesData);
 
         await httpDelete('/brands/1', {}, HttpStatus.FORBIDDEN, userToken);
       });

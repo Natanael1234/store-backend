@@ -4,14 +4,15 @@ import {
   getActiveAcceptableValues,
   getActiveErrorDataList,
 } from '../../../../../test/test-data/test-active-data';
-import {
-  getBrandIdAcceptableValues,
-  getBrandIdErrorDataList,
-} from '../../../../../test/test-data/test-brand-id.-data';
+
 import {
   getCodeAcceptableValues,
   getCodeErrorDataList,
 } from '../../../../../test/test-data/test-code-data';
+import {
+  getFKAcceptableValues,
+  getFKErrorDataList,
+} from '../../../../../test/test-data/test-fk-data';
 import {
   getModelAcceptableValues,
   getModelErrorDataList,
@@ -26,6 +27,8 @@ import {
   getQuantityInStockErrorDataList,
 } from '../../../../../test/test-data/test-quantity-in-stock-data';
 import { validateFirstError } from '../../../../system/utils/validation';
+import { BrandMessage } from '../../../enums/messages/brand-messages/brand-messages.enum';
+import { CategoryMessage } from '../../../enums/messages/category-messages/category-messages.enum';
 import { UpdateProductRequestDTO } from './update-product.request.dto';
 
 describe('UpdateProductRequestDTO', () => {
@@ -39,10 +42,10 @@ describe('UpdateProductRequestDTO', () => {
 
   describe('code', () => {
     it.each(
-      getCodeErrorDataList(
-        TestProductData.dataForRepository[1],
-        TestPurpose.update,
-      ),
+      getCodeErrorDataList({
+        dtoData: TestProductData.dataForRepository[1],
+        purpose: TestPurpose.update,
+      }),
     )(
       'should fail validation when code is $description',
       async ({ data, expectedErrors }) => {
@@ -55,10 +58,10 @@ describe('UpdateProductRequestDTO', () => {
     );
 
     it.each(
-      getCodeAcceptableValues(
-        TestProductData.dataForRepository[1],
-        TestPurpose.update,
-      ),
+      getCodeAcceptableValues({
+        dtoData: TestProductData.dataForRepository[1],
+        purpose: TestPurpose.update,
+      }),
     )('should validate when code is $description', async ({ data }) => {
       const errors = await validateFirstError(data, UpdateProductRequestDTO);
       expect(errors).toHaveLength(0);
@@ -67,10 +70,10 @@ describe('UpdateProductRequestDTO', () => {
 
   describe('name', () => {
     it.each(
-      getNameErrorDataList(
-        TestProductData.dataForRepository[1],
-        TestPurpose.update,
-      ),
+      getNameErrorDataList({
+        dtoData: TestProductData.dataForRepository[1],
+        purpose: TestPurpose.update,
+      }),
     )(
       'should fail validation when name is $description',
       async ({ data, expectedErrors }) => {
@@ -83,10 +86,10 @@ describe('UpdateProductRequestDTO', () => {
     );
 
     it.each(
-      getNameAcceptableValues(
-        TestProductData.dataForRepository[1],
-        TestPurpose.update,
-      ),
+      getNameAcceptableValues({
+        dtoData: TestProductData.dataForRepository[1],
+        purpose: TestPurpose.update,
+      }),
     )('should validate when name is $description', async ({ data }) => {
       const errors = await validateFirstError(data, UpdateProductRequestDTO);
       expect(errors).toHaveLength(0);
@@ -95,10 +98,10 @@ describe('UpdateProductRequestDTO', () => {
 
   describe('model', () => {
     it.each(
-      getModelErrorDataList(
-        TestProductData.dataForRepository[1],
-        TestPurpose.update,
-      ),
+      getModelErrorDataList({
+        dtoData: TestProductData.dataForRepository[1],
+        purpose: TestPurpose.update,
+      }),
     )(
       'should fail validation when model is $description',
       async ({ data, expectedErrors }) => {
@@ -111,10 +114,10 @@ describe('UpdateProductRequestDTO', () => {
     );
 
     it.each(
-      getModelAcceptableValues(
-        TestProductData.dataForRepository[1],
-        TestPurpose.update,
-      ),
+      getModelAcceptableValues({
+        dtoData: TestProductData.dataForRepository[1],
+        purpose: TestPurpose.update,
+      }),
     )('should validate when model is $description', async ({ data }) => {
       const errors = await validateFirstError(data, UpdateProductRequestDTO);
       expect(errors).toHaveLength(0);
@@ -123,10 +126,10 @@ describe('UpdateProductRequestDTO', () => {
 
   describe('price', () => {
     it.each(
-      getPriceErrorDataList(
-        TestProductData.dataForRepository[1],
-        TestPurpose.update,
-      ),
+      getPriceErrorDataList({
+        dtoData: TestProductData.dataForRepository[1],
+        purpose: TestPurpose.update,
+      }),
     )(
       'should fail when price is $description',
       async ({ data, expectedErrors }) => {
@@ -139,10 +142,10 @@ describe('UpdateProductRequestDTO', () => {
     );
 
     it.each(
-      getModelAcceptableValues(
-        TestProductData.dataForRepository[1],
-        TestPurpose.update,
-      ),
+      getModelAcceptableValues({
+        dtoData: TestProductData.dataForRepository[1],
+        purpose: TestPurpose.update,
+      }),
     )('should validate when price is $description', async ({ data }) => {
       const errors = await validateFirstError(data, UpdateProductRequestDTO);
       expect(errors).toHaveLength(0);
@@ -151,7 +154,9 @@ describe('UpdateProductRequestDTO', () => {
 
   describe('quantityInStock', () => {
     it.each(
-      getQuantityInStockErrorDataList(TestProductData.dataForRepository[1]),
+      getQuantityInStockErrorDataList({
+        dtoData: TestProductData.dataForRepository[1],
+      }),
     )(
       'should fail when quantity in stock is $description',
       async ({ data, expectedErrors }) => {
@@ -164,10 +169,10 @@ describe('UpdateProductRequestDTO', () => {
     );
 
     it.each(
-      getQuantityInStockAcceptableValues(
-        TestProductData.dataForRepository[1],
-        TestPurpose.update,
-      ),
+      getQuantityInStockAcceptableValues({
+        dtoData: TestProductData.dataForRepository[1],
+        purpose: TestPurpose.update,
+      }),
     )(
       'should validate when quantity in stock is $description',
       async ({ data }) => {
@@ -178,7 +183,9 @@ describe('UpdateProductRequestDTO', () => {
   });
 
   describe('active', () => {
-    it.each(getActiveErrorDataList(TestProductData.dataForRepository[1]))(
+    it.each(
+      getActiveErrorDataList({ dtoData: TestProductData.dataForRepository[1] }),
+    )(
       'should fail when active is $description',
       async ({ data, expectedErrors }) => {
         const errors = await validateFirstError(data, UpdateProductRequestDTO);
@@ -189,21 +196,30 @@ describe('UpdateProductRequestDTO', () => {
       },
     );
 
-    it.each(getActiveAcceptableValues(TestProductData.dataForRepository[1]))(
-      'should validate when active is $description',
-      async ({ data }) => {
-        const errors = await validateFirstError(data, UpdateProductRequestDTO);
-        expect(errors).toHaveLength(0);
-      },
-    );
+    it.each(
+      getActiveAcceptableValues({
+        dtoData: TestProductData.dataForRepository[1],
+      }),
+    )('should validate when active is $description', async ({ data }) => {
+      const errors = await validateFirstError(data, UpdateProductRequestDTO);
+      expect(errors).toHaveLength(0);
+    });
   });
 
   describe('brandId', () => {
     it.each(
-      getBrandIdErrorDataList(
-        TestProductData.dataForRepository[1],
-        TestPurpose.update,
-      ),
+      getFKErrorDataList({
+        property: 'brandId',
+        dtoData: TestProductData.dataForRepository[1],
+        allowUndefined: true,
+        allowNull: false,
+        messages: {
+          invalid: BrandMessage.BRAND_ID_TYPE,
+          type: BrandMessage.BRAND_ID_TYPE,
+          undefined: BrandMessage.REQUIRED_BRAND_ID,
+          null: BrandMessage.NULL_BRAND_ID,
+        },
+      }),
     )(
       'should fail when brandId is $description',
       async ({ data, expectedErrors }) => {
@@ -216,11 +232,51 @@ describe('UpdateProductRequestDTO', () => {
     );
 
     it.each(
-      getBrandIdAcceptableValues(
-        TestProductData.dataForRepository[1],
-        TestPurpose.update,
-      ),
+      getFKAcceptableValues({
+        property: 'brandId',
+        dtoData: TestProductData.dataForRepository[1],
+        allowUndefined: true,
+        allowNull: false,
+      }),
     )('should validate when brandId is $description', async ({ data }) => {
+      const errors = await validateFirstError(data, UpdateProductRequestDTO);
+      expect(errors).toHaveLength(0);
+    });
+  });
+
+  describe('categoryId', () => {
+    it.each(
+      getFKErrorDataList({
+        property: 'categoryId',
+        dtoData: TestProductData.dataForRepository[1],
+        allowUndefined: true,
+        allowNull: false,
+        messages: {
+          invalid: CategoryMessage.CATEGORY_ID_TYPE,
+          type: CategoryMessage.CATEGORY_ID_TYPE,
+          undefined: CategoryMessage.REQUIRED_CATEGORY_ID,
+          null: CategoryMessage.NULL_CATEGORY_ID,
+        },
+      }),
+    )(
+      'should fail when categoryId is $description',
+      async ({ data, expectedErrors }) => {
+        const errors = await validateFirstError(data, UpdateProductRequestDTO);
+        expect(errors).toHaveLength(1);
+        expect(errors[0].property).toEqual('categoryId');
+        expect(errors[0].value).toEqual(data.categoryId);
+        expect(errors[0].constraints).toEqual(expectedErrors);
+      },
+    );
+
+    it.each(
+      getFKAcceptableValues({
+        property: 'categoryId',
+        dtoData: TestProductData.dataForRepository[1],
+        allowUndefined: true,
+        allowNull: false,
+      }),
+    )('should validate when categoryId is $description', async ({ data }) => {
       const errors = await validateFirstError(data, UpdateProductRequestDTO);
       expect(errors).toHaveLength(0);
     });

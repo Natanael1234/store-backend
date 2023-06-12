@@ -20,7 +20,7 @@ export class FilteringRequestDTO {
   @Expose()
   query?: string;
 
-  @IsEnum(ActiveFilter, { message: ActiveMessage.INVALID })
+  @IsEnum(ActiveFilter, { message: ActiveMessage.TYPE })
   @Transform((options) => {
     if (options.value == null) {
       return ActiveFilter.ACTIVE;

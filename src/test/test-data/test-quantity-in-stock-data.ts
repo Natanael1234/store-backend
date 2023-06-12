@@ -6,8 +6,15 @@ import {
   TestPurpose,
 } from '../test-data';
 
-export function getQuantityInStockErrorDataList(dtoData): TestErrorData[] {
+export function getQuantityInStockErrorDataList(options: {
+  dtoData: any;
+  // purpose: TestPurpose;
+}): TestErrorData[] {
   const property = 'quantityInStock';
+  const {
+    // purpose,
+    dtoData,
+  } = options;
   const list = [
     TestData.buildErrorData({
       description: 'negative',
@@ -53,11 +60,15 @@ export function getQuantityInStockErrorDataList(dtoData): TestErrorData[] {
   return list;
 }
 
-export function getQuantityInStockAcceptableValues(
-  dtoData: any,
-  purpose: TestPurpose,
-): TestAcceptData[] {
+export function getQuantityInStockAcceptableValues(options: {
+  dtoData: any;
+  purpose: TestPurpose;
+}): TestAcceptData[] {
   const property = 'quantityInStock';
+  const {
+    // purpose,
+    dtoData,
+  } = options;
   const list = [
     TestData.buildAcceptableValues({
       property,

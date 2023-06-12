@@ -14,7 +14,7 @@ export class TestDtoSort<Enum extends Record<string, string>> {
     if (!length) {
       throw new Error('Enum has no keys');
     }
-    const lastKey = keys[length - 1];
+
     const lastValue = values[length - 1];
     const data = [
       {
@@ -34,6 +34,14 @@ export class TestDtoSort<Enum extends Record<string, string>> {
         },
       },
       {
+        description: 'should accept when "orderBy" is "null"',
+        data: { orderBy: null },
+        expectedResult: {
+          ...this.defaultDTOData,
+          orderBy: this.defaultOrderBy,
+        },
+      },
+      {
         description: 'should accept when "orderBy" is undefined',
         data: { orderBy: undefined },
         expectedResult: {
@@ -42,7 +50,15 @@ export class TestDtoSort<Enum extends Record<string, string>> {
         },
       },
       {
-        description: 'should accept when "orderBy" is empty array',
+        description: 'should accept when "orderBy" is "undefined"',
+        data: { orderBy: undefined },
+        expectedResult: {
+          ...this.defaultDTOData,
+          orderBy: this.defaultOrderBy,
+        },
+      },
+      {
+        description: 'should accept when "orderBy" is []',
         data: { orderBy: [] },
         expectedResult: {
           ...this.defaultDTOData,
@@ -52,7 +68,7 @@ export class TestDtoSort<Enum extends Record<string, string>> {
       ...Object.keys(this.enumeration).map((key) => {
         const value = `${this.enumeration[key]}`;
         return {
-          description: `should accept when "orderBy" is "${value}"`,
+          description: `should accept when "orderBy" is ["${value}"]`,
           data: { orderBy: [value] },
           expectedResult: {
             ...this.defaultDTOData,
@@ -62,7 +78,7 @@ export class TestDtoSort<Enum extends Record<string, string>> {
       }),
       ...Object.keys(this.enumeration).map((key) => {
         return {
-          description: `should accept when "orderBy" is OrderEnum."${lastKey}"`,
+          description: `should accept when "orderBy" is [OrderEnum.${key}]`,
           data: { orderBy: [this.enumeration[key]] },
           expectedResult: {
             ...this.defaultDTOData,
@@ -71,9 +87,8 @@ export class TestDtoSort<Enum extends Record<string, string>> {
         };
       }),
       {
-        description:
-          'should accept orderBy as comma separated valid values string',
-        data: { orderBy: values.join(',') },
+        description: 'should accept orderBy as json array string',
+        data: { orderBy: JSON.stringify(values) },
         expectedResult: {
           ...this.defaultDTOData,
           orderBy: values,
@@ -81,8 +96,8 @@ export class TestDtoSort<Enum extends Record<string, string>> {
       },
       {
         description:
-          'should accept when orderBy is a single valid value string',
-        data: { orderBy: lastValue },
+          'should accept when orderBy is a single valid value json array string',
+        data: { orderBy: JSON.stringify([lastValue]) },
         expectedResult: {
           ...this.defaultDTOData,
           orderBy: [lastValue],
@@ -91,15 +106,6 @@ export class TestDtoSort<Enum extends Record<string, string>> {
       {
         description:
           'should accept and transform into default value when orderBy is empty string',
-        data: { orderBy: '' },
-        expectedResult: {
-          ...this.defaultDTOData,
-          orderBy: this.defaultOrderBy,
-        },
-      },
-      {
-        description:
-          'should accept and transform into default value when orderBy is ","',
         data: { orderBy: '' },
         expectedResult: {
           ...this.defaultDTOData,

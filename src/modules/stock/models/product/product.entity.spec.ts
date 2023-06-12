@@ -3,8 +3,10 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { QueryFailedError, Repository } from 'typeorm';
 import { getTestingModule } from '../../../../.jest/test-config.module';
 import { TestBrandData } from '../../../../test/brand/test-brand-data';
+import { TestCategoryData } from '../../../../test/category/test-category-data';
 import { TestProductData } from '../../../../test/product/test-product-data';
 import { BrandEntity } from '../brand/brand.entity';
+import { CategoryEntity } from '../category/category.entity';
 import { ProductEntity } from './product.entity';
 
 function validateProduct(
@@ -16,6 +18,7 @@ function validateProduct(
     quantityInStock?: number;
     active?: boolean; // TODO: testar
     brandId: number;
+    categoryId: number;
   },
   product: ProductEntity,
   options?: {
@@ -32,6 +35,8 @@ function validateProduct(
   expect(product.price).toEqual(expectedData.price);
   expect(product.quantityInStock).toEqual(expectedData.quantityInStock);
   expect(product.brandId).toEqual(expectedData.brandId);
+  expect(product.categoryId).toEqual(expectedData.categoryId);
+  expect(product.active).toEqual(expectedData.active);
   expect(product.created).toBeDefined();
   expect(product.updated).toBeDefined();
   if (options?.deleted) {
@@ -45,6 +50,7 @@ describe('ProductEntity', () => {
   let module: TestingModule;
   let brandsRepo: Repository<BrandEntity>;
   let productRepo: Repository<ProductEntity>;
+  let categoryRepo: Repository<CategoryEntity>;
 
   beforeEach(async () => {
     module = await getTestingModule();
@@ -54,6 +60,9 @@ describe('ProductEntity', () => {
     productRepo = module.get<Repository<ProductEntity>>(
       getRepositoryToken(ProductEntity),
     );
+    categoryRepo = module.get<Repository<CategoryEntity>>(
+      getRepositoryToken(CategoryEntity),
+    );
   });
 
   afterEach(async () => {
@@ -62,16 +71,13 @@ describe('ProductEntity', () => {
 
   describe('create', () => {
     it('should insert products', async () => {
-      const productData = TestProductData.dataForRepository;
       const brandsData = TestBrandData.dataForRepository;
+      const categoriesDataData = TestCategoryData.dataForRepository;
+      const productData = TestProductData.dataForRepository;
 
-      await brandsRepo.insert(brandsData[0]);
-      await brandsRepo.insert(brandsData[1]);
-      await brandsRepo.insert(brandsData[2]);
-
-      await productRepo.insert(productData[0]);
-      await productRepo.insert(productData[1]);
-      await productRepo.insert(productData[2]);
+      await brandsRepo.insert(brandsData);
+      await categoryRepo.insert(categoriesDataData);
+      await productRepo.insert(productData);
 
       const expectedResults = [
         productData[0],
@@ -82,12 +88,9 @@ describe('ProductEntity', () => {
         .createQueryBuilder('product')
         .getMany();
 
-      const brands = await brandsRepo.find({
-        relations: { products: true },
-      });
+      const brands = await brandsRepo.find({ relations: { products: true } });
 
       expect(products).toHaveLength(3);
-      expect(Array.isArray(products)).toBe(true);
       validateProduct(expectedResults[0], products[0], { productId: 1 });
       validateProduct(expectedResults[1], products[1], { productId: 2 });
       validateProduct(expectedResults[2], products[2], { productId: 3 });
@@ -97,128 +100,130 @@ describe('ProductEntity', () => {
       expect(brands[2].products).toHaveLength(0);
     });
 
-    it('should fail if brand does not exists', async () => {
-      const productData = TestProductData.dataForRepository;
-      const brandsData = TestBrandData.dataForRepository;
+    describe.each([
+      { property: 'code' },
+      { property: 'name' },
+      { property: 'model' },
+      { property: 'price' },
+      { property: 'brandId' },
+      { property: 'categoryId' },
+    ])(`$property`, ({ property }) => {
+      it.each([
+        { valueDescription: 'null', prop: { value: null } },
+        { valueDescription: 'undefined', prop: { value: undefined } },
+        { valueDescription: 'not defined', prop: {} },
+      ])(
+        `should not insert when ${property} is $valueDescription`,
+        async ({ valueDescription, prop }) => {
+          const brandData = TestBrandData.dataForRepository[0];
+          const categoryDataData = TestCategoryData.dataForRepository[0];
+          const productData = TestProductData.dataForRepository[0];
 
-      await brandsRepo.insert(brandsData[0]);
-      await brandsRepo.insert(brandsData[1]);
-      await brandsRepo.insert(brandsData[2]);
+          await brandsRepo.insert(brandData);
+          await categoryRepo.insert(categoryDataData);
 
-      await productRepo.insert(productData[0]);
-      await productRepo.insert(productData[1]);
+          const fn = async () => {
+            delete productData[property];
+            const data = { ...productData, ...prop };
 
-      const fn = async () => {
-        const data = { ...productData[2], brandId: 200 };
-        await productRepo.insert(productRepo.create(data));
-      };
+            await productRepo.insert(data);
+          };
 
-      await expect(fn).rejects.toThrow(QueryFailedError);
-      await expect(fn).rejects.toThrow(
-        `SQLITE_CONSTRAINT: FOREIGN KEY constraint failed`,
+          await expect(fn).rejects.toThrow(QueryFailedError);
+          await expect(fn).rejects.toThrow(
+            `SQLITE_CONSTRAINT: NOT NULL constraint failed: products.${property}`,
+          );
+        },
       );
     });
 
-    describe('properties', () => {
-      describe.each([
-        { property: 'code' },
-        { property: 'name' },
-        { property: 'model' },
-        { property: 'price' },
-        { property: 'brandId' },
-      ])(``, ({ property }) => {
-        describe('not defined', () => {
-          it(`should not insert when ${property} is not defined`, async () => {
-            const brandsData = TestBrandData.dataForRepository;
-            const productData = TestProductData.dataForRepository;
-
-            await brandsRepo.insert(brandsData[0]);
-            await brandsRepo.insert(brandsData[1]);
-            await brandsRepo.insert(brandsData[2]);
-
-            const fn = async () => {
-              const data = { ...productData[0] };
-              delete data[property];
-              await productRepo.insert(productRepo.create(data));
-            };
-
-            await expect(fn).rejects.toThrow(QueryFailedError);
-            await expect(fn).rejects.toThrow(
-              `SQLITE_CONSTRAINT: NOT NULL constraint failed: products.${property}`,
-            );
-          });
-        });
-
-        describe.each([
-          { valueDescription: 'null', value: null },
-          { valueDescription: 'undefined', value: undefined },
-        ])('$valueDescription', ({ valueDescription, value }) => {
-          it(`should not insert when ${property} is ${valueDescription}`, async () => {
-            const brandsData = TestBrandData.dataForRepository;
-            const productData = TestProductData.dataForRepository;
-
-            await brandsRepo.insert(brandsData[0]);
-            await brandsRepo.insert(brandsData[1]);
-            await brandsRepo.insert(brandsData[2]);
-
-            const fn = async () => {
-              const data = { ...productData[0] };
-              data[property] = value;
-              await productRepo.insert(productRepo.create(data));
-            };
-
-            await expect(fn).rejects.toThrow(QueryFailedError);
-            await expect(fn).rejects.toThrow(
-              `SQLITE_CONSTRAINT: NOT NULL constraint failed: products.${property}`,
-            );
-          });
-        });
-      });
-
-      it('should set quantityInStock as 0 by default', async () => {
+    describe('brandId', () => {
+      it('should fail if brand does not exists', async () => {
         const brandsData = TestBrandData.dataForRepository;
-        const productData = TestProductData.dataForRepository[0];
+        const categoriesDataData = TestCategoryData.dataForRepository;
+        const productData = TestProductData.dataForRepository;
 
-        await brandsRepo.insert(brandsData[0]);
-        await brandsRepo.insert(brandsData[1]);
-        await brandsRepo.insert(brandsData[2]);
+        await brandsRepo.insert(brandsData);
+        await categoryRepo.insert(categoriesDataData);
+        await productRepo.insert(productData.slice(0, 2));
 
-        delete productData.quantityInStock;
-        await productRepo.insert(productRepo.create(productData));
-        const product = productRepo.createQueryBuilder('product').getOne();
-        expect((await product).quantityInStock).toEqual(0);
+        const fn = async () => {
+          const data = { ...productData[2], brandId: 200 };
+          await productRepo.insert(productRepo.create(data));
+        };
+
+        await expect(fn).rejects.toThrow(QueryFailedError);
+        await expect(fn).rejects.toThrow(
+          `SQLITE_CONSTRAINT: FOREIGN KEY constraint failed`,
+        );
       });
+    });
 
+    describe('categoryId', () => {
+      it('should fail if category does not exists', async () => {
+        const brandsData = TestBrandData.dataForRepository;
+        const categoriesDataData = TestCategoryData.dataForRepository;
+        const productData = TestProductData.dataForRepository;
+
+        await brandsRepo.insert(brandsData);
+        await categoryRepo.insert(categoriesDataData);
+        await productRepo.insert(productData.slice(0, 2));
+
+        const fn = async () => {
+          const data = { ...productData[2], categoryId: 200 };
+          await productRepo.insert(productRepo.create(data));
+        };
+
+        await expect(fn).rejects.toThrow(QueryFailedError);
+        await expect(fn).rejects.toThrow(
+          `SQLITE_CONSTRAINT: FOREIGN KEY constraint failed`,
+        );
+      });
+    });
+
+    describe('activeId', () => {
       it('should set active as false by default', async () => {
-        const brandsData = TestBrandData.dataForRepository;
+        const brandData = TestBrandData.dataForRepository[0];
+        const categoryData = TestCategoryData.dataForRepository[0];
         const productData = TestProductData.dataForRepository[0];
-
-        await brandsRepo.insert(brandsData[0]);
-        await brandsRepo.insert(brandsData[1]);
-        await brandsRepo.insert(brandsData[2]);
-
         delete productData.active;
+
+        await brandsRepo.insert(brandData);
+        await categoryRepo.insert(categoryData);
         await productRepo.insert(productData);
+
         const product = await productRepo
           .createQueryBuilder('product')
           .getOne();
         expect(product.active).toEqual(false);
       });
     });
+
+    describe('quantityInStock', () => {
+      it('should set quantityInStock as 0 by default', async () => {
+        const categoryData = TestCategoryData.dataForRepository[0];
+        const brandData = TestBrandData.dataForRepository[0];
+        const productData = TestProductData.dataForRepository[0];
+
+        await brandsRepo.insert(brandData);
+        await categoryRepo.insert(categoryData);
+        delete productData.quantityInStock;
+        await productRepo.insert(productData);
+        const product = productRepo.createQueryBuilder('product').getOne();
+        expect((await product).quantityInStock).toEqual(0);
+      });
+    });
   });
 
   describe('find', () => {
     it('should find users', async () => {
-      const productData = TestProductData.dataForRepository;
       const brandsData = TestBrandData.dataForRepository;
+      const categoryData = TestCategoryData.dataForRepository;
+      const productData = TestProductData.dataForRepository;
 
-      await brandsRepo.insert(brandsData[0]);
-      await brandsRepo.insert(brandsData[1]);
-      await brandsRepo.insert(brandsData[2]);
-
-      await productRepo.insert(productData[0]);
-      await productRepo.insert(productData[1]);
-      await productRepo.insert(productData[2]);
+      await brandsRepo.insert(brandsData);
+      await categoryRepo.insert(categoryData);
+      await productRepo.insert(productData);
 
       const expectedResults = [
         productData[0],
@@ -244,16 +249,13 @@ describe('ProductEntity', () => {
 
   describe('find one', () => {
     it('should find one user by id', async () => {
-      const productData = TestProductData.dataForRepository;
       const brandsData = TestBrandData.dataForRepository;
+      const categoryData = TestCategoryData.dataForRepository;
+      const productData = TestProductData.dataForRepository;
 
-      await brandsRepo.insert(brandsData[0]);
-      await brandsRepo.insert(brandsData[1]);
-      await brandsRepo.insert(brandsData[2]);
-
-      await productRepo.insert(productData[0]);
-      await productRepo.insert(productData[1]);
-      await productRepo.insert(productData[2]);
+      await brandsRepo.insert(brandsData);
+      await categoryRepo.insert(categoryData);
+      await productRepo.insert(productData);
 
       const expectedResult = productData[1];
 
@@ -264,16 +266,13 @@ describe('ProductEntity', () => {
 
   describe('soft delete', () => {
     it('should soft delete an user', async () => {
-      const productData = TestProductData.dataForRepository;
       const brandsData = TestBrandData.dataForRepository;
+      const categoryData = TestCategoryData.dataForRepository;
+      const productData = TestProductData.dataForRepository;
 
-      await brandsRepo.insert(brandsData[0]);
-      await brandsRepo.insert(brandsData[1]);
-      await brandsRepo.insert(brandsData[2]);
-
-      await productRepo.insert(productData[0]);
-      await productRepo.insert(productData[1]);
-      await productRepo.insert(productData[2]);
+      await brandsRepo.insert(brandsData);
+      await categoryRepo.insert(categoryData);
+      await productRepo.insert(productData);
 
       const allExpectedResults = [
         productData[0],
@@ -304,40 +303,14 @@ describe('ProductEntity', () => {
   });
 
   describe('update', () => {
-    it('should fail if brand does not exists', async () => {
-      const productData = TestProductData.dataForRepository;
-      const brandsData = TestBrandData.dataForRepository;
-
-      await brandsRepo.insert(brandsData[0]);
-      await brandsRepo.insert(brandsData[1]);
-      await brandsRepo.insert(brandsData[2]);
-
-      await productRepo.insert(productData[0]);
-      await productRepo.insert(productData[1]);
-      await productRepo.insert(productData[2]);
-
-      const fn = async () => {
-        const data = { brandId: 200 };
-        await productRepo.update(1, data);
-      };
-
-      await expect(fn).rejects.toThrow(QueryFailedError);
-      await expect(fn).rejects.toThrow(
-        `SQLITE_CONSTRAINT: FOREIGN KEY constraint failed`,
-      );
-    });
-
     it('should update an user', async () => {
-      const productData = TestProductData.dataForRepository;
       const brandsData = TestBrandData.dataForRepository;
+      const categoryData = TestCategoryData.dataForRepository;
+      const productData = TestProductData.dataForRepository;
 
-      await brandsRepo.insert(brandsData[0]);
-      await brandsRepo.insert(brandsData[1]);
-      await brandsRepo.insert(brandsData[2]);
-
-      await productRepo.insert(productData[0]);
-      await productRepo.insert(productData[1]);
-      await productRepo.insert(productData[2]);
+      await brandsRepo.insert(brandsData);
+      await categoryRepo.insert(categoryData);
+      await productRepo.insert(productData);
 
       const updateData = {
         code: '00000002a',
@@ -346,11 +319,12 @@ describe('ProductEntity', () => {
         price: 90,
         quantityInStock: 6,
         active: true,
-        brandId: 1,
+        brandId: 2,
+        categoryId: 2,
       };
       const expectedResults = [
         productData[0],
-        updateData,
+        { ...updateData, categoryId: 2, brandId: 2 },
         { ...productData[2], quantityInStock: 0, active: false },
       ];
       await productRepo.update(2, updateData);
@@ -363,64 +337,129 @@ describe('ProductEntity', () => {
       validateProduct(expectedResults[2], products[2], { productId: 3 });
     });
 
-    describe('properties', () => {
-      it('should accept empty properties', async () => {
+    it('should accept all properties empty', async () => {
+      const brandsData = TestBrandData.dataForRepository;
+      const categoryData = TestCategoryData.dataForRepository;
+      const productData = TestProductData.dataForRepository;
+
+      await brandsRepo.insert(brandsData);
+      await categoryRepo.insert(categoryData);
+      await productRepo.insert(productData);
+
+      const fn = () => productRepo.update(2, {});
+
+      await expect(fn()).resolves.toEqual({
+        affected: 1,
+        generatedMaps: [],
+        raw: [],
+      });
+    });
+
+    describe.each([
+      { property: 'code' },
+      { property: 'name' },
+      { property: 'model' },
+      { property: 'price' },
+      { property: 'active' },
+      { property: 'brandId' },
+      { property: 'categoryId' },
+    ])('$property', ({ property }) => {
+      it.each([{ description: 'null', prop: { [property]: null } }])(
+        `should fail update an product when ${property} is $description`,
+        async ({ prop }) => {
+          const brandsData = TestBrandData.dataForRepository;
+          const categoryData = TestCategoryData.dataForRepository;
+          const productData = TestProductData.dataForRepository;
+
+          await brandsRepo.insert(brandsData);
+          await categoryRepo.insert(categoryData);
+          await productRepo.insert(productData);
+
+          const fn = () => productRepo.update(2, prop);
+
+          await expect(fn()).rejects.toThrow(QueryFailedError);
+          await expect(fn).rejects.toThrow(
+            `SQLITE_CONSTRAINT: NOT NULL constraint failed: products.${property}`,
+          );
+        },
+      );
+    });
+
+    describe.each([
+      { property: 'code' },
+      { property: 'name' },
+      { property: 'model' },
+      { property: 'price' },
+      { property: 'active' },
+      { property: 'brandId' },
+      { property: 'categoryId' },
+    ])('$property', ({ property }) => {
+      it.each([
+        { description: 'undefined', prop: { [property]: undefined } },
+        { description: 'not defined', prop: {} },
+      ])(
+        `should not fail update an product when ${property} is $description`,
+        async ({ prop }) => {
+          const brandsData = TestBrandData.dataForRepository;
+          const categoryData = TestCategoryData.dataForRepository;
+          const productData = TestProductData.dataForRepository;
+
+          await brandsRepo.insert(brandsData);
+          await categoryRepo.insert(categoryData);
+          await productRepo.insert(productData);
+
+          const fn = () => productRepo.update(2, prop);
+
+          await expect(fn()).resolves.toEqual({
+            affected: 1,
+            generatedMaps: [],
+            raw: [],
+          });
+        },
+      );
+    });
+
+    describe('brandId', () => {
+      it('should fail if brand does not exists', async () => {
         const brandsData = TestBrandData.dataForRepository;
+        const categoryData = TestCategoryData.dataForRepository;
         const productData = TestProductData.dataForRepository;
 
-        await brandsRepo.insert(brandsData[0]);
-        await brandsRepo.insert(brandsData[1]);
-        await brandsRepo.insert(brandsData[2]);
+        await brandsRepo.insert(brandsData);
+        await categoryRepo.insert(categoryData);
+        await productRepo.insert(productData);
 
-        await productRepo.insert(productData[0]);
-        await productRepo.insert(productData[1]);
-        await productRepo.insert(productData[2]);
+        const fn = async () => {
+          const data = { brandId: 200 };
+          await productRepo.update(1, data);
+        };
 
-        const fn = () => productRepo.update(2, {});
-
-        await expect(fn()).resolves.toEqual({
-          affected: 1,
-          generatedMaps: [],
-          raw: [],
-        });
+        await expect(fn).rejects.toThrow(QueryFailedError);
+        await expect(fn).rejects.toThrow(
+          `SQLITE_CONSTRAINT: FOREIGN KEY constraint failed`,
+        );
       });
+    });
 
-      describe('name', () => {
-        describe('empty', () => {});
+    describe('categoryId', () => {
+      it('should fail if category does not exists', async () => {
+        const brandsData = TestBrandData.dataForRepository;
+        const categoryData = TestCategoryData.dataForRepository;
+        const productData = TestProductData.dataForRepository;
 
-        describe.each([
-          { description: 'null', value: null },
-          { description: 'undefined', value: undefined },
-        ])('$description', ({ description, value }) => {
-          it.each([
-            { property: 'code' },
-            { property: 'name' },
-            { property: 'model' },
-            { property: 'price' },
-            // { property: 'manufacturer' } TODO:
-          ])(
-            'should not insert an product when $property is ' + description,
-            async ({ property }) => {
-              const brandsData = TestBrandData.dataForRepository;
-              const productData = TestProductData.dataForRepository;
+        await brandsRepo.insert(brandsData);
+        await categoryRepo.insert(categoryData);
+        await productRepo.insert(productData);
 
-              await brandsRepo.insert(brandsData[0]);
-              await brandsRepo.insert(brandsData[1]);
-              await brandsRepo.insert(brandsData[2]);
+        const fn = async () => {
+          const data = { categoryId: 200 };
+          await productRepo.update(1, data);
+        };
 
-              await productRepo.insert(productData[0]);
-              await productRepo.insert(productData[1]);
-              await productRepo.insert(productData[2]);
-
-              const fn = () => productRepo.update(2, { [property]: null });
-
-              await expect(fn()).rejects.toThrow(QueryFailedError);
-              await expect(fn).rejects.toThrow(
-                `SQLITE_CONSTRAINT: NOT NULL constraint failed: products.${property}`,
-              );
-            },
-          );
-        });
+        await expect(fn).rejects.toThrow(QueryFailedError);
+        await expect(fn).rejects.toThrow(
+          `SQLITE_CONSTRAINT: FOREIGN KEY constraint failed`,
+        );
       });
     });
   });

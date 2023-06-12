@@ -12,7 +12,10 @@ describe('CreateUserRequestDto', () => {
   });
 
   it.each(
-    getPasswordErrorDataList(TestUserData.updateData[2], TestPurpose.create),
+    getPasswordErrorDataList({
+      dtoData: TestUserData.updateData[2],
+      purpose: TestPurpose.create,
+    }),
   )(
     'should fail validation when password is $description',
     async ({ data, expectedErrors }) => {

@@ -6,11 +6,12 @@ import {
   TestPurpose,
 } from '../test-data';
 
-export function getPasswordErrorDataList(
-  dtoData,
-  purpose: TestPurpose,
-): TestErrorData[] {
+export function getPasswordErrorDataList(options: {
+  dtoData;
+  purpose: TestPurpose;
+}): TestErrorData[] {
   const property = 'password';
+  const { purpose, dtoData } = options;
   const list = [
     TestData.buildErrorData({
       description: 'number',
@@ -116,11 +117,12 @@ export function getPasswordErrorDataList(
   return list;
 }
 
-export function getPasswordAcceptableValues(
-  dtoData: any,
-  purpose: TestPurpose,
-): TestAcceptData[] {
+export function getPasswordAcceptableValues(options: {
+  dtoData;
+  purpose: TestPurpose;
+}): TestAcceptData[] {
   const property = 'password';
+  const { purpose, dtoData } = options;
   const minLen = 'Pwd12*';
   const maxLen = 'Pwd12*' + '123456';
   const list = [

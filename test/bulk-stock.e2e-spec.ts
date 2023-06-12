@@ -15,7 +15,7 @@ import {
   getHTTPPostMethod,
 } from './common/test-request-utils';
 
-describe('StockController (e2e)', () => {
+describe('BulkStockController (e2e)', () => {
   let app: INestApplication;
   let moduleFixture: TestingModule;
 

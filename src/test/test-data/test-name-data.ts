@@ -6,10 +6,11 @@ import {
   TestPurpose,
 } from '../test-data';
 
-export function getNameErrorDataList(
-  dtoData,
-  purpose: TestPurpose,
-): TestErrorData[] {
+export function getNameErrorDataList(options: {
+  dtoData;
+  purpose: TestPurpose;
+}): TestErrorData[] {
+  const { dtoData, purpose } = options;
   const property = 'name';
   const list = [
     TestData.buildErrorData({
@@ -93,10 +94,11 @@ export function getNameErrorDataList(
   return list;
 }
 
-export function getNameAcceptableValues(
-  dtoData: any,
-  purpose: TestPurpose,
-): TestAcceptData[] {
+export function getNameAcceptableValues(options: {
+  dtoData;
+  purpose: TestPurpose;
+}): TestAcceptData[] {
+  const { dtoData, purpose } = options;
   const property = 'name';
   const minLen = 'x'.repeat(6);
   const maxLen = 'x'.repeat(60);

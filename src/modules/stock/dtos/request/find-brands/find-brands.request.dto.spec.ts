@@ -39,7 +39,7 @@ async function testErrors(data: any, constraints: { [type: string]: string }) {
   expect(errors[0].constraints).toEqual(constraints);
 }
 
-describe('FindBranddRequestDTO', () => {
+describe('FindBrandRequestDTO', () => {
   it('sould validate', async () => {
     const data = {
       query: 'test',
@@ -176,7 +176,7 @@ describe('FindBranddRequestDTO', () => {
         isString: TextMessage.STRING,
       });
       expect(errors[1].constraints).toEqual({
-        isEnum: ActiveMessage.INVALID,
+        isEnum: ActiveMessage.TYPE,
       });
       expect(errors[2].constraints).toEqual({
         isEnum: DeletedMessage.INVALID,

@@ -1,14 +1,11 @@
 import { Transform } from 'class-transformer';
-import {
-  IsBoolean,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  MaxLength,
-  MinLength,
-} from 'class-validator';
+import { IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
 import { ActiveMessage } from '../../../../system/enums/messages/active-messages/active-messages.enum';
 import { NameMessage } from '../../../../system/enums/messages/name-messages/name-messages.enum';
+import { getBooleanTransformer } from '../../../../system/utils/boolean/boolean-transformer';
+import { IsBool } from '../../../../system/validators/active-validator/bool.validator';
+
+const booleanTransformer = getBooleanTransformer({ defaultValue: false });
 
 export class CreateBrandRequestDTO {
   @MaxLength(60, { message: NameMessage.MAX_LEN })
@@ -17,23 +14,11 @@ export class CreateBrandRequestDTO {
   @IsNotEmpty({ message: NameMessage.REQUIRED })
   name: string;
 
-  @IsBoolean({ message: ActiveMessage.BOOLEAN })
-  @Transform(({ value }) => {
-    if (value == null) {
-      return false;
-    } else if (typeof value == 'string') {
-      value = value.toLowerCase();
-      if (value == 'true') {
-        return true;
-      } else if (value == 'false') {
-        return false;
-      }
-      return value;
-    } else if (typeof value == 'boolean') {
-      return value;
-    }
-    return value;
+  @IsBool({
+    optional: true,
+    invalidTypeMessage: ActiveMessage.TYPE,
+    requiredMessage: ActiveMessage.REQUIRED,
   })
-  @IsOptional()
+  @Transform(({ value }) => booleanTransformer(value))
   active?: boolean;
 }

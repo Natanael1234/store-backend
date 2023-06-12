@@ -5,7 +5,7 @@ export class TestDtoDeletedFilter {
   constructor(private readonly defaultDTOData: object) {}
 
   get acceptData() {
-    const data = [
+    const acceptData = [
       {
         description:
           'should pass validation and transform properties when "deleted" is null',
@@ -50,7 +50,7 @@ export class TestDtoDeletedFilter {
       },
     ];
 
-    return data;
+    return acceptData;
   }
 
   get errorData() {

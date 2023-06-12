@@ -28,7 +28,10 @@ describe('RegisterRequestDto', () => {
 
   describe('name', () => {
     it.each(
-      getNameErrorDataList(TestUserData.registerData[2], TestPurpose.register),
+      getNameErrorDataList({
+        dtoData: TestUserData.registerData[2],
+        purpose: TestPurpose.register,
+      }),
     )(
       'should fail validation when name is $description',
       async ({ data, expectedErrors }) => {
@@ -68,7 +71,10 @@ describe('RegisterRequestDto', () => {
 
   describe('email', () => {
     it.each(
-      getEmailErrorDataList(TestUserData.registerData[2], TestPurpose.register),
+      getEmailErrorDataList({
+        dtoData: TestUserData.registerData[2],
+        purpose: TestPurpose.register,
+      }),
     )(
       'should fail validation when email is $emailDescription',
       async ({ data, expectedErrors }) => {
@@ -101,10 +107,10 @@ describe('RegisterRequestDto', () => {
 
   describe('password', () => {
     it.each(
-      getPasswordErrorDataList(
-        TestUserData.registerData[2],
-        TestPurpose.register,
-      ),
+      getPasswordErrorDataList({
+        dtoData: TestUserData.registerData[2],
+        purpose: TestPurpose.register,
+      }),
     )(
       'should fail validation when password is $passwordDescription',
       async ({ data, expectedErrors }) => {

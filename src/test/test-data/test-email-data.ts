@@ -6,11 +6,12 @@ import {
   TestPurpose,
 } from '../test-data';
 
-export function getEmailErrorDataList(
-  dtoData,
-  purpose: TestPurpose,
-): TestErrorData[] {
+export function getEmailErrorDataList(options: {
+  dtoData;
+  purpose: TestPurpose;
+}): TestErrorData[] {
   const property = 'email';
+  const { dtoData, purpose } = options;
   const list = [
     TestData.buildErrorData({
       description: 'number',
@@ -93,11 +94,13 @@ export function getEmailErrorDataList(
   return list;
 }
 
-export function getEmailAcceptableValues(
-  dtoData: any,
-  purpose: TestPurpose,
-): TestAcceptData[] {
+export function getEmailAcceptableValues(options: {
+  dtoData;
+  purpose: TestPurpose;
+}): TestAcceptData[] {
   const property = 'email';
+
+  const { dtoData, purpose } = options;
   const maxLen = 'x'.repeat(50) + '@email.com';
   const list = [
     TestData.buildAcceptableValues({

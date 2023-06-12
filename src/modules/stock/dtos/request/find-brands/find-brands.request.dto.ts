@@ -7,8 +7,8 @@ import { DeletedMessage } from '../../../../system/enums/messages/deleted-messag
 import { PaginationMessage } from '../../../../system/enums/messages/pagination-messages/pagination-messages.enum';
 import { SortMessage } from '../../../../system/enums/messages/sort-messages/sort-messages.enum';
 import { TextMessage } from '../../../../system/enums/messages/text-messages/text-messages.enum';
-import { getArrayTransformer } from '../../../../system/utils/array/array-transformer';
 import { getEnumTransformer } from '../../../../system/utils/enum/enum-transformer';
+import { getJSONTransformer } from '../../../../system/utils/json/json-transformer';
 import {
   normalizePageSizeValue,
   normalizePageValue,
@@ -24,8 +24,9 @@ const deletedEnumTransformer = getEnumTransformer(DeletedFilter, {
   defaultValue: DeletedFilter.NOT_DELETED,
 });
 
-const arrayTransformer = getArrayTransformer({
+const orderByArrayTransformer = getJSONTransformer({
   defaultValues: [BrandOrder.NAME_ASC],
+  useDefaulValuesInsteadOfEmptyArray: true,
   removeDuplicated: true,
 });
 
@@ -36,7 +37,7 @@ export class FindBrandRequestDTO {
   @Expose()
   query?: string;
 
-  @IsEnum(ActiveFilter, { message: ActiveMessage.INVALID })
+  @IsEnum(ActiveFilter, { message: ActiveMessage.TYPE })
   @Transform((options) => activeEnumTransformer(options.value))
   @Expose()
   active?: ActiveFilter;
@@ -57,7 +58,7 @@ export class FindBrandRequestDTO {
   pageSize?: number;
 
   @IsEnum(BrandOrder, { each: true, message: SortMessage.INVALID })
-  @Transform(({ value }) => arrayTransformer(value))
+  @Transform(({ value }) => orderByArrayTransformer(value))
   @Expose()
   orderBy?: BrandOrder[];
 }

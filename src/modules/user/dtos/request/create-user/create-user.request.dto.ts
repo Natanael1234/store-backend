@@ -2,11 +2,9 @@ import { Transform } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
-  IsBoolean,
   IsEmail,
   IsEnum,
   IsNotEmpty,
-  IsOptional,
   IsString,
   IsStrongPassword,
   MaxLength,
@@ -17,7 +15,11 @@ import { ActiveMessage } from '../../../../system/enums/messages/active-messages
 import { EmailMessage } from '../../../../system/enums/messages/email-messages/email-messages.enum';
 import { NameMessage } from '../../../../system/enums/messages/name-messages/name-messages.enum';
 import { PasswordMessage } from '../../../../system/enums/messages/password-messages/password-messages.enum';
+import { getBooleanTransformer } from '../../../../system/utils/boolean/boolean-transformer';
+import { IsBool } from '../../../../system/validators/active-validator/bool.validator';
 import { RoleMessage } from '../../../enums/messages/role/role-messages.enum';
+
+const booleanTransformer = getBooleanTransformer({ defaultValue: false });
 
 export class CreateUserRequestDTO {
   @MaxLength(60, { message: NameMessage.MAX_LEN })
@@ -54,23 +56,11 @@ export class CreateUserRequestDTO {
   @IsNotEmpty({ message: RoleMessage.REQUIRED })
   roles: Role[];
 
-  @IsBoolean({ message: ActiveMessage.BOOLEAN })
-  @Transform(({ value }) => {
-    if (value == null) {
-      return false;
-    } else if (typeof value == 'string') {
-      value = value.toLowerCase();
-      if (value == 'true') {
-        return true;
-      } else if (value == 'false') {
-        return false;
-      }
-      return value;
-    } else if (typeof value == 'boolean') {
-      return value;
-    }
-    return value;
+  @IsBool({
+    requiredMessage: ActiveMessage.REQUIRED,
+    invalidTypeMessage: ActiveMessage.TYPE,
+    optional: true,
   })
-  @IsOptional()
+  @Transform(({ value }) => booleanTransformer(value))
   active?: boolean;
 }

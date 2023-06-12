@@ -1,47 +1,69 @@
 import { ActiveMessage } from '../../modules/system/enums/messages/active-messages/active-messages.enum';
 import { TestAcceptData, TestData, TestErrorData } from '../test-data';
 
-export function getActiveErrorDataList(dtoData): TestErrorData[] {
+export function getActiveErrorDataList(options: {
+  dtoData;
+  // purpose: TestPurpose;
+}): TestErrorData[] {
   const property = 'active';
+  const {
+    dtoData,
+    // purpose
+  } = options;
   const list = [
     TestData.buildErrorData({
       description: 'number',
       property,
       value: 2323232,
       data: dtoData,
-      errors: { isBoolean: ActiveMessage.BOOLEAN },
-      message: { [property]: ActiveMessage.BOOLEAN },
+      errors: { isBool: ActiveMessage.TYPE },
+      message: { [property]: ActiveMessage.TYPE },
     }),
     TestData.buildErrorData({
       description: 'array',
       property,
       value: [],
       data: dtoData,
-      errors: { isBoolean: ActiveMessage.BOOLEAN },
-      message: { [property]: ActiveMessage.BOOLEAN },
+      errors: { isBool: ActiveMessage.TYPE },
+      message: { [property]: ActiveMessage.TYPE },
     }),
     TestData.buildErrorData({
       description: 'object',
       property,
       value: {},
       data: dtoData,
-      errors: { isBoolean: ActiveMessage.BOOLEAN },
-      message: { [property]: ActiveMessage.BOOLEAN },
+      errors: { isBool: ActiveMessage.TYPE },
+      message: { [property]: ActiveMessage.TYPE },
     }),
     TestData.buildErrorData({
       description: 'invalid',
       property,
       value: 'invalid',
       data: dtoData,
-      errors: { isBoolean: ActiveMessage.BOOLEAN },
-      message: { [property]: ActiveMessage.BOOLEAN },
+      errors: { isBool: ActiveMessage.TYPE },
+      message: { [property]: ActiveMessage.TYPE },
+    }),
+    TestData.buildErrorData({
+      description: 'null',
+      property,
+      value: null,
+      data: dtoData,
+      errors: { isBool: ActiveMessage.REQUIRED },
+      message: { [property]: ActiveMessage.REQUIRED },
     }),
   ];
   return list;
 }
 
-export function getActiveAcceptableValues(dtoData): TestAcceptData[] {
+export function getActiveAcceptableValues(options: {
+  dtoData;
+  // purpose: TestPurpose;
+}): TestAcceptData[] {
   const property = 'active';
+  const {
+    dtoData,
+    // purpose
+  } = options;
   const list = [
     TestData.buildAcceptableValues({
       property,
@@ -67,12 +89,12 @@ export function getActiveAcceptableValues(dtoData): TestAcceptData[] {
       data: dtoData,
       value: 'false',
     }),
-    TestData.buildAcceptableValues({
-      property,
-      description: 'null',
-      data: dtoData,
-      value: null,
-    }),
+    // TestData.buildAcceptableValues({
+    //   property,
+    //   description: 'null',
+    //   data: dtoData,
+    //   value: null,
+    // }),
     TestData.buildAcceptableValues({
       property,
       description: 'undefined',

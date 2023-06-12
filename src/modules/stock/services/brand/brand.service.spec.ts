@@ -93,11 +93,13 @@ describe('BrandService', () => {
     });
 
     describe.each([
-      ...getNameErrorDataList(
-        TestBrandData.dataForRepository[1],
-        TestPurpose.create,
-      ),
-      ...getActiveErrorDataList(TestBrandData.dataForRepository[1]),
+      ...getNameErrorDataList({
+        dtoData: TestBrandData.dataForRepository[1],
+        purpose: TestPurpose.create,
+      }),
+      ...getActiveErrorDataList({
+        dtoData: TestBrandData.dataForRepository[1],
+      }),
     ])(
       '$property',
       ({ data, ExceptionClass, response, property, description }) => {
@@ -116,11 +118,13 @@ describe('BrandService', () => {
     );
 
     describe.each([
-      ...getNameAcceptableValues(
-        TestBrandData.dataForRepository[1],
-        TestPurpose.create,
-      ),
-      ...getActiveAcceptableValues(TestBrandData.dataForRepository[1]),
+      ...getNameAcceptableValues({
+        dtoData: TestBrandData.dataForRepository[1],
+        purpose: TestPurpose.create,
+      }),
+      ...getActiveAcceptableValues({
+        dtoData: TestBrandData.dataForRepository[1],
+      }),
     ])('$property', ({ property, data, description }) => {
       it(`should validate when ${property} is ${description}`, async () => {
         const brandDto = plainToInstance(CreateBrandRequestDTO, data);
@@ -166,11 +170,13 @@ describe('BrandService', () => {
     });
 
     describe.each([
-      ...getNameErrorDataList(
-        TestBrandData.dataForRepository[1],
-        TestPurpose.update,
-      ),
-      ...getActiveErrorDataList(TestBrandData.dataForRepository[1]),
+      ...getNameErrorDataList({
+        dtoData: TestBrandData.dataForRepository[1],
+        purpose: TestPurpose.update,
+      }),
+      ...getActiveErrorDataList({
+        dtoData: TestBrandData.dataForRepository[1],
+      }),
     ])(
       '$property',
       ({ description, data, ExceptionClass, response, property }) => {
@@ -196,11 +202,13 @@ describe('BrandService', () => {
       },
     );
     describe.each([
-      ...getNameAcceptableValues(
-        TestBrandData.dataForRepository[1],
-        TestPurpose.update,
-      ),
-      ...getActiveAcceptableValues(TestBrandData.dataForRepository[1]),
+      ...getNameAcceptableValues({
+        dtoData: TestBrandData.dataForRepository[1],
+        purpose: TestPurpose.update,
+      }),
+      ...getActiveAcceptableValues({
+        dtoData: TestBrandData.dataForRepository[1],
+      }),
     ])('$property', ({ description, property, data }) => {
       it(`should validate when ${property} is ${description}`, async () => {
         const brandData = TestBrandData.dataForRepository;
@@ -650,13 +658,13 @@ describe('BrandService', () => {
       const fn = () => brandService.findById(null);
       await expect(fn()).rejects.toThrow(UnprocessableEntityException);
       expect(await brandRepo.find()).toStrictEqual(brandsBefore);
-      await expect(fn()).rejects.toThrow(BrandMessage.ID_REQUIRED);
+      await expect(fn()).rejects.toThrow(BrandMessage.REQUIRED_BRAND_ID);
       try {
         await fn();
       } catch (ex) {
         expect(ex.response).toEqual({
           error: 'Unprocessable Entity',
-          message: BrandMessage.ID_REQUIRED,
+          message: BrandMessage.REQUIRED_BRAND_ID,
           statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
         });
       }
@@ -705,13 +713,13 @@ describe('BrandService', () => {
       const fn = () => brandService.delete(null);
       await expect(fn()).rejects.toThrow(UnprocessableEntityException);
       expect(await brandRepo.find()).toStrictEqual(brandsBefore);
-      await expect(fn()).rejects.toThrow(BrandMessage.ID_REQUIRED);
+      await expect(fn()).rejects.toThrow(BrandMessage.REQUIRED_BRAND_ID);
       try {
         await fn();
       } catch (ex) {
         expect(ex.response).toEqual({
           error: 'Unprocessable Entity',
-          message: BrandMessage.ID_REQUIRED,
+          message: BrandMessage.REQUIRED_BRAND_ID,
           statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
         });
       }

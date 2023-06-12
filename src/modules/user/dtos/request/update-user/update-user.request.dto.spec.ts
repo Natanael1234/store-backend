@@ -27,7 +27,10 @@ describe('UpdateUserRequestDto', () => {
 
   describe('name', () => {
     it.each(
-      getNameErrorDataList(TestUserData.updateData[2], TestPurpose.update),
+      getNameErrorDataList({
+        dtoData: TestUserData.updateData[2],
+        purpose: TestPurpose.update,
+      }),
     )(
       'should fail validation when name is $description',
       async ({ data, expectedErrors }) => {
@@ -59,7 +62,10 @@ describe('UpdateUserRequestDto', () => {
 
   describe('email', () => {
     it.each(
-      getEmailErrorDataList(TestUserData.updateData[2], TestPurpose.update),
+      getEmailErrorDataList({
+        dtoData: TestUserData.updateData[2],
+        purpose: TestPurpose.update,
+      }),
     )(
       'should fail validation when email is $description',
       async ({ data, expectedErrors }) => {
@@ -85,7 +91,9 @@ describe('UpdateUserRequestDto', () => {
   });
 
   describe('active', () => {
-    it.each(getActiveErrorDataList(TestBrandData.dataForRepository[1]))(
+    it.each(
+      getActiveErrorDataList({ dtoData: TestBrandData.dataForRepository[1] }),
+    )(
       'should fail when active is $description',
       async ({ data, expectedErrors }) => {
         const errors = await validateFirstError(data, UpdateUserRequestDTO);
@@ -96,13 +104,14 @@ describe('UpdateUserRequestDto', () => {
       },
     );
 
-    it.each(getActiveAcceptableValues(TestBrandData.dataForRepository[1]))(
-      'should validate when active is $description',
-      async ({ data }) => {
-        const errors = await validateFirstError(data, UpdateUserRequestDTO);
-        expect(errors).toHaveLength(0);
-      },
-    );
+    it.each(
+      getActiveAcceptableValues({
+        dtoData: TestBrandData.dataForRepository[1],
+      }),
+    )('should validate when active is $description', async ({ data }) => {
+      const errors = await validateFirstError(data, UpdateUserRequestDTO);
+      expect(errors).toHaveLength(0);
+    });
   });
 
   describe('multiple errors', () => {
@@ -115,13 +124,9 @@ describe('UpdateUserRequestDto', () => {
       const errors = await validate(data);
 
       expect(errors).toHaveLength(3);
-      expect(errors[0].constraints).toEqual({
-        minLength: NameMessage.MIN_LEN,
-      });
+      expect(errors[0].constraints).toEqual({ minLength: NameMessage.MIN_LEN });
       expect(errors[1].constraints).toEqual({ isEmail: EmailMessage.INVALID });
-      expect(errors[2].constraints).toEqual({
-        isBoolean: ActiveMessage.BOOLEAN,
-      });
+      expect(errors[2].constraints).toEqual({ isBool: ActiveMessage.TYPE });
     });
   });
 });

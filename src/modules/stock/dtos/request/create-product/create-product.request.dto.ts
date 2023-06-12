@@ -1,7 +1,5 @@
 import { Transform } from 'class-transformer';
 import {
-  IsBoolean,
-  IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -12,11 +10,17 @@ import {
 } from 'class-validator';
 import { ActiveMessage } from '../../../../system/enums/messages/active-messages/active-messages.enum';
 import { NameMessage } from '../../../../system/enums/messages/name-messages/name-messages.enum';
-import { BrandIdMessage } from '../../../enums/messages/brand-id-messages/brand-id-quantity-messages.enum';
+import { getBooleanTransformer } from '../../../../system/utils/boolean/boolean-transformer';
+import { IsBool } from '../../../../system/validators/active-validator/bool.validator';
+import { IsForeignKey } from '../../../../system/validators/foreign-key-validator/foreign-key.validator';
+import { BrandMessage } from '../../../enums/messages/brand-messages/brand-messages.enum';
+import { CategoryMessage } from '../../../enums/messages/category-messages/category-messages.enum';
 import { CodeMessage } from '../../../enums/messages/code-messages/code-messages.enum';
 import { ModelMessage } from '../../../enums/messages/model-messages/model-messages.enum';
 import { PriceMessage } from '../../../enums/messages/price-messages/price-messages.enum';
 import { ProductQuantityMessage } from '../../../enums/messages/quantity-messages/quantity-messages.enum';
+
+const booleanTransformer = getBooleanTransformer({ defaultValue: false });
 
 export class CreateProductRequestDTO {
   @MaxLength(60, { message: CodeMessage.MAX_LEN })
@@ -48,28 +52,29 @@ export class CreateProductRequestDTO {
   @IsOptional()
   quantityInStock?: number;
 
-  @IsBoolean({ message: ActiveMessage.BOOLEAN })
-  @Transform(({ value }) => {
-    if (value == null) {
-      return false;
-    } else if (typeof value == 'string') {
-      value = value.toLowerCase();
-      if (value == 'true') {
-        return true;
-      } else if (value == 'false') {
-        return false;
-      }
-      return value;
-    } else if (typeof value == 'boolean') {
-      return value;
-    }
-    return value;
+  @IsBool({
+    optional: true,
+    requiredMessage: ActiveMessage.REQUIRED,
+    invalidTypeMessage: ActiveMessage.TYPE,
   })
-  @IsOptional()
+  @Transform(({ value }) => booleanTransformer(value))
   active?: boolean;
 
-  @Min(1, { message: BrandIdMessage.INVALID })
-  @IsInt({ message: BrandIdMessage.INT })
-  @IsNotEmpty({ message: BrandIdMessage.REQUIRED })
+  @IsForeignKey({
+    invalidTypeMessage: BrandMessage.BRAND_ID_TYPE,
+    requiredMessage: BrandMessage.REQUIRED_BRAND_ID,
+    notNullMessage: BrandMessage.NULL_BRAND_ID,
+    allowUndefined: false,
+    allowNull: false,
+  })
   brandId: number;
+
+  @IsForeignKey({
+    invalidTypeMessage: CategoryMessage.CATEGORY_ID_TYPE,
+    requiredMessage: CategoryMessage.REQUIRED_CATEGORY_ID,
+    notNullMessage: CategoryMessage.NULL_CATEGORY_ID,
+    allowUndefined: false,
+    allowNull: false,
+  })
+  categoryId: number;
 }

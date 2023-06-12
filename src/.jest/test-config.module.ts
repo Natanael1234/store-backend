@@ -5,6 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { TreeRepository } from 'typeorm';
 import { AppController } from '../app.controller';
 import { AppService } from '../app.service';
 import { JWTConfigs } from '../modules/authentication/configs/jwt.config';
@@ -17,10 +18,14 @@ import { TokenService } from '../modules/authentication/services/token/token.ser
 import { JwtStrategy } from '../modules/authentication/strategies/jwt/jwt.strategy';
 import { LocalStrategy } from '../modules/authentication/strategies/local/local.strategy';
 import { BrandController } from '../modules/stock/controllers/brand/brand.controller';
+import { CategoryController } from '../modules/stock/controllers/category/category.controller';
 import { ProductController } from '../modules/stock/controllers/product/product.controller';
 import { BrandEntity } from '../modules/stock/models/brand/brand.entity';
+import { CategoryEntity } from '../modules/stock/models/category/category.entity';
 import { ProductEntity } from '../modules/stock/models/product/product.entity';
+import { CategoryRepository } from '../modules/stock/repositories/category.repository';
 import { BrandService } from '../modules/stock/services/brand/brand.service';
+import { CategoryService } from '../modules/stock/services/category/category.service';
 import { ProductService } from '../modules/stock/services/product/product.service';
 import { EncryptionService } from '../modules/system/encryption/services/encryption/encryption.service';
 import { UserController } from '../modules/user/controllers/user.controller';
@@ -40,6 +45,7 @@ export async function getTestingModule(
         RefreshTokenEntity,
         ProductEntity,
         BrandEntity,
+        CategoryEntity,
       ]),
       ConfigModule.forRoot({ isGlobal: true }),
       TypeOrmModule.forRoot(sqlitDatabaseOptions),
@@ -59,10 +65,13 @@ export async function getTestingModule(
       JwtStrategy,
       LocalStrategy,
       RefreshTokenRepository,
+      CategoryRepository,
       TokenService,
       UserService,
       ProductService,
       BrandService,
+      CategoryService,
+      TreeRepository,
       ...(additionalMetadata?.providers || []),
       { provide: APP_GUARD, useClass: JwtAuthenticationGuard },
       { provide: APP_GUARD, useClass: RolesGuard },
@@ -73,6 +82,7 @@ export async function getTestingModule(
       UserController,
       BrandController,
       ProductController,
+      CategoryController,
       ...(additionalMetadata?.controllers || []),
     ],
   }).compile();

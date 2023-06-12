@@ -6,10 +6,11 @@ import {
   TestPurpose,
 } from '../test-data';
 
-export function getPriceErrorDataList(
-  dtoData,
-  purpose: TestPurpose,
-): TestErrorData[] {
+export function getPriceErrorDataList(options: {
+  dtoData;
+  purpose: TestPurpose;
+}): TestErrorData[] {
+  const { dtoData, purpose } = options;
   const property = 'price';
   const list = [
     TestData.buildErrorData({
@@ -76,11 +77,12 @@ export function getPriceErrorDataList(
   return list;
 }
 
-export function getPriceAcceptableValues(
-  dtoData: any,
-  purpose: TestPurpose,
-): TestAcceptData[] {
+export function getPriceAcceptableValues(options: {
+  dtoData: any;
+  purpose: TestPurpose;
+}): TestAcceptData[] {
   const property = 'price';
+  const { purpose, dtoData } = options;
   const list = [
     TestData.buildAcceptableValues({
       property,

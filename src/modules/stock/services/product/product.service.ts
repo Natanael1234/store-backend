@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
-import { FindManyOptions, ILike, IsNull, Not, Repository } from 'typeorm';
+import { FindManyOptions, ILike, In, IsNull, Not, Repository } from 'typeorm';
 import { PaginationConfig } from '../../../system/dtos/request/pagination/configs/pagination.config';
 import { PaginatedResponseDTO } from '../../../system/dtos/response/pagination/pagination.response.dto';
 import { SuccessResponseDto } from '../../../system/dtos/response/pagination/success.response.dto';
@@ -17,9 +17,11 @@ import { CreateProductRequestDTO } from '../../dtos/request/create-product/creat
 import { FindProductRequestDTO } from '../../dtos/request/find-products/find-products.request.dto';
 import { UpdateProductRequestDTO } from '../../dtos/request/update-product/update-product.request.dto';
 import { BrandMessage } from '../../enums/messages/brand-messages/brand-messages.enum';
+import { CategoryMessage } from '../../enums/messages/category-messages/category-messages.enum';
 import { ProductMessage } from '../../enums/messages/product-messages/product-messages.enum';
 import { ProductOrder } from '../../enums/sort/product-order/product-order.enum';
 import { BrandEntity } from '../../models/brand/brand.entity';
+import { CategoryEntity } from '../../models/category/category.entity';
 import { ProductEntity } from '../../models/product/product.entity';
 
 @Injectable()
@@ -27,20 +29,44 @@ export class ProductService {
   constructor(
     @InjectRepository(BrandEntity)
     private brandRepo: Repository<BrandEntity>,
+    @InjectRepository(CategoryEntity)
+    private categoryRepo: Repository<CategoryEntity>,
     @InjectRepository(ProductEntity)
     private productRepo: Repository<ProductEntity>,
   ) {}
 
   async create(productDto: CreateProductRequestDTO): Promise<ProductEntity> {
-    if (!productDto) throw new BadRequestException('Data is required'); // TODO: move message to enum
+    if (!productDto) {
+      throw new BadRequestException('Data is required'); // TODO: move message to enum
+    }
+    productDto = plainToInstance(CreateProductRequestDTO, productDto);
     await validateOrThrowError(productDto, CreateProductRequestDTO);
+    // brand
     const existentBrand = await this.brandRepo.findOne({
       where: { id: productDto.brandId },
     });
-    if (!existentBrand) throw new NotFoundException(BrandMessage.NOT_FOUND);
+    if (!existentBrand) {
+      throw new NotFoundException(BrandMessage.NOT_FOUND);
+    }
+    // category
+    const existendCategory = await this.categoryRepo.findOne({
+      where: { id: productDto.categoryId },
+    });
+    if (!existendCategory) {
+      throw new NotFoundException(CategoryMessage.NOT_FOUND);
+    }
+    // product
     delete productDto['id'];
     const product = this.productRepo.create(productDto);
-    return this.productRepo.save(product);
+
+    await this.productRepo.save(product);
+    return await this.productRepo.findOne({
+      where: { id: product.id },
+      relations: {
+        brand: true,
+        category: true,
+      },
+    });
   }
 
   async update(
@@ -49,20 +75,42 @@ export class ProductService {
   ): Promise<ProductEntity> {
     if (!productId)
       throw new UnprocessableEntityException(ProductMessage.ID_REQUIRED);
-    if (!productDto) throw new BadRequestException('Data is required'); // TODO: move message to enum
+    if (!productDto) {
+      throw new BadRequestException('Data is required'); // TODO: move message to enum
+    }
+    productDto = plainToInstance(UpdateProductRequestDTO, productDto);
     await validateOrThrowError(productDto, UpdateProductRequestDTO);
-    const existentBrand = await this.brandRepo.findOne({
-      where: { id: productDto.brandId },
-    });
-    if (!existentBrand) throw new NotFoundException(BrandMessage.NOT_FOUND);
+    // brand
+    if (productDto.brandId != undefined) {
+      const existentBrand = await this.brandRepo.findOne({
+        where: { id: productDto.brandId },
+      });
+      if (!existentBrand) {
+        throw new NotFoundException(BrandMessage.NOT_FOUND);
+      }
+    }
+    // category
+    if (productDto.categoryId != undefined) {
+      const existentCategory = await this.categoryRepo.findOneBy({
+        id: productDto.categoryId,
+      });
+      if (!existentCategory) {
+        throw new NotFoundException(CategoryMessage.NOT_FOUND);
+      }
+    }
+    // product
     const existentProduct = await this.productRepo.findOne({
       where: { id: productId },
     });
     if (!existentProduct) throw new NotFoundException(ProductMessage.NOT_FOUND);
+
     const product = this.productRepo.create(productDto);
     product.id = productId;
     await this.productRepo.update(productId, product);
-    return this.productRepo.findOne({ where: { id: productId } });
+    return this.productRepo.findOne({
+      where: { id: productId },
+      relations: { brand: true, category: true },
+    });
   }
 
   async find(
@@ -111,7 +159,19 @@ export class ProductService {
       findManyOptions.order[column] = direction;
     }
 
-    findManyOptions.relations = { brand: true };
+    // brandIds
+    if (findDTO.brandIds?.length) {
+      findManyOptions.where.brandId = In(findDTO.brandIds.filter((id) => !!id));
+    }
+
+    // categoryIds
+    if (findDTO.categoryIds?.length) {
+      findManyOptions.where.categoryId = In(
+        findDTO.categoryIds.filter((id) => !!id),
+      );
+    }
+
+    findManyOptions.relations = { brand: true, category: true };
 
     const [results, count] = await this.productRepo.findAndCount(
       findManyOptions,
@@ -124,7 +184,7 @@ export class ProductService {
       throw new UnprocessableEntityException(ProductMessage.ID_REQUIRED);
     const product = await this.productRepo.findOne({
       where: { id: productId },
-      relations: { brand: true },
+      relations: { brand: true, category: true },
     });
     if (!product) throw new NotFoundException(ProductMessage.NOT_FOUND);
     return product;
