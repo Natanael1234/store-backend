@@ -31,7 +31,3 @@ https://javascript.plainenglish.io/nestjs-implementing-access-refresh-token-jwt-
 # test
 
 https://github.com/jmcdo29/testing-nestjs
-
-# docs
-
-https://docs.nestjs.com/recipes/documentation
