@@ -70,6 +70,7 @@ describe('arrayTransformer', () => {
       expect(transformer('fAlSe')).toEqual(false);
     });
 
+    // TODO: error?
     it('should return default value when receives null', () => {
       if (options) {
         expect(transformer(null)).toEqual(null);

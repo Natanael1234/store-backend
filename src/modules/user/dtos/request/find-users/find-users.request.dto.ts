@@ -7,7 +7,7 @@ import { DeletedMessage } from '../../../../system/enums/messages/deleted-messag
 import { PaginationMessage } from '../../../../system/enums/messages/pagination-messages/pagination-messages.enum';
 import { SortMessage } from '../../../../system/enums/messages/sort-messages/sort-messages.enum';
 import { TextMessage } from '../../../../system/enums/messages/text-messages/text-messages.enum';
-import { getArrayTransformer } from '../../../../system/utils/array/array-transformer';
+import { getJSONTransformer } from '../../../../system/utils/json/json-transformer';
 import {
   normalizePageSizeValue,
   normalizePageValue,
@@ -15,8 +15,9 @@ import {
 import { textSearchTransformer } from '../../../../system/utils/text-seach/text-search-transformer';
 import { UserOrder } from '../../../enums/sort/user-order/user-order.enum';
 
-const arrayTransformer = getArrayTransformer({
+const orderByArrayTransformer = getJSONTransformer({
   defaultValues: [UserOrder.NAME_ASC],
+  useDefaulValuesInsteadOfEmptyArray: true,
   removeDuplicated: true,
 });
 
@@ -72,7 +73,7 @@ export class FindUserRequestDTO {
   pageSize?: number;
 
   @IsEnum(UserOrder, { each: true, message: SortMessage.INVALID })
-  @Transform(({ value }) => arrayTransformer(value))
+  @Transform(({ value }) => orderByArrayTransformer(value))
   @Expose()
   orderBy?: UserOrder[];
 }

@@ -544,7 +544,7 @@ describe('BrandController (e2e)', () => {
             // execute
             const apiResult = await httpGet(
               '/brands',
-              { orderBy: orderBy, active: ActiveFilter.ALL },
+              { orderBy: JSON.stringify(orderBy), active: ActiveFilter.ALL },
               HttpStatus.OK,
               rootToken,
             );
@@ -567,7 +567,9 @@ describe('BrandController (e2e)', () => {
           const apiResult = await httpGet(
             '/brands',
             {
-              orderBy: ['invalid_impossible_and_never_gonna_happen'],
+              orderBy: JSON.stringify([
+                'invalid_impossible_and_never_gonna_happen',
+              ]),
               active: ActiveFilter.ALL,
             },
             HttpStatus.UNPROCESSABLE_ENTITY,

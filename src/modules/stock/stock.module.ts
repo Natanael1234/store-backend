@@ -10,6 +10,7 @@ import { ProductController } from './controllers/product/product.controller';
 import { BrandEntity } from './models/brand/brand.entity';
 import { CategoryEntity } from './models/category/category.entity';
 import { ProductEntity } from './models/product/product.entity';
+import { CategoryRepository } from './repositories/category.repository';
 import { BrandService } from './services/brand/brand.service';
 import { BulkService } from './services/bulk/bulk.service';
 import { CategoryService } from './services/category/category.service';
@@ -35,6 +36,7 @@ import { ProductService } from './services/product/product.service';
     CategoryService,
     BulkService,
     TreeRepository,
+    CategoryRepository,
   ],
   exports: [BrandService, ProductService, BulkService],
 })

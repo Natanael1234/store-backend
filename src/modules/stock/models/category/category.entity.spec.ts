@@ -11,7 +11,7 @@ import {
   testCompareCategoryTrees,
   testValidateCategoryEntity,
 } from '../../../../test/category/test-category-utils';
-import { CategoryRepository } from '../../repositories/categoy.repository';
+import { CategoryRepository } from '../../repositories/category.repository';
 import { CategoryEntity } from './category.entity';
 
 describe('CategoryEntity', () => {

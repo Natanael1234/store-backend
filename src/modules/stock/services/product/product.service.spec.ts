@@ -10,6 +10,7 @@ import {
   FindManyOptions,
   FindOptionsWhere,
   ILike,
+  In,
   IsNull,
   Not,
   Repository,
@@ -33,6 +34,7 @@ import {
   getActiveErrorDataList,
 } from '../../../../test/test-data/test-active-data';
 
+import { TestDtoIdListFilter } from '../../../../test/filtering/id-list-filter/test-dto-id-list-filter';
 import {
   getCodeAcceptableValues,
   getCodeErrorDataList,
@@ -71,7 +73,7 @@ import { ProductMessage } from '../../enums/messages/product-messages/product-me
 import { ProductOrder } from '../../enums/sort/product-order/product-order.enum';
 import { BrandEntity } from '../../models/brand/brand.entity';
 import { ProductEntity } from '../../models/product/product.entity';
-import { CategoryRepository } from '../../repositories/categoy.repository';
+import { CategoryRepository } from '../../repositories/category.repository';
 import { ProductService } from './product.service';
 
 describe('ProductService', () => {
@@ -960,6 +962,158 @@ describe('ProductService', () => {
         }
 
         new TestServiceDeleted().executeTests();
+      });
+
+      describe('brandIds', () => {
+        const idlistTests = new TestDtoIdListFilter({
+          messages: {
+            invalidMessage: BrandMessage.INVALID_BRAND_ID_LIST,
+            invalidItemMessage: BrandMessage.INVALID_BRAND_ID_LIST_ITEM,
+            requiredItemMessage: BrandMessage.NULL_BRAND_ID_LIST_ITEM,
+          },
+          customOptions: {
+            description: 'category parent options',
+            allowUndefined: true,
+            allowNull: true,
+            allowNullItem: false,
+          },
+        });
+        const { accepts, rejects } = idlistTests.getTestData();
+
+        it.each(accepts)(
+          `Should filter products by brandIds = $test.description`,
+          async ({ test }) => {
+            await brandRepo.insert(TestBrandData.dataForRepository);
+            await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
+            await productRepo.insert(TestProductData.dataForRepository);
+
+            const findManyOptions: FindManyOptions<ProductEntity> = {
+              relations: {
+                category: true,
+                brand: true,
+              },
+            };
+            if (test.normalizedData?.length) {
+              findManyOptions.where = { brandId: In(test.normalizedData) };
+            }
+            const expected = await productRepo.find(findManyOptions);
+
+            const results = await productService.find({
+              active: ActiveFilter.ALL,
+              brandIds: test.data,
+              orderBy: [ProductOrder.ACTIVE_DESC],
+            });
+            expect(results).toEqual({
+              count: expected.length,
+              page: 1,
+              pageSize: 12,
+              results: expected,
+            });
+          },
+        );
+
+        it.each(rejects)(
+          'should fail when brandId is $test.description',
+          async (optionTest) => {
+            await brandRepo.insert(TestBrandData.dataForRepository);
+            await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
+            await productRepo.insert(TestProductData.dataForRepository);
+
+            const fn = () =>
+              productService.find({
+                active: ActiveFilter.ALL,
+                brandIds: optionTest.test.data,
+                orderBy: [ProductOrder.ACTIVE_DESC],
+              });
+
+            await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+            try {
+              await fn();
+            } catch (ex) {
+              expect(ex.response).toEqual({
+                error: 'UnprocessableEntityException',
+                message: { brandIds: optionTest.message },
+                statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+              });
+            }
+          },
+        );
+      });
+
+      describe('categoryIds', () => {
+        const idlistTests = new TestDtoIdListFilter({
+          messages: {
+            invalidMessage: CategoryMessage.INVALID_CATEGORY_ID_LIST,
+            invalidItemMessage: CategoryMessage.INVALID_CATEGORY_ID_LIST_ITEM,
+            requiredItemMessage: CategoryMessage.NULL_CATEGORY_ID_LIST_ITEM,
+          },
+          customOptions: {
+            description: 'category parent options',
+            allowUndefined: true,
+            allowNull: true,
+            allowNullItem: false,
+          },
+        });
+        const { accepts, rejects } = idlistTests.getTestData();
+
+        it.each(accepts)(
+          `Should filter products when categoryIds = $test.description`,
+          async ({ test }) => {
+            await brandRepo.insert(TestBrandData.dataForRepository);
+            await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
+            await productRepo.insert(TestProductData.dataForRepository);
+
+            const findManyOptions: FindManyOptions<ProductEntity> = {
+              relations: {
+                category: true,
+                brand: true,
+              },
+            };
+            if (test.normalizedData?.length) {
+              findManyOptions.where = { categoryId: In(test.normalizedData) };
+            }
+            const expected = await productRepo.find(findManyOptions);
+
+            const results = await productService.find({
+              active: ActiveFilter.ALL,
+              categoryIds: test.data,
+              orderBy: [ProductOrder.ACTIVE_DESC],
+            });
+            expect(results).toEqual({
+              count: expected.length,
+              page: 1,
+              pageSize: 12,
+              results: expected,
+            });
+          },
+        );
+
+        it.each(rejects)(
+          'should fail when categoryId is $test.description',
+          async (optionTest) => {
+            await brandRepo.insert(TestBrandData.dataForRepository);
+            await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
+            await productRepo.insert(TestProductData.dataForRepository);
+
+            const fn = () =>
+              productService.find({
+                active: ActiveFilter.ALL,
+                categoryIds: optionTest.test.data,
+                orderBy: [ProductOrder.ACTIVE_DESC],
+              });
+
+            await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+            try {
+              await fn();
+            } catch (ex) {
+              expect(ex.response).toEqual({
+                error: 'UnprocessableEntityException',
+                message: { categoryIds: optionTest.message },
+                statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+              });
+            }
+          },
+        );
       });
 
       describe('pagination', () => {

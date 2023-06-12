@@ -1,6 +1,6 @@
 import { CreateCategoryRequestDTO } from '../../modules/stock/dtos/request/create-category/create-category.request.dto';
 import { CategoryEntity } from '../../modules/stock/models/category/category.entity';
-import { CategoryRepository } from '../../modules/stock/repositories/categoy.repository';
+import { CategoryRepository } from '../../modules/stock/repositories/category.repository';
 
 export type CompareExpectedTreesExpectedData = {
   id?: number;

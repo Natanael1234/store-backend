@@ -23,7 +23,7 @@ import { ProductController } from '../modules/stock/controllers/product/product.
 import { BrandEntity } from '../modules/stock/models/brand/brand.entity';
 import { CategoryEntity } from '../modules/stock/models/category/category.entity';
 import { ProductEntity } from '../modules/stock/models/product/product.entity';
-import { CategoryRepository } from '../modules/stock/repositories/categoy.repository';
+import { CategoryRepository } from '../modules/stock/repositories/category.repository';
 import { BrandService } from '../modules/stock/services/brand/brand.service';
 import { CategoryService } from '../modules/stock/services/category/category.service';
 import { ProductService } from '../modules/stock/services/product/product.service';

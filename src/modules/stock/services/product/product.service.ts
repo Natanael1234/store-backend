@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
-import { FindManyOptions, ILike, IsNull, Not, Repository } from 'typeorm';
+import { FindManyOptions, ILike, In, IsNull, Not, Repository } from 'typeorm';
 import { PaginationConfig } from '../../../system/dtos/request/pagination/configs/pagination.config';
 import { PaginatedResponseDTO } from '../../../system/dtos/response/pagination/pagination.response.dto';
 import { SuccessResponseDto } from '../../../system/dtos/response/pagination/success.response.dto';
@@ -157,6 +157,18 @@ export class ProductService {
     for (let orderItem of orderBy) {
       const [column, direction] = orderItem.split('_');
       findManyOptions.order[column] = direction;
+    }
+
+    // brandIds
+    if (findDTO.brandIds?.length) {
+      findManyOptions.where.brandId = In(findDTO.brandIds.filter((id) => !!id));
+    }
+
+    // categoryIds
+    if (findDTO.categoryIds?.length) {
+      findManyOptions.where.categoryId = In(
+        findDTO.categoryIds.filter((id) => !!id),
+      );
     }
 
     findManyOptions.relations = { brand: true, category: true };

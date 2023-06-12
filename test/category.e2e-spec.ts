@@ -2,7 +2,7 @@ import { HttpStatus, INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { instanceToPlain, plainToInstance } from 'class-transformer';
-import { FindManyOptions, IsNull, Not, Repository } from 'typeorm';
+import { FindManyOptions, In, IsNull, Not, Repository } from 'typeorm';
 import { getTestingModule } from '../src/.jest/test-config.module';
 import { Role } from '../src/modules/authentication/enums/role/role.enum';
 import { AuthenticationService } from '../src/modules/authentication/services/authentication/authentication.service';
@@ -10,7 +10,7 @@ import { CreateCategoryRequestDTO } from '../src/modules/stock/dtos/request/crea
 import { CategoryMessage } from '../src/modules/stock/enums/messages/category-messages/category-messages.enum';
 import { CategoryOrder } from '../src/modules/stock/enums/sort/category-order/category-order.enum';
 import { CategoryEntity } from '../src/modules/stock/models/category/category.entity';
-import { CategoryRepository } from '../src/modules/stock/repositories/categoy.repository';
+import { CategoryRepository } from '../src/modules/stock/repositories/category.repository';
 import { PaginationConfig } from '../src/modules/system/dtos/request/pagination/configs/pagination.config';
 import { ActiveFilter } from '../src/modules/system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../src/modules/system/enums/filter/deleted-filter/deleted-filter.enum';
@@ -22,6 +22,7 @@ import {
   testValidateCategoriesArrays,
   testValidateCategory,
 } from '../src/test/category/test-category-utils';
+import { TestDtoIdListFilter } from '../src/test/filtering/id-list-filter/test-dto-id-list-filter';
 import { TestSortScenarioBuilder } from '../src/test/filtering/sort/test-service-sort-filter';
 import { TestProductData } from '../src/test/product/test-product-data';
 import { TestPurpose } from '../src/test/test-data';
@@ -1008,6 +1009,155 @@ describe('CategoryController (e2e)', () => {
         new TestDeletedFilter().executeTests();
       });
 
+      describe('parentIds', () => {
+        async function createTestScenario() {
+          await categoryRepo.bulkCreate([
+            { name: 'Category 1', active: true, parentId: null },
+            { name: 'Category 2', active: true, parentId: 1 },
+            { name: 'Category 3', active: true, parentId: 1 },
+            { name: 'Category 4', active: true, parentId: 2 },
+            { name: 'Category 5', active: true, parentId: 2 },
+            { name: 'Category 6', active: true, parentId: 3 },
+            { name: 'Category 7', active: true, parentId: 3 },
+            { name: 'Category 8', active: true, parentId: null },
+            { name: 'Category 9', active: true, parentId: 8 },
+            { name: 'Category 10', active: true, parentId: 8 },
+          ]);
+        }
+
+        it('should filter categories by parentIds', async () => {
+          await createTestScenario();
+          const expectedResults = objectToJSON(
+            await categoryRepo.find({
+              where: { id: In([2, 3, 4, 5]) },
+              relations: { parent: true },
+            }),
+          );
+
+          const serviceCategories = await httpGet(
+            '/categories',
+            { active: ActiveFilter.ALL, parentIds: JSON.stringify([1, 2]) },
+            HttpStatus.OK,
+            rootToken,
+          );
+
+          expect(serviceCategories).toEqual({
+            count: 4,
+            page: 1,
+            pageSize: 12,
+            results: expectedResults,
+          });
+          expect(serviceCategories.results).toEqual(expectedResults);
+        });
+
+        it('should filter categories by null parent', async () => {
+          await createTestScenario();
+          const expectedResults = objectToJSON(
+            (
+              await categoryRepo.find({
+                relations: { parent: true },
+              })
+            ).filter((c) => !c.parent),
+          );
+          try {
+            const serviceCategories = await httpGet(
+              '/categories',
+              { active: ActiveFilter.ALL, parentIds: JSON.stringify([null]) },
+              HttpStatus.OK,
+              rootToken,
+            );
+
+            expect(serviceCategories).toEqual({
+              count: 2,
+              page: 1,
+              pageSize: 12,
+              results: expectedResults,
+            });
+            expect(serviceCategories.results).toEqual(expectedResults);
+          } catch (error) {
+            throw error;
+          }
+        });
+
+        const idlistTests = new TestDtoIdListFilter({
+          onlyQueryParameters: true,
+          messages: {
+            propertyLabel: 'parentId',
+            invalidMessage: CategoryMessage.INVALID_PARENT_CATEGORY_ID_LIST,
+            invalidItemMessage:
+              CategoryMessage.INVALID_PARENT_CATEGORY_ID_LIST_ITEM,
+            requiredItemMessage:
+              CategoryMessage.NULL_PARENT_CATEGORY_ID_LIST_ITEM,
+          },
+          customOptions: {
+            description: 'category parent options',
+            allowUndefined: true,
+            allowNull: true,
+            allowNullItem: true,
+          },
+        });
+        const { accepts, rejects } = idlistTests.getTestData();
+
+        it.each(accepts)(
+          'should filter categories when parentIds=$test.description',
+          async ({ test }) => {
+            await createTestScenario();
+
+            const categories = (
+              await categoryRepo.find({
+                relations: { parent: true },
+                order: { name: 'ASC' },
+              })
+            )
+              .filter((category) => {
+                if (test.normalizedData?.length) {
+                  if (category.parent) {
+                    return test.normalizedData.includes(category.parent.id);
+                  } else {
+                    return test.normalizedData.includes(null);
+                  }
+                }
+                return true;
+              })
+              .map((category) => objectToJSON(category));
+
+            const results = await httpGet(
+              '/categories',
+              {
+                active: ActiveFilter.ALL,
+                parentIds: test.data,
+                orderBy: JSON.stringify([CategoryOrder.NAME_ASC]),
+              },
+              HttpStatus.OK,
+              rootToken,
+            );
+
+            expect(results).toEqual({
+              count: categories.length,
+              page: 1,
+              pageSize: 12,
+              results: categories,
+            });
+          },
+        );
+
+        it.each(rejects)('$description', async ({ test, message }) => {
+          await createTestScenario();
+          const apiResult = await httpGet(
+            '/categories',
+            { active: ActiveFilter.ALL, parentIds: test.data },
+            HttpStatus.UNPROCESSABLE_ENTITY,
+            rootToken,
+          );
+
+          expect(apiResult).toEqual({
+            error: 'UnprocessableEntityException',
+            message: { parentIds: message },
+            statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+          });
+        });
+      });
+
       describe('pagination', () => {
         class TestPagination extends AbstractTestApiPagination<CategoryEntity> {
           insertRegisters(quantity: number): Promise<any> {
@@ -1064,7 +1214,7 @@ describe('CategoryController (e2e)', () => {
             // execute
             const apiResult = await httpGet(
               '/categories',
-              { orderBy: orderBy, active: ActiveFilter.ALL },
+              { orderBy: JSON.stringify(orderBy), active: ActiveFilter.ALL },
               HttpStatus.OK,
               rootToken,
             );

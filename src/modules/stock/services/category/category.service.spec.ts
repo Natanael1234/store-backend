@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { plainToInstance } from 'class-transformer';
-import { FindManyOptions, ILike, IsNull, Not } from 'typeorm';
+import { FindManyOptions, ILike, In, IsNull, Not } from 'typeorm';
 import { getTestingModule } from '../../../../.jest/test-config.module';
 import { TestCategoryData } from '../../../../test/category/test-category-data';
 import { AbstractTestServiceActiveFilter } from '../../../../test/filtering/active/test-service-active-filter';
@@ -40,8 +40,9 @@ import { UpdateCategoryRequestDTO } from '../../dtos/request/update-category/upd
 import { CategoryOrder } from '../../enums/sort/category-order/category-order.enum';
 import { CategoryEntity } from '../../models/category/category.entity';
 
+import { TestDtoIdListFilter } from '../../../../test/filtering/id-list-filter/test-dto-id-list-filter';
 import { getFKErrorDataList } from '../../../../test/test-data/test-fk-data';
-import { CategoryRepository } from '../../repositories/categoy.repository';
+import { CategoryRepository } from '../../repositories/category.repository';
 import { CategoryService } from './category.service';
 
 describe('CategoryService', () => {
@@ -753,6 +754,141 @@ describe('CategoryService', () => {
         }
 
         new TestServiceDeleted().executeTests();
+      });
+
+      describe('parentId', () => {
+        async function createTestScenario() {
+          await categoryRepo.bulkCreate([
+            { name: 'Category 1', active: true, parentId: null },
+            { name: 'Category 2', active: true, parentId: 1 },
+            { name: 'Category 3', active: true, parentId: 1 },
+            { name: 'Category 4', active: true, parentId: 2 },
+            { name: 'Category 5', active: true, parentId: 2 },
+            { name: 'Category 6', active: true, parentId: 3 },
+            { name: 'Category 7', active: true, parentId: 3 },
+            { name: 'Category 8', active: true, parentId: null },
+            { name: 'Category 9', active: true, parentId: 8 },
+            { name: 'Category 10', active: true, parentId: 8 },
+          ]);
+        }
+
+        it('should filter categories by parentIds', async () => {
+          await createTestScenario();
+          const expectedResults = await categoryRepo.find({
+            where: { id: In([2, 3, 4, 5]) },
+            relations: { parent: true },
+          });
+          const serviceCategories = await categoryService.find({
+            active: ActiveFilter.ALL,
+            parentIds: [1, 2],
+          });
+          expect(serviceCategories).toEqual({
+            count: 4,
+            page: 1,
+            pageSize: 12,
+            results: expectedResults,
+          });
+          expect(serviceCategories.results).toEqual(expectedResults);
+        });
+
+        it('should filter categories by null parent', async () => {
+          await createTestScenario();
+          const expectedResults = await categoryRepo.find({
+            where: { id: In([1, 8]) },
+            relations: { parent: true },
+          });
+          try {
+            const serviceCategories = await categoryService.find({
+              active: ActiveFilter.ALL,
+              parentIds: [null],
+            });
+            expect(serviceCategories).toEqual({
+              count: 2,
+              page: 1,
+              pageSize: 12,
+              results: expectedResults,
+            });
+            expect(serviceCategories.results).toEqual(expectedResults);
+          } catch (error) {
+            throw error;
+          }
+        });
+
+        const idlistTests = new TestDtoIdListFilter({
+          messages: {
+            propertyLabel: 'parentId',
+            invalidMessage: CategoryMessage.INVALID_PARENT_CATEGORY_ID_LIST,
+            invalidItemMessage:
+              CategoryMessage.INVALID_PARENT_CATEGORY_ID_LIST_ITEM,
+            requiredItemMessage:
+              CategoryMessage.NULL_PARENT_CATEGORY_ID_LIST_ITEM,
+          },
+          customOptions: {
+            description: 'category parent options',
+            allowUndefined: true,
+            allowNull: true,
+            allowNullItem: true,
+          },
+        });
+        const { accepts, rejects } = idlistTests.getTestData();
+
+        it.each(accepts)('$description', async ({ test }) => {
+          await createTestScenario();
+          const categories = (
+            await categoryRepo.find({ relations: { parent: true } })
+          ).filter((category) => {
+            if (test.normalizedData?.length) {
+              if (category.parent) {
+                return test.normalizedData.includes(category.parent.id);
+              } else {
+                return (
+                  test.normalizedData.includes(null) ||
+                  test.normalizedData.includes(undefined)
+                );
+              }
+            }
+            return true;
+          });
+
+          const results = await categoryService.find({
+            active: ActiveFilter.ACTIVE,
+            parentIds: test.data,
+            orderBy: [CategoryOrder.ACTIVE_DESC],
+          });
+
+          expect(results).toEqual({
+            count: categories.length,
+            page: 1,
+            pageSize: 12,
+            results: categories,
+          });
+        });
+
+        it.each(rejects)('$description', async (optionTest) => {
+          const test = optionTest.test;
+          const message = optionTest.message;
+
+          await createTestScenario();
+          const fn = () =>
+            categoryService.find({
+              active: ActiveFilter.ACTIVE,
+              parentIds: test.data,
+              orderBy: [CategoryOrder.ACTIVE_DESC],
+            });
+
+          await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+          try {
+            await fn();
+          } catch (ex) {
+            expect(ex.response).toEqual({
+              error: 'UnprocessableEntityException',
+              message: {
+                parentIds: message,
+              },
+              statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+            });
+          }
+        });
       });
 
       describe('pagination', () => {

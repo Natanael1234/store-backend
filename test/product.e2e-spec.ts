@@ -2,7 +2,7 @@ import { HttpStatus, INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { instanceToPlain, plainToInstance } from 'class-transformer';
-import { FindManyOptions, IsNull, Not, Repository } from 'typeorm';
+import { FindManyOptions, In, IsNull, Not, Repository } from 'typeorm';
 import { getTestingModule } from '../src/.jest/test-config.module';
 import { Role } from '../src/modules/authentication/enums/role/role.enum';
 import { AuthenticationService } from '../src/modules/authentication/services/authentication/authentication.service';
@@ -14,7 +14,7 @@ import { ProductMessage } from '../src/modules/stock/enums/messages/product-mess
 import { ProductOrder } from '../src/modules/stock/enums/sort/product-order/product-order.enum';
 import { BrandEntity } from '../src/modules/stock/models/brand/brand.entity';
 import { ProductEntity } from '../src/modules/stock/models/product/product.entity';
-import { CategoryRepository } from '../src/modules/stock/repositories/categoy.repository';
+import { CategoryRepository } from '../src/modules/stock/repositories/category.repository';
 import { PaginationConfig } from '../src/modules/system/dtos/request/pagination/configs/pagination.config';
 import { SuccessResponseDto } from '../src/modules/system/dtos/response/pagination/success.response.dto';
 import { ActiveFilter } from '../src/modules/system/enums/filter/active-filter/active-filter.enum';
@@ -25,6 +25,7 @@ import { UserEntity } from '../src/modules/user/models/user/user.entity';
 import { UserService } from '../src/modules/user/services/user/user.service';
 import { TestBrandData } from '../src/test/brand/test-brand-data';
 import { TestCategoryData } from '../src/test/category/test-category-data';
+import { TestDtoIdListFilter } from '../src/test/filtering/id-list-filter/test-dto-id-list-filter';
 import { TestSortScenarioBuilder } from '../src/test/filtering/sort/test-service-sort-filter';
 import { TestProductData } from '../src/test/product/test-product-data';
 import {
@@ -1130,6 +1131,213 @@ describe('ProductController (e2e)', () => {
           new ProductTestDeletedFilter().executeTests();
         });
 
+        async function createRelationsTestScenario() {
+          await brandRepo.insert(TestBrandData.dataForRepository);
+          await categoryRepo.insert(TestCategoryData.dataForRepository);
+          const productData = TestProductData.buildData(3);
+          productData[1].categoryId = 2;
+          productData[2].brandId = 2;
+          await productRepo.insert(productData);
+        }
+
+        describe('categoryIds', () => {
+          it('should filter products by categoryIds', async () => {
+            await createRelationsTestScenario();
+            const expectedResults = (
+              await productRepo.find({
+                where: { categoryId: 1 },
+                relations: { category: true, brand: true },
+              })
+            ).map((product) => objectToJSON(product));
+
+            const serviceCategories = await httpGet(
+              '/products',
+              { active: ActiveFilter.ALL, categoryIds: JSON.stringify([1]) },
+              HttpStatus.OK,
+              rootToken,
+            );
+
+            expect(serviceCategories).toEqual({
+              count: 2,
+              page: 1,
+              pageSize: 12,
+              results: expectedResults,
+            });
+
+            expect(serviceCategories.results).toEqual(expectedResults);
+          });
+
+          const idlistTests = new TestDtoIdListFilter({
+            onlyQueryParameters: true,
+            messages: {
+              propertyLabel: 'categoryId',
+              invalidMessage: CategoryMessage.INVALID_CATEGORY_ID_LIST,
+              invalidItemMessage: CategoryMessage.INVALID_CATEGORY_ID_LIST_ITEM,
+              requiredItemMessage: CategoryMessage.NULL_CATEGORY_ID_LIST_ITEM,
+            },
+            customOptions: {
+              description: 'category options',
+              allowUndefined: true,
+              allowNull: true,
+              allowNullItem: false,
+            },
+          });
+          const { accepts, rejects } = idlistTests.getTestData();
+
+          it.each(accepts)(
+            'should filter products when categoryIds=$test.description',
+            async ({ test }) => {
+              await createRelationsTestScenario();
+
+              const findManyOptions: FindManyOptions<ProductEntity> = {
+                where: {},
+                relations: { category: true, brand: true },
+                order: { name: 'ASC' },
+              };
+
+              if (test.normalizedData) {
+                findManyOptions.where['categoryId'] = In(test.normalizedData);
+              }
+              const products = (await productRepo.find(findManyOptions)).map(
+                (category) => objectToJSON(category),
+              );
+
+              const results = await httpGet(
+                '/products',
+                {
+                  active: ActiveFilter.ALL,
+                  categoryIds: test.data,
+                  orderBy: JSON.stringify([ProductOrder.NAME_ASC]),
+                },
+                HttpStatus.OK,
+                rootToken,
+              );
+
+              expect(results).toEqual({
+                count: products.length,
+                page: 1,
+                pageSize: 12,
+                results: products,
+              });
+            },
+          );
+
+          it.each(rejects)('$description', async ({ test, message }) => {
+            await createRelationsTestScenario();
+            const apiResult = await httpGet(
+              '/products',
+              { active: ActiveFilter.ALL, categoryIds: test.data },
+              HttpStatus.UNPROCESSABLE_ENTITY,
+              rootToken,
+            );
+
+            expect(apiResult).toEqual({
+              error: 'UnprocessableEntityException',
+              message: { categoryIds: message },
+              statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+            });
+          });
+        });
+
+        describe('brandIds', () => {
+          it('should filter products by brandIds', async () => {
+            await createRelationsTestScenario();
+            const expectedResults = (
+              await productRepo.find({
+                where: { brandId: 1 },
+                relations: { category: true, brand: true },
+              })
+            ).map((product) => objectToJSON(product));
+
+            const serviceCategories = await httpGet(
+              '/products',
+              { active: ActiveFilter.ALL, brandIds: JSON.stringify([1]) },
+              HttpStatus.OK,
+              rootToken,
+            );
+
+            expect(serviceCategories).toEqual({
+              count: 2,
+              page: 1,
+              pageSize: 12,
+              results: expectedResults,
+            });
+
+            expect(serviceCategories.results).toEqual(expectedResults);
+          });
+
+          const idlistTests = new TestDtoIdListFilter({
+            onlyQueryParameters: true,
+            messages: {
+              propertyLabel: 'brandId',
+              invalidMessage: BrandMessage.INVALID_BRAND_ID_LIST,
+              invalidItemMessage: BrandMessage.INVALID_BRAND_ID_LIST_ITEM,
+              requiredItemMessage: BrandMessage.NULL_BRAND_ID_LIST_ITEM,
+            },
+            customOptions: {
+              description: 'brand options',
+              allowUndefined: true,
+              allowNull: true,
+              allowNullItem: false,
+            },
+          });
+          const { accepts, rejects } = idlistTests.getTestData();
+
+          it.each(accepts)(
+            'should filter products when brandIds=$test.description',
+            async ({ test }) => {
+              await createRelationsTestScenario();
+
+              const findManyOptions: FindManyOptions<ProductEntity> = {
+                where: {},
+                relations: { category: true, brand: true },
+                order: { name: 'ASC' },
+              };
+
+              if (test.normalizedData) {
+                findManyOptions.where['brandId'] = In(test.normalizedData);
+              }
+              const products = (await productRepo.find(findManyOptions)).map(
+                (product) => objectToJSON(product),
+              );
+
+              const results = await httpGet(
+                '/products',
+                {
+                  active: ActiveFilter.ALL,
+                  brandIds: test.data,
+                  orderBy: JSON.stringify([ProductOrder.NAME_ASC]),
+                },
+                HttpStatus.OK,
+                rootToken,
+              );
+
+              expect(results).toEqual({
+                count: products.length,
+                page: 1,
+                pageSize: 12,
+                results: products,
+              });
+            },
+          );
+
+          it.each(rejects)('$description', async ({ test, message }) => {
+            await createRelationsTestScenario();
+            const apiResult = await httpGet(
+              '/products',
+              { active: ActiveFilter.ALL, brandIds: test.data },
+              HttpStatus.UNPROCESSABLE_ENTITY,
+              rootToken,
+            );
+
+            expect(apiResult).toEqual({
+              error: 'UnprocessableEntityException',
+              message: { brandIds: message },
+              statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+            });
+          });
+        });
+
         describe('pagination', () => {
           class ProductTestPagination extends AbstractTestApiPagination<ProductEntity> {
             async insertRegisters(quantity: number): Promise<any> {
@@ -1200,7 +1408,7 @@ describe('ProductController (e2e)', () => {
               // execute
               const apiResult = await httpGet(
                 '/products',
-                { orderBy: orderBy, active: ActiveFilter.ALL },
+                { orderBy: JSON.stringify(orderBy), active: ActiveFilter.ALL },
                 HttpStatus.OK,
                 rootToken,
               );
@@ -1300,7 +1508,7 @@ describe('ProductController (e2e)', () => {
                   pageSize: 8,
                   deleted: DeletedFilter.DELETED,
                   active: ActiveFilter.INACTIVE,
-                  orderBy: [ProductOrder.NAME_DESC],
+                  orderBy: JSON.stringify([ProductOrder.NAME_DESC]),
                 },
                 HttpStatus.OK,
                 rootToken,
@@ -1312,7 +1520,7 @@ describe('ProductController (e2e)', () => {
                   pageSize: 8,
                   deleted: DeletedFilter.DELETED,
                   active: ActiveFilter.INACTIVE,
-                  orderBy: [ProductOrder.NAME_DESC],
+                  orderBy: JSON.stringify([ProductOrder.NAME_DESC]),
                 },
                 HttpStatus.OK,
                 rootToken,
@@ -1324,7 +1532,7 @@ describe('ProductController (e2e)', () => {
                   pageSize: 8,
                   deleted: DeletedFilter.DELETED,
                   active: ActiveFilter.INACTIVE,
-                  orderBy: [ProductOrder.NAME_DESC],
+                  orderBy: JSON.stringify([ProductOrder.NAME_DESC]),
                 },
                 HttpStatus.OK,
                 rootToken,
@@ -1336,7 +1544,7 @@ describe('ProductController (e2e)', () => {
                   pageSize: 8,
                   deleted: DeletedFilter.DELETED,
                   active: ActiveFilter.INACTIVE,
-                  orderBy: ProductOrder.NAME_DESC,
+                  orderBy: JSON.stringify([ProductOrder.NAME_DESC]),
                 },
                 HttpStatus.OK,
                 rootToken,

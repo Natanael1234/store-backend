@@ -1,6 +1,7 @@
 import { plainToInstance } from 'class-transformer';
 import { TestDtoActiveFilter } from '../../../../../test/filtering/active/test-dto-active-filter';
 import { TestDtoDeletedFilter } from '../../../../../test/filtering/deleted/test-dto-deleted-filter';
+import { TestDtoIdListFilter } from '../../../../../test/filtering/id-list-filter/test-dto-id-list-filter';
 import { TestDtoPagination } from '../../../../../test/filtering/pagination/test-dto-pagination-filter';
 import { TestDtoSort } from '../../../../../test/filtering/sort/test-dto-sort-filter';
 import { TestDtoTextFilter } from '../../../../../test/filtering/text/text-dto-text-filter';
@@ -13,6 +14,8 @@ import { PaginationMessage } from '../../../../system/enums/messages/pagination-
 import { SortMessage } from '../../../../system/enums/messages/sort-messages/sort-messages.enum';
 import { TextMessage } from '../../../../system/enums/messages/text-messages/text-messages.enum';
 import { validateFirstError } from '../../../../system/utils/validation';
+import { BrandMessage } from '../../../enums/messages/brand-messages/brand-messages.enum';
+import { CategoryMessage } from '../../../enums/messages/category-messages/category-messages.enum';
 import { ProductOrder } from '../../../enums/sort/product-order/product-order.enum';
 import { FindProductRequestDTO } from './find-products.request.dto';
 
@@ -23,6 +26,8 @@ const defaultDtoResult = {
   page: PaginationConfig.DEFAULT_PAGE,
   pageSize: PaginationConfig.DEFAULT_PAGE_SIZE,
   orderBy: [ProductOrder.NAME_ASC],
+  brandsIds: undefined,
+  categoriesIds: undefined,
 };
 
 async function testAccepts(data: any, expectedResult: any) {
@@ -118,6 +123,78 @@ describe('FindProductsRequestDTO', () => {
         await testErrors(data, constraints);
       },
     );
+  });
+
+  describe('brandIds', () => {
+    const idlistTests = new TestDtoIdListFilter({
+      messages: {
+        propertyLabel: 'brandIds',
+        invalidMessage: BrandMessage.INVALID_BRAND_ID_LIST,
+        requiredItemMessage: BrandMessage.NULL_BRAND_ID_LIST_ITEM,
+        invalidItemMessage: BrandMessage.INVALID_BRAND_ID_LIST_ITEM,
+      },
+      customOptions: {
+        description: 'brandIds options',
+        allowNull: true,
+        allowUndefined: true,
+        allowNullItem: false,
+      },
+    });
+    const { accepts, rejects } = idlistTests.getTestData();
+
+    it.each(accepts)('$description', async ({ test }) => {
+      const expectedResult = {
+        ...defaultDtoResult,
+        brandIds: test.normalizedData,
+      };
+      await testAccepts(
+        { ...defaultDtoResult, brandIds: test.data },
+        expectedResult,
+      );
+    });
+
+    it.each(rejects)('$description', async ({ test, constraints }) => {
+      await testErrors(
+        { ...defaultDtoResult, brandIds: test.data },
+        constraints,
+      );
+    });
+  });
+
+  describe('categoryIds', () => {
+    const idlistTests = new TestDtoIdListFilter({
+      messages: {
+        propertyLabel: 'categoryIds',
+        invalidMessage: CategoryMessage.INVALID_CATEGORY_ID_LIST,
+        requiredItemMessage: CategoryMessage.NULL_CATEGORY_ID_LIST_ITEM,
+        invalidItemMessage: CategoryMessage.INVALID_CATEGORY_ID_LIST_ITEM,
+      },
+      customOptions: {
+        description: 'categoryIds options',
+        allowNull: true,
+        allowUndefined: true,
+        allowNullItem: false,
+      },
+    });
+    const { accepts, rejects } = idlistTests.getTestData();
+
+    it.each(accepts)('$description', async ({ test }) => {
+      const expectedResult = {
+        ...defaultDtoResult,
+        categoryIds: test.normalizedData,
+      };
+      await testAccepts(
+        { ...defaultDtoResult, categoryIds: test.data },
+        expectedResult,
+      );
+    });
+
+    it.each(rejects)('$description', async ({ test, constraints }) => {
+      await testErrors(
+        { ...defaultDtoResult, categoryIds: test.data },
+        constraints,
+      );
+    });
   });
 
   describe('pagination', () => {

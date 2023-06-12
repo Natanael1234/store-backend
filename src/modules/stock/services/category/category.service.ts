@@ -4,16 +4,8 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
-import {
-  FindManyOptions,
-  ILike,
-  IsNull,
-  Not,
-  Repository,
-  TreeRepository,
-} from 'typeorm';
+import { FindManyOptions, ILike, In, IsNull, Not } from 'typeorm';
 import { PaginationConfig } from '../../../system/dtos/request/pagination/configs/pagination.config';
 import { PaginatedResponseDTO } from '../../../system/dtos/response/pagination/pagination.response.dto';
 import { SuccessResponseDto } from '../../../system/dtos/response/pagination/success.response.dto';
@@ -26,17 +18,13 @@ import { UpdateCategoryRequestDTO } from '../../dtos/request/update-category/upd
 import { CategoryMessage } from '../../enums/messages/category-messages/category-messages.enum';
 import { CategoryOrder } from '../../enums/sort/category-order/category-order.enum';
 import { CategoryEntity } from '../../models/category/category.entity';
+import { CategoryRepository } from '../../repositories/category.repository';
 
 @Injectable()
 export class CategoryService {
   pageSize = 12;
 
-  constructor(
-    @InjectRepository(CategoryEntity)
-    private categoryRepo: Repository<CategoryEntity>,
-    @InjectRepository(CategoryEntity)
-    private categoryTreeRepo: TreeRepository<CategoryEntity>,
-  ) {}
+  constructor(private categoryRepo: CategoryRepository) {}
 
   async create(categoryDto: CreateCategoryRequestDTO): Promise<CategoryEntity> {
     if (!categoryDto) throw new BadRequestException('Data is required'); // TODO: move message to enum
@@ -116,7 +104,7 @@ export class CategoryService {
 
       if (parentId != existentCategory.parent?.id) {
         // cannot move element to its descendant
-        const descendants = await this.categoryTreeRepo.findDescendants(
+        const descendants = await this.categoryRepo.findDescendants(
           existentCategory,
         );
         const targetIsDescendant = descendants.find(
@@ -153,7 +141,8 @@ export class CategoryService {
     findDTO = plainToInstance(FindCategoriesRequestDTO, findDTO || {});
     await validateOrThrowError(findDTO || {}, FindCategoriesRequestDTO);
 
-    let { query, active, deleted, page, pageSize, orderBy } = findDTO;
+    let { query, active, deleted, parentIds, page, pageSize, orderBy } =
+      findDTO;
     const findManyOptions: FindManyOptions = {};
 
     findManyOptions.where = {};
@@ -194,6 +183,11 @@ export class CategoryService {
       findManyOptions.order[column] = direction;
     }
 
+    // parentId
+    if (parentIds?.length) {
+      const childrenIds = await this.categoryRepo.getChildrenIds(parentIds);
+      findManyOptions.where.id = In(childrenIds);
+    }
     findManyOptions.relations = { parent: true };
 
     // results
