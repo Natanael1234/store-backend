@@ -1,6 +1,7 @@
-import { TestingModule } from '@nestjs/testing';
-import { getTestingModule } from '../../../../.jest/test-config.module';
+import { Test, TestingModule } from '@nestjs/testing';
 import { CachingService } from './caching.service';
+import { getTestingModule } from '../../../../.jest/test-config.module';
+import { CacheModule } from '@nestjs/common';
 
 // TODO:
 describe('CachingService', () => {
@@ -15,7 +16,7 @@ describe('CachingService', () => {
     await module.close(); // TODO: é necessário?
   });
 
-  it.skip('should be defined', () => {
+  it('should be defined', () => {
     expect(service).toBeDefined();
   });
 });
