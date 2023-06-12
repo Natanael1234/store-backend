@@ -1,4 +1,3 @@
-import { EncryptedDataDto } from '../../../system/encryption/dtos/encrypted-data.dto';
 import {
   Column,
   CreateDateColumn,
@@ -7,6 +6,8 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Role } from '../../../authentication/enums/role/role.enum';
+import { EncryptedDataDto } from '../../../system/encryption/dtos/encrypted-data.dto';
 
 @Entity({ name: 'users' })
 export class UserEntity {
@@ -25,6 +26,12 @@ export class UserEntity {
     select: false,
   })
   hash: EncryptedDataDto;
+
+  @Column({ type: 'simple-json', nullable: false })
+  roles: Role[];
+
+  @Column({ nullable: false, default: false })
+  active: boolean;
 
   @CreateDateColumn()
   created!: Date;

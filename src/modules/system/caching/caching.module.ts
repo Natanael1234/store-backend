@@ -1,6 +1,6 @@
-import { CachingService } from './services/caching.service';
-import { Module, CacheModule, CacheStore } from '@nestjs/common';
+import { CacheModule, Module } from '@nestjs/common';
 import { CachingConfig } from './configs/caching.config';
+import { CachingService } from './services/caching.service';
 
 const redisStore = require('cache-manager-redis-store');
 

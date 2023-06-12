@@ -20,17 +20,17 @@ services:
     networks:
       - webnet
     depends_on:
-      - redis
+      # - redis
       - postgres
-  redis:
-    container_name: redis
-    image: redis
-    networks:
-      - webnet
-    ports:
-      - ${REDIS_PORT}:${REDIS_PORT}
-    volumes:
-      - redis:/data
+  # redis:
+  #   container_name: redis
+  #   image: redis
+  #   networks:
+  #     - webnet
+  #   ports:
+  #     - ${REDIS_PORT}:${REDIS_PORT}
+  #   volumes:
+  #     - redis:/data
   postgres:
     container_name: postgres
     image: postgres:12
@@ -51,5 +51,5 @@ networks:
   webnet:
 volumes:
   pgdata:
-  redis:
-    driver: local
+    # redis:
+    #   driver: local
