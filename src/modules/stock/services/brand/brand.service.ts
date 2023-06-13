@@ -13,9 +13,9 @@ import { SuccessResponseDto } from '../../../system/dtos/response/pagination/suc
 import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
 import { validateOrThrowError } from '../../../system/utils/validation';
-import { CreateBrandRequestDTO } from '../../dtos/request/create-brand/create-brand.request.dto';
-import { FindBrandRequestDTO } from '../../dtos/request/find-brands/find-brands.request.dto';
-import { UpdateBrandRequestDTO } from '../../dtos/request/update-brand/update-brand.request.dto';
+import { CreateBrandRequestDTO } from '../../controllers/brand/dtos/request/create-brand/create-brand.request.dto';
+import { FindBrandRequestDTO } from '../../controllers/brand/dtos/request/find-brands/find-brands.request.dto';
+import { UpdateBrandRequestDTO } from '../../controllers/brand/dtos/request/update-brand/update-brand.request.dto';
 import { BrandMessage } from '../../enums/messages/brand-messages/brand-messages.enum';
 import { BrandOrder } from '../../enums/sort/brand-order/brand-order.enum';
 import { BrandEntity } from '../../models/brand/brand.entity';

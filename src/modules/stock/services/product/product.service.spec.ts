@@ -64,9 +64,9 @@ import { SuccessResponseDto } from '../../../system/dtos/response/pagination/suc
 import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
 import { SortMessage } from '../../../system/enums/messages/sort-messages/sort-messages.enum';
-import { CreateProductRequestDTO } from '../../dtos/request/create-product/create-product.request.dto';
-import { FindProductRequestDTO } from '../../dtos/request/find-products/find-products.request.dto';
-import { UpdateProductRequestDTO } from '../../dtos/request/update-product/update-product.request.dto';
+import { CreateProductRequestDTO } from '../../controllers/product/dtos/request/create-product/create-product.request.dto';
+import { FindProductRequestDTO } from '../../controllers/product/dtos/request/find-products/find-products.request.dto';
+import { UpdateProductRequestDTO } from '../../controllers/product/dtos/request/update-product/update-product.request.dto';
 import { BrandMessage } from '../../enums/messages/brand-messages/brand-messages.enum';
 import { CategoryMessage } from '../../enums/messages/category-messages/category-messages.enum';
 import { ProductMessage } from '../../enums/messages/product-messages/product-messages.enum';

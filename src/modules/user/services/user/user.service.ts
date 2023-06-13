@@ -16,11 +16,11 @@ import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-
 import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
 import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
 import { validateOrThrowError } from '../../../system/utils/validation';
-import { CreateUserRequestDTO } from '../../dtos/request/create-user/create-user.request.dto';
-import { FindUserRequestDTO } from '../../dtos/request/find-users/find-users.request.dto';
-import { UpdatePasswordRequestDTO } from '../../dtos/request/update-password/update-password.request.dto';
-import { UpdateUserRequestDTO } from '../../dtos/request/update-user/update-user.request.dto';
-import { UpdatePasswordResponseDTO } from '../../dtos/response/update-password/update-password.response.dto';
+import { CreateUserRequestDTO } from '../../controllers/user/dtos/request/create-user/create-user.request.dto';
+import { FindUserRequestDTO } from '../../controllers/user/dtos/request/find-users/find-users.request.dto';
+import { UpdatePasswordRequestDTO } from '../../controllers/user/dtos/request/update-password/update-password.request.dto';
+import { UpdateUserRequestDTO } from '../../controllers/user/dtos/request/update-user/update-user.request.dto';
+import { UpdatePasswordResponseDTO } from '../../controllers/user/dtos/response/update-password/update-password.response.dto';
 import { UserMessage } from '../../enums/messages/user/user-messages.ts/user-messages.enum';
 import { UserOrder } from '../../enums/sort/user-order/user-order.enum';
 import { UserEntity } from '../../models/user/user.entity';

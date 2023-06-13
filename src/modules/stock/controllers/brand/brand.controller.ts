@@ -13,11 +13,11 @@ import { Role } from '../../../authentication/enums/role/role.enum';
 import { PaginatedResponseDTO } from '../../../system/dtos/response/pagination/pagination.response.dto';
 import { SuccessResponseDto } from '../../../system/dtos/response/pagination/success.response.dto';
 import { Roles } from '../../../user/decorators/roles/roles.decorator';
-import { CreateBrandRequestDTO } from '../../dtos/request/create-brand/create-brand.request.dto';
-import { FindBrandRequestDTO } from '../../dtos/request/find-brands/find-brands.request.dto';
-import { UpdateBrandRequestDTO } from '../../dtos/request/update-brand/update-brand.request.dto';
 import { BrandEntity } from '../../models/brand/brand.entity';
 import { BrandService } from '../../services/brand/brand.service';
+import { CreateBrandRequestDTO } from './dtos/request/create-brand/create-brand.request.dto';
+import { FindBrandRequestDTO } from './dtos/request/find-brands/find-brands.request.dto';
+import { UpdateBrandRequestDTO } from './dtos/request/update-brand/update-brand.request.dto';
 
 @Controller('brands')
 export class BrandController {

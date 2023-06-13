@@ -34,14 +34,14 @@ import {
   testValidateCategoriesArrays,
   testValidateCategory,
 } from '../../../../test/category/test-category-utils';
-import { CreateCategoryRequestDTO } from '../../dtos/request/create-category/create-category.request.dto';
-import { FindCategoriesRequestDTO } from '../../dtos/request/find-categories/find-categories.request.dto';
-import { UpdateCategoryRequestDTO } from '../../dtos/request/update-category/update-category.request.dto';
 import { CategoryOrder } from '../../enums/sort/category-order/category-order.enum';
 import { CategoryEntity } from '../../models/category/category.entity';
 
 import { TestDtoIdListFilter } from '../../../../test/filtering/id-list-filter/test-dto-id-list-filter';
 import { getFKErrorDataList } from '../../../../test/test-data/test-fk-data';
+import { CreateCategoryRequestDTO } from '../../controllers/category/dtos/request/create-category/create-category.request.dto';
+import { FindCategoriesRequestDTO } from '../../controllers/category/dtos/request/find-categories/find-categories.request.dto';
+import { UpdateCategoryRequestDTO } from '../../controllers/category/dtos/request/update-category/update-category.request.dto';
 import { CategoryRepository } from '../../repositories/category.repository';
 import { CategoryService } from './category.service';
 

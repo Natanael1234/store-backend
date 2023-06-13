@@ -12,9 +12,9 @@ import { SuccessResponseDto } from '../../../system/dtos/response/pagination/suc
 import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
 import { validateOrThrowError } from '../../../system/utils/validation';
-import { CreateCategoryRequestDTO } from '../../dtos/request/create-category/create-category.request.dto';
-import { FindCategoriesRequestDTO } from '../../dtos/request/find-categories/find-categories.request.dto';
-import { UpdateCategoryRequestDTO } from '../../dtos/request/update-category/update-category.request.dto';
+import { CreateCategoryRequestDTO } from '../../controllers/category/dtos/request/create-category/create-category.request.dto';
+import { FindCategoriesRequestDTO } from '../../controllers/category/dtos/request/find-categories/find-categories.request.dto';
+import { UpdateCategoryRequestDTO } from '../../controllers/category/dtos/request/update-category/update-category.request.dto';
 import { CategoryMessage } from '../../enums/messages/category-messages/category-messages.enum';
 import { CategoryOrder } from '../../enums/sort/category-order/category-order.enum';
 import { CategoryEntity } from '../../models/category/category.entity';
