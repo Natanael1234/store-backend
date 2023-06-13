@@ -15,7 +15,7 @@ import { NameMessage } from '../src/modules/system/enums/messages/name-messages/
 import { PasswordMessage } from '../src/modules/system/enums/messages/password-messages/password-messages.enum';
 import { SortMessage } from '../src/modules/system/enums/messages/sort-messages/sort-messages.enum';
 import { ValidationPipe } from '../src/modules/system/pipes/custom-validation.pipe';
-import { FindUserRequestDTO } from '../src/modules/user/dtos/request/find-users/find-users.request.dto';
+import { FindUserRequestDTO } from '../src/modules/user/controllers/user/dtos/request/find-users/find-users.request.dto';
 import { RoleMessage } from '../src/modules/user/enums/messages/role/role-messages.enum';
 import { UserMessage } from '../src/modules/user/enums/messages/user/user-messages.ts/user-messages.enum';
 import { UserOrder } from '../src/modules/user/enums/sort/user-order/user-order.enum';

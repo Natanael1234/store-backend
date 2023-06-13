@@ -13,11 +13,11 @@ import { Role } from '../../../authentication/enums/role/role.enum';
 import { PaginatedResponseDTO } from '../../../system/dtos/response/pagination/pagination.response.dto';
 import { SuccessResponseDto } from '../../../system/dtos/response/pagination/success.response.dto';
 import { Roles } from '../../../user/decorators/roles/roles.decorator';
-import { CreateProductRequestDTO } from '../../dtos/request/create-product/create-product.request.dto';
-import { FindProductRequestDTO } from '../../dtos/request/find-products/find-products.request.dto';
-import { UpdateProductRequestDTO } from '../../dtos/request/update-product/update-product.request.dto';
 import { ProductEntity } from '../../models/product/product.entity';
 import { ProductService } from '../../services/product/product.service';
+import { CreateProductRequestDTO } from './dtos/request/create-product/create-product.request.dto';
+import { FindProductRequestDTO } from './dtos/request/find-products/find-products.request.dto';
+import { UpdateProductRequestDTO } from './dtos/request/update-product/update-product.request.dto';
 
 @Controller('products')
 export class ProductController {

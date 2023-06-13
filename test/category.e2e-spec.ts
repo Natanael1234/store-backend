@@ -6,7 +6,7 @@ import { FindManyOptions, In, IsNull, Not, Repository } from 'typeorm';
 import { getTestingModule } from '../src/.jest/test-config.module';
 import { Role } from '../src/modules/authentication/enums/role/role.enum';
 import { AuthenticationService } from '../src/modules/authentication/services/authentication/authentication.service';
-import { CreateCategoryRequestDTO } from '../src/modules/stock/dtos/request/create-category/create-category.request.dto';
+import { CreateCategoryRequestDTO } from '../src/modules/stock/controllers/category/dtos/request/create-category/create-category.request.dto';
 import { CategoryMessage } from '../src/modules/stock/enums/messages/category-messages/category-messages.enum';
 import { CategoryOrder } from '../src/modules/stock/enums/sort/category-order/category-order.enum';
 import { CategoryEntity } from '../src/modules/stock/models/category/category.entity';

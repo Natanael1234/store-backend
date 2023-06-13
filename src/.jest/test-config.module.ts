@@ -28,7 +28,7 @@ import { BrandService } from '../modules/stock/services/brand/brand.service';
 import { CategoryService } from '../modules/stock/services/category/category.service';
 import { ProductService } from '../modules/stock/services/product/product.service';
 import { EncryptionService } from '../modules/system/encryption/services/encryption/encryption.service';
-import { UserController } from '../modules/user/controllers/user.controller';
+import { UserController } from '../modules/user/controllers/user/user.controller';
 import { RolesGuard } from '../modules/user/guards/roles/roles.guard';
 import { UserEntity } from '../modules/user/models/user/user.entity';
 import { UserService } from '../modules/user/services/user/user.service';

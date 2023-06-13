@@ -32,7 +32,7 @@ import { EmailMessage } from '../../../system/enums/messages/email-messages/emai
 import { NameMessage } from '../../../system/enums/messages/name-messages/name-messages.enum';
 import { PasswordMessage } from '../../../system/enums/messages/password-messages/password-messages.enum';
 import { SortMessage } from '../../../system/enums/messages/sort-messages/sort-messages.enum';
-import { CreateUserRequestDTO } from '../../dtos/request/create-user/create-user.request.dto';
+import { CreateUserRequestDTO } from '../../controllers/user/dtos/request/create-user/create-user.request.dto';
 import { RoleMessage } from '../../enums/messages/role/role-messages.enum';
 import { UserMessage } from '../../enums/messages/user/user-messages.ts/user-messages.enum';
 import { UserOrder } from '../../enums/sort/user-order/user-order.enum';

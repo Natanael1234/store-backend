@@ -3,7 +3,6 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { CategoryRepository } from '../stock/repositories/category.repository';
 import { EncryptionModule } from '../system/encryption/encryption.module';
 import { UserEntity } from '../user/models/user/user.entity';
 import { UserModule } from '../user/user.module';
@@ -37,7 +36,6 @@ import { LocalStrategy } from './strategies/local/local.strategy';
     JwtStrategy,
     { provide: APP_GUARD, useClass: JwtAuthenticationGuard },
     RefreshTokenRepository,
-    CategoryRepository,
     TokenService,
   ],
   exports: [AuthenticationService],

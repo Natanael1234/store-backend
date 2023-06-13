@@ -13,11 +13,11 @@ import { Role } from '../../../authentication/enums/role/role.enum';
 import { PaginatedResponseDTO } from '../../../system/dtos/response/pagination/pagination.response.dto';
 import { SuccessResponseDto } from '../../../system/dtos/response/pagination/success.response.dto';
 import { Roles } from '../../../user/decorators/roles/roles.decorator';
-import { CreateCategoryRequestDTO } from '../../dtos/request/create-category/create-category.request.dto';
-import { FindCategoriesRequestDTO } from '../../dtos/request/find-categories/find-categories.request.dto';
-import { UpdateCategoryRequestDTO } from '../../dtos/request/update-category/update-category.request.dto';
 import { CategoryEntity } from '../../models/category/category.entity';
 import { CategoryService } from '../../services/category/category.service';
+import { CreateCategoryRequestDTO } from './dtos/request/create-category/create-category.request.dto';
+import { FindCategoriesRequestDTO } from './dtos/request/find-categories/find-categories.request.dto';
+import { UpdateCategoryRequestDTO } from './dtos/request/update-category/update-category.request.dto';
 
 @Controller('categories')
 export class CategoryController {
