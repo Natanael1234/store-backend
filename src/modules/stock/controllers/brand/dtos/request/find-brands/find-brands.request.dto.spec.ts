@@ -86,15 +86,14 @@ describe('FindBrandRequestDTO', () => {
 
   describe('active', () => {
     const testActive = new TestDtoActiveFilter(defaultDtoResult);
+    const accepts = testActive.acceptData;
+    const rejects = testActive.errorData;
 
-    it.each(testActive.acceptData)(
-      '$description',
-      async ({ data, expectedResult }) => {
-        await testAccepts(data, expectedResult);
-      },
-    );
+    it.each(accepts)('$description', async ({ data, expectedResult }) => {
+      await testAccepts(data, expectedResult);
+    });
 
-    it.each(testActive.errorData)(
+    it.each(rejects)(
       'should fail when $description',
       async ({ data, constraints }) => {
         await testErrors(data, constraints);
@@ -175,7 +174,7 @@ describe('FindBrandRequestDTO', () => {
         isString: TextMessage.STRING,
       });
       expect(errors[1].constraints).toEqual({
-        isEnum: ActiveMessage.TYPE,
+        isEnum: ActiveMessage.INVALID,
       });
       expect(errors[2].constraints).toEqual({
         isEnum: DeletedMessage.INVALID,

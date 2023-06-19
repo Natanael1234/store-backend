@@ -160,7 +160,7 @@ export abstract class AbstractTestAPIActiveFilter<EntityType> {
       );
       expect(ret).toEqual({
         error: UnprocessableEntityException.name,
-        message: { active: ActiveMessage.TYPE },
+        message: { active: ActiveMessage.INVALID },
         statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
       });
     });
