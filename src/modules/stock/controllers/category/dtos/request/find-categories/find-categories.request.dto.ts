@@ -1,29 +1,17 @@
 import { Expose, Transform } from 'class-transformer';
-import { IsInt, IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 import { Active } from '../../../../../../system/decorators/active/active.decorator';
 import { Deleted } from '../../../../../../system/decorators/deleted/deleted.decorator';
 import { IdList } from '../../../../../../system/decorators/id-list/id-list.decorator';
+import { PageSize } from '../../../../../../system/decorators/pagination/page-size.decorator';
+import { Page } from '../../../../../../system/decorators/pagination/page.decorator';
 import { Sort } from '../../../../../../system/decorators/sort/sort.decorator';
 import { ActiveFilter } from '../../../../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../../../../system/enums/filter/deleted-filter/deleted-filter.enum';
-import { PaginationMessage } from '../../../../../../system/enums/messages/pagination-messages/pagination-messages.enum';
 import { TextMessage } from '../../../../../../system/enums/messages/text-messages/text-messages.enum';
-import { getEnumTransformer } from '../../../../../../system/utils/enum/enum-transformer';
-import {
-  normalizePageSizeValue,
-  normalizePageValue,
-} from '../../../../../../system/utils/pagination/pagination-transformer';
 import { textSearchTransformer } from '../../../../../../system/utils/text-seach/text-search-transformer';
 import { CategoryMessage } from '../../../../../enums/messages/category-messages/category-messages.enum';
 import { CategoryOrder } from '../../../../../enums/sort/category-order/category-order.enum';
-
-const activeEnumTransformer = getEnumTransformer(ActiveFilter, {
-  defaultValue: ActiveFilter.ACTIVE,
-});
-
-const deletedEnumTransformer = getEnumTransformer(DeletedFilter, {
-  defaultValue: DeletedFilter.NOT_DELETED,
-});
 
 export class FindCategoriesRequestDTO {
   /**
@@ -74,9 +62,7 @@ export class FindCategoriesRequestDTO {
    *
    * @example 1
    */
-  @IsInt({ message: PaginationMessage.PAGE_INT })
-  @Transform((options) => normalizePageValue(options.obj.page))
-  @Expose()
+  @Page()
   page?: number;
 
   /**
@@ -85,9 +71,7 @@ export class FindCategoriesRequestDTO {
    *
    * @example 20
    */
-  @IsInt({ message: PaginationMessage.PAGE_SIZE_INT })
-  @Transform((options) => normalizePageSizeValue(options.obj.pageSize))
-  @Expose()
+  @PageSize()
   pageSize?: number;
 
   /**

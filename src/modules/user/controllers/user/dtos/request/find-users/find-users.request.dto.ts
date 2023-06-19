@@ -1,16 +1,13 @@
 import { Expose, Transform } from 'class-transformer';
-import { IsInt, IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 import { Active } from '../../../../../../system/decorators/active/active.decorator';
 import { Deleted } from '../../../../../../system/decorators/deleted/deleted.decorator';
+import { PageSize } from '../../../../../../system/decorators/pagination/page-size.decorator';
+import { Page } from '../../../../../../system/decorators/pagination/page.decorator';
 import { Sort } from '../../../../../../system/decorators/sort/sort.decorator';
 import { ActiveFilter } from '../../../../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../../../../system/enums/filter/deleted-filter/deleted-filter.enum';
-import { PaginationMessage } from '../../../../../../system/enums/messages/pagination-messages/pagination-messages.enum';
 import { TextMessage } from '../../../../../../system/enums/messages/text-messages/text-messages.enum';
-import {
-  normalizePageSizeValue,
-  normalizePageValue,
-} from '../../../../../../system/utils/pagination/pagination-transformer';
 import { textSearchTransformer } from '../../../../../../system/utils/text-seach/text-search-transformer';
 import { UserOrder } from '../../../../../enums/sort/user-order/user-order.enum';
 
@@ -48,9 +45,7 @@ export class FindUserRequestDTO {
    *
    * @example 1
    */
-  @IsInt({ message: PaginationMessage.PAGE_INT })
-  @Transform((options) => normalizePageValue(options.obj.page))
-  @Expose()
+  @Page()
   page?: number;
 
   /**
@@ -60,9 +55,7 @@ export class FindUserRequestDTO {
    *
    * @example 20
    */
-  @IsInt({ message: PaginationMessage.PAGE_SIZE_INT })
-  @Transform((options) => normalizePageSizeValue(options.obj.pageSize))
-  @Expose()
+  @PageSize()
   pageSize?: number;
 
   /**
