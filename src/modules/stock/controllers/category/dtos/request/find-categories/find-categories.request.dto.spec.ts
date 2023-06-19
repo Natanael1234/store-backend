@@ -218,15 +218,9 @@ describe('FindCategoriesRequestDTO', () => {
 
       const errors = await validateFirstError(data, FindCategoriesRequestDTO);
       expect(errors).toHaveLength(7);
-      expect(errors[0].constraints).toEqual({
-        isString: TextMessage.STRING,
-      });
-      expect(errors[1].constraints).toEqual({
-        isEnum: ActiveMessage.TYPE,
-      });
-      expect(errors[2].constraints).toEqual({
-        isEnum: DeletedMessage.INVALID,
-      });
+      expect(errors[0].constraints).toEqual({ isString: TextMessage.STRING });
+      expect(errors[1].constraints).toEqual({ isEnum: ActiveMessage.INVALID });
+      expect(errors[2].constraints).toEqual({ isEnum: DeletedMessage.INVALID });
       expect(errors[3].constraints).toEqual({
         isIdList: CategoryMessage.INVALID_PARENT_CATEGORY_ID_LIST_ITEM,
       });
@@ -236,9 +230,7 @@ describe('FindCategoriesRequestDTO', () => {
       expect(errors[5].constraints).toEqual({
         isInt: PaginationMessage.PAGE_SIZE_INT,
       });
-      expect(errors[6].constraints).toEqual({
-        isSorting: SortMessage.INVALID,
-      });
+      expect(errors[6].constraints).toEqual({ isSorting: SortMessage.INVALID });
     });
   });
 });

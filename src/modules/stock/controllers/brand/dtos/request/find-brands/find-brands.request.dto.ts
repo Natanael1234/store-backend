@@ -1,9 +1,9 @@
 import { Expose, Transform } from 'class-transformer';
 import { IsEnum, IsInt, IsOptional, IsString } from 'class-validator';
+import { Active } from '../../../../../../system/decorators/active/active.decorator';
 import { Sort } from '../../../../../../system/decorators/sort/sort.decorator';
 import { ActiveFilter } from '../../../../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../../../../system/enums/filter/deleted-filter/deleted-filter.enum';
-import { ActiveMessage } from '../../../../../../system/enums/messages/active-messages/active-messages.enum';
 import { DeletedMessage } from '../../../../../../system/enums/messages/deleted-messages/deleted-messages.enum';
 import { PaginationMessage } from '../../../../../../system/enums/messages/pagination-messages/pagination-messages.enum';
 import { TextMessage } from '../../../../../../system/enums/messages/text-messages/text-messages.enum';
@@ -14,10 +14,6 @@ import {
 } from '../../../../../../system/utils/pagination/pagination-transformer';
 import { textSearchTransformer } from '../../../../../../system/utils/text-seach/text-search-transformer';
 import { BrandOrder } from '../../../../../models/brand-order/brand-order.enum';
-
-const activeEnumTransformer = getEnumTransformer(ActiveFilter, {
-  defaultValue: ActiveFilter.ACTIVE,
-});
 
 const deletedEnumTransformer = getEnumTransformer(DeletedFilter, {
   defaultValue: DeletedFilter.NOT_DELETED,
@@ -40,9 +36,7 @@ export class FindBrandRequestDTO {
    *
    * @example "all"
    */
-  @IsEnum(ActiveFilter, { message: ActiveMessage.TYPE })
-  @Transform((options) => activeEnumTransformer(options.value))
-  @Expose()
+  @Active()
   active?: ActiveFilter;
 
   /**

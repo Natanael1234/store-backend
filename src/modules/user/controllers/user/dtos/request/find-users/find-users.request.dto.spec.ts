@@ -175,7 +175,7 @@ describe('FindUserRequestDTO', () => {
         isString: TextMessage.STRING,
       });
       expect(errors[1].constraints).toEqual({
-        isEnum: ActiveMessage.TYPE,
+        isEnum: ActiveMessage.INVALID,
       });
       expect(errors[2].constraints).toEqual({
         isEnum: DeletedMessage.INVALID,
