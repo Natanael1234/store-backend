@@ -1,10 +1,10 @@
 import { Expose, Transform } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, IsString } from 'class-validator';
+import { IsInt, IsOptional, IsString } from 'class-validator';
 import { Active } from '../../../../../../system/decorators/active/active.decorator';
+import { Deleted } from '../../../../../../system/decorators/deleted/deleted.decorator';
 import { Sort } from '../../../../../../system/decorators/sort/sort.decorator';
 import { ActiveFilter } from '../../../../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../../../../system/enums/filter/deleted-filter/deleted-filter.enum';
-import { DeletedMessage } from '../../../../../../system/enums/messages/deleted-messages/deleted-messages.enum';
 import { PaginationMessage } from '../../../../../../system/enums/messages/pagination-messages/pagination-messages.enum';
 import { TextMessage } from '../../../../../../system/enums/messages/text-messages/text-messages.enum';
 import {
@@ -39,22 +39,7 @@ export class FindUserRequestDTO {
    *
    * @example "not_deleted"
    */
-  @IsEnum(DeletedFilter, { message: DeletedMessage.INVALID })
-  @Transform((options) => {
-    if (options.value == null) {
-      return DeletedFilter.NOT_DELETED;
-    } else if (typeof options.value == 'string') {
-      const value = options.value.toLowerCase();
-    } else if (options.value == DeletedFilter.DELETED) {
-      return DeletedFilter.DELETED;
-    } else if (options.value == DeletedFilter.NOT_DELETED) {
-      return DeletedFilter.NOT_DELETED;
-    } else if (options.value == DeletedFilter.ALL) {
-      return DeletedFilter.ALL;
-    }
-    return options.value;
-  })
-  @Expose()
+  @Deleted()
   deleted?: DeletedFilter;
 
   /**

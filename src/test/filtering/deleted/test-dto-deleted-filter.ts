@@ -7,8 +7,7 @@ export class TestDtoDeletedFilter {
   get acceptData() {
     const acceptData = [
       {
-        description:
-          'should pass validation and transform properties when "deleted" is null',
+        description: `should pass validation and return "${DeletedFilter.NOT_DELETED}" when deleted is null`,
         data: { deleted: null },
         expectedResult: {
           ...this.defaultDTOData,
@@ -16,8 +15,7 @@ export class TestDtoDeletedFilter {
         },
       },
       {
-        description:
-          'should pass validation and transform properties when "deleted" is undefined',
+        description: `should pass validation and return "${DeletedFilter.NOT_DELETED}" when deleted is undefined`,
         data: { deleted: undefined },
         expectedResult: {
           ...this.defaultDTOData,
@@ -25,8 +23,7 @@ export class TestDtoDeletedFilter {
         },
       },
       {
-        description:
-          'should pass validation and transform properties when "deleted" is string deleted',
+        description: `should pass validation and return "${DeletedFilter.DELETED}" when deleted is string deleted`,
         data: { deleted: 'deleted' },
         expectedResult: {
           ...this.defaultDTOData,
@@ -34,8 +31,7 @@ export class TestDtoDeletedFilter {
         },
       },
       {
-        description:
-          'should pass validation and transform properties when "deleted" is string not deleted',
+        description: `should pass validation and  return "${DeletedFilter.NOT_DELETED}" when deleted is string not deleted`,
         data: { deleted: 'not_deleted' },
         expectedResult: {
           ...this.defaultDTOData,
@@ -43,8 +39,7 @@ export class TestDtoDeletedFilter {
         },
       },
       {
-        description:
-          'should pass validation and transform properties when "deleted" is string all',
+        description: `should pass validation and  return "${DeletedFilter.ALL}" when deleted is string all`,
         data: { deleted: 'all' },
         expectedResult: { ...this.defaultDTOData, deleted: DeletedFilter.ALL },
       },
@@ -56,37 +51,37 @@ export class TestDtoDeletedFilter {
   get errorData() {
     const errorData = [
       {
-        description: 'should fail when "deleted" is invalid string',
+        description: 'should fail when deleted is invalid string',
         data: { deleted: 'dEleteD' },
         constraints: { isEnum: DeletedMessage.INVALID },
       },
       {
-        description: 'should fail when "deleted" is empty string',
+        description: 'should fail when deleted is ""',
         data: { deleted: '' },
         constraints: { isEnum: DeletedMessage.INVALID },
       },
       {
-        description: 'should fail when "deleted" is boolean',
+        description: 'should fail when deleted is boolean',
         data: { deleted: true },
         constraints: { isEnum: DeletedMessage.INVALID },
       },
       {
-        description: 'should fail when "deleted" is boolean string',
+        description: 'should fail when deleted is boolean string',
         data: { deleted: 'true' },
         constraints: { isEnum: DeletedMessage.INVALID },
       },
       {
-        description: 'should fail when "deleted" is number',
+        description: 'should fail when deleted is number',
         data: { deleted: 4334556 },
         constraints: { isEnum: DeletedMessage.INVALID },
       },
       {
-        description: 'should fail when "deleted" is object',
+        description: 'should fail when deleted is object',
         data: { deleted: {} },
         constraints: { isEnum: DeletedMessage.INVALID },
       },
       {
-        description: 'should fail when "deleted" is array',
+        description: 'should fail when deleted is array',
         data: { deleted: [] },
         constraints: { isEnum: DeletedMessage.INVALID },
       },
