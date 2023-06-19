@@ -31,7 +31,6 @@ import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/delet
 import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
 import { NameMessage } from '../../../system/enums/messages/name-messages/name-messages.enum';
 import { PasswordMessage } from '../../../system/enums/messages/password-messages/password-messages.enum';
-import { SortMessage } from '../../../system/enums/messages/sort-messages/sort-messages.enum';
 import { CreateUserRequestDTO } from '../../controllers/user/dtos/request/create-user/create-user.request.dto';
 import { RoleMessage } from '../../enums/messages/role/role-messages.enum';
 import { UserMessage } from '../../enums/messages/user/user-messages.ts/user-messages.enum';
@@ -465,11 +464,9 @@ describe('UserService', () => {
       });
 
       describe('sort', () => {
-        const testSortScenario = new TestSortScenarioBuilder<typeof UserOrder>(
-          UserOrder,
-          [UserOrder.NAME_ASC],
-          'api',
-        );
+        const { accepts, rejects } = new TestSortScenarioBuilder<
+          typeof UserOrder
+        >(UserOrder, [UserOrder.NAME_ASC], 'service').getTests();
 
         const userData = [];
         let counter = 1;
@@ -487,7 +484,7 @@ describe('UserService', () => {
           }
         }
 
-        it.each(testSortScenario.generateSuccessTestScenarios())(
+        it.each(accepts)(
           `should order results when orderBy=$description`,
           async ({ orderBySQL, orderBy }) => {
             // prepare
@@ -499,7 +496,7 @@ describe('UserService', () => {
 
             // execute
             const apiResult = await userService.find({
-              orderBy: orderBy,
+              orderBy,
               active: ActiveFilter.ALL,
             });
 
@@ -513,31 +510,25 @@ describe('UserService', () => {
           },
         );
 
-        it('should fail when receives invalid orderBy item string', async () => {
-          // prepare
-          await userRepo.insert(userData);
+        it.each(rejects)(
+          'should fail when orderBy=$description',
+          async ({ orderBy, expectedErrorResult }) => {
+            // prepare
+            await userRepo.insert(userData);
 
-          // execute
-          const fn = () =>
-            userService.find({
-              orderBy: [
-                'invalid_impossible_and_never_gonna_happen' as UserOrder,
-              ],
-              active: ActiveFilter.ALL,
-            });
+            // execute
+            const fn = () =>
+              userService.find({ orderBy, active: ActiveFilter.ALL });
 
-          await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+            await expect(fn()).rejects.toThrow(UnprocessableEntityException);
 
-          try {
-            await fn();
-          } catch (ex) {
-            expect(ex.response).toEqual({
-              error: 'UnprocessableEntityException',
-              message: { orderBy: SortMessage.INVALID },
-              statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-            });
-          }
-        });
+            try {
+              await fn();
+            } catch (ex) {
+              expect(ex.response).toEqual(expectedErrorResult);
+            }
+          },
+        );
       });
     });
   });

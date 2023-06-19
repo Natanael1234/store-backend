@@ -10,12 +10,23 @@ import { CategoryMessage } from '../../../../../enums/messages/category-messages
 const booleanTransformer = getBooleanTransformer({ defaultValue: false });
 
 export class CreateCategoryRequestDTO {
+  /**
+   * Category name.
+   * Must have from 6 up to 60 characters.
+   *
+   * @example 'Category X'
+   */
   @MaxLength(60, { message: NameMessage.MAX_LEN })
   @MinLength(6, { message: NameMessage.MIN_LEN })
   @IsString({ message: NameMessage.STRING })
   @IsNotEmpty({ message: NameMessage.REQUIRED })
   name: string;
 
+  /**
+   * If category is active. false by default.
+   *
+   * @example true
+   */
   @IsBool({
     optional: true,
     invalidTypeMessage: ActiveMessage.TYPE,
@@ -24,6 +35,11 @@ export class CreateCategoryRequestDTO {
   @Transform(({ value }) => booleanTransformer(value))
   active?: boolean;
 
+  /**
+   * Parent category id.
+   *
+   * @example 1
+   */
   @IsForeignKey({
     allowUndefined: true,
     allowNull: true,

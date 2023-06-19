@@ -142,7 +142,7 @@ function getConstraints(options: IsIdListConstrantOptions) {
     }
 
     private isInvalidNullItem(item: any) {
-      return item == null && !options?.allowNullItem;
+      return item === null && !options?.allowNullItem;
     }
   }
 

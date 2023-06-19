@@ -13,7 +13,6 @@ import { ActiveMessage } from '../src/modules/system/enums/messages/active-messa
 import { EmailMessage } from '../src/modules/system/enums/messages/email-messages/email-messages.enum';
 import { NameMessage } from '../src/modules/system/enums/messages/name-messages/name-messages.enum';
 import { PasswordMessage } from '../src/modules/system/enums/messages/password-messages/password-messages.enum';
-import { SortMessage } from '../src/modules/system/enums/messages/sort-messages/sort-messages.enum';
 import { ValidationPipe } from '../src/modules/system/pipes/custom-validation.pipe';
 import { FindUserRequestDTO } from '../src/modules/user/controllers/user/dtos/request/find-users/find-users.request.dto';
 import { RoleMessage } from '../src/modules/user/enums/messages/role/role-messages.enum';
@@ -1088,11 +1087,9 @@ describe('UserController (e2e)', () => {
       });
 
       describe('sort', () => {
-        const testSortScenario = new TestSortScenarioBuilder<typeof UserOrder>(
-          UserOrder,
-          [UserOrder.NAME_ASC],
-          'api',
-        );
+        const { accepts, rejects } = new TestSortScenarioBuilder<
+          typeof UserOrder
+        >(UserOrder, [UserOrder.NAME_ASC], 'api').getTests();
 
         async function buildData() {
           const usersData = [];
@@ -1113,8 +1110,8 @@ describe('UserController (e2e)', () => {
           return usersData;
         }
 
-        it.each(testSortScenario.generateSuccessTestScenarios())(
-          `should order results when orderBy=$description`,
+        it.each(accepts)(
+          `should sort results when orderBy=$description`,
           async ({ orderBySQL, orderBy }) => {
             // prepare
             const usersData = await buildData();
@@ -1129,7 +1126,7 @@ describe('UserController (e2e)', () => {
             // execute
             const apiResult = await httpGet(
               '/users',
-              { orderBy: JSON.stringify(orderBy), active: ActiveFilter.ALL },
+              { orderBy, active: ActiveFilter.ALL },
               HttpStatus.OK,
               token,
             );
@@ -1144,31 +1141,25 @@ describe('UserController (e2e)', () => {
           },
         );
 
-        it('should fail when receives invalid orderBy item string', async () => {
-          // prepare
-          const usersData = await buildData();
-          await userRepo.insert(usersData);
-          let token = await auth('email1@email.com', 'Abc12*');
+        it.each(rejects)(
+          'should fail when orderBy=$description',
+          async ({ orderBy, expectedErrorResult }) => {
+            // prepare
+            const usersData = await buildData();
+            await userRepo.insert(usersData);
+            let token = await auth('email1@email.com', 'Abc12*');
 
-          // execute
-          const apiResult = await httpGet(
-            '/brands',
-            {
-              orderBy: JSON.stringify([
-                'invalid_impossible_and_never_gonna_happen',
-              ]),
-              active: ActiveFilter.ALL,
-            },
-            HttpStatus.UNPROCESSABLE_ENTITY,
-            token,
-          );
+            // execute
+            const apiResult = await httpGet(
+              '/brands',
+              { orderBy: orderBy, active: ActiveFilter.ALL },
+              expectedErrorResult.statusCode,
+              token,
+            );
 
-          expect(apiResult).toEqual({
-            error: 'UnprocessableEntityException',
-            message: { orderBy: SortMessage.INVALID },
-            statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-          });
-        });
+            expect(apiResult).toEqual(expectedErrorResult);
+          },
+        );
       });
     });
   });

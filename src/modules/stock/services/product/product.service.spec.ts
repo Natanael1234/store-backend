@@ -63,7 +63,6 @@ import { PaginationConfig } from '../../../system/dtos/request/pagination/config
 import { SuccessResponseDto } from '../../../system/dtos/response/pagination/success.response.dto';
 import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
-import { SortMessage } from '../../../system/enums/messages/sort-messages/sort-messages.enum';
 import { CreateProductRequestDTO } from '../../controllers/product/dtos/request/create-product/create-product.request.dto';
 import { FindProductRequestDTO } from '../../controllers/product/dtos/request/find-products/find-products.request.dto';
 import { UpdateProductRequestDTO } from '../../controllers/product/dtos/request/update-product/update-product.request.dto';
@@ -1139,9 +1138,9 @@ describe('ProductService', () => {
       });
 
       describe('sort', () => {
-        const testSortScenario = new TestSortScenarioBuilder<
+        const { accepts, rejects } = new TestSortScenarioBuilder<
           typeof ProductOrder
-        >(ProductOrder, [ProductOrder.NAME_ASC], 'api');
+        >(ProductOrder, [ProductOrder.NAME_ASC], 'service').getTests();
 
         const brandData = TestBrandData.buildData(1);
         const categoryData = TestCategoryData.buildData(1);
@@ -1163,7 +1162,7 @@ describe('ProductService', () => {
           }
         }
 
-        it.each(testSortScenario.generateSuccessTestScenarios())(
+        it.each(accepts)(
           `should order results when orderBy=$description`,
           async ({ orderBySQL, orderBy }) => {
             // prepare
@@ -1193,33 +1192,27 @@ describe('ProductService', () => {
           },
         );
 
-        it('should fail when receives invalid orderBy item string', async () => {
-          // prepare
-          await brandRepo.insert(brandData);
-          await categoryRepo.insert(categoryData);
-          await productRepo.insert(productData);
+        it.each(rejects)(
+          'should fail when orderBy=$description',
+          async ({ orderBy, expectedErrorResult }) => {
+            // prepare
+            await brandRepo.insert(brandData);
+            await categoryRepo.insert(categoryData);
+            await productRepo.insert(productData);
 
-          // execute
-          const fn = () =>
-            productService.find({
-              orderBy: [
-                'invalid_impossible_and_never_gonna_happen' as ProductOrder,
-              ],
-              active: ActiveFilter.ALL,
-            });
+            // execute
+            const fn = () =>
+              productService.find({ orderBy, active: ActiveFilter.ALL });
 
-          await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+            await expect(fn()).rejects.toThrow(UnprocessableEntityException);
 
-          try {
-            await fn();
-          } catch (ex) {
-            expect(ex.response).toEqual({
-              error: 'UnprocessableEntityException',
-              message: { orderBy: SortMessage.INVALID },
-              statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-            });
-          }
-        });
+            try {
+              await fn();
+            } catch (ex) {
+              expect(ex.response).toEqual(expectedErrorResult);
+            }
+          },
+        );
       });
 
       describe('combined tests', () => {

@@ -15,7 +15,6 @@ import { BrandEntity } from '../src/modules/stock/models/brand/brand.entity';
 import { PaginationConfig } from '../src/modules/system/dtos/request/pagination/configs/pagination.config';
 import { ActiveFilter } from '../src/modules/system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../src/modules/system/enums/filter/deleted-filter/deleted-filter.enum';
-import { SortMessage } from '../src/modules/system/enums/messages/sort-messages/sort-messages.enum';
 import { ValidationPipe } from '../src/modules/system/pipes/custom-validation.pipe';
 import { UserEntity } from '../src/modules/user/models/user/user.entity';
 import { TestBrandData } from '../src/test/brand/test-brand-data';
@@ -516,11 +515,9 @@ describe('BrandController (e2e)', () => {
       });
 
       describe('sort', () => {
-        const testSortScenario = new TestSortScenarioBuilder<typeof BrandOrder>(
-          BrandOrder,
-          [BrandOrder.NAME_ASC],
-          'api',
-        );
+        const { accepts, rejects } = new TestSortScenarioBuilder<
+          typeof BrandOrder
+        >(BrandOrder, [BrandOrder.NAME_ASC], 'api').getTests();
 
         const brandData = [];
         for (let name of ['Brand 1', 'Brand 2']) {
@@ -531,7 +528,7 @@ describe('BrandController (e2e)', () => {
           }
         }
 
-        it.each(testSortScenario.generateSuccessTestScenarios())(
+        it.each(accepts)(
           `should order results when orderBy=$description`,
           async ({ orderBySQL, orderBy }) => {
             // prepare
@@ -544,7 +541,7 @@ describe('BrandController (e2e)', () => {
             // execute
             const apiResult = await httpGet(
               '/brands',
-              { orderBy: JSON.stringify(orderBy), active: ActiveFilter.ALL },
+              { orderBy, active: ActiveFilter.ALL },
               HttpStatus.OK,
               rootToken,
             );
@@ -559,31 +556,23 @@ describe('BrandController (e2e)', () => {
           },
         );
 
-        it('should fail when receives invalid orderBy item string', async () => {
-          // prepare
-          await brandRepo.insert(brandData);
+        it.each(rejects)(
+          `should fail when orderBy=$description`,
+          async ({ orderBy, expectedErrorResult }) => {
+            // prepare
+            await brandRepo.insert(brandData);
 
-          // execute
-          const apiResult = await httpGet(
-            '/brands',
-            {
-              orderBy: JSON.stringify([
-                'invalid_impossible_and_never_gonna_happen',
-              ]),
-              active: ActiveFilter.ALL,
-            },
-            HttpStatus.UNPROCESSABLE_ENTITY,
-            rootToken,
-          );
+            // execute
+            const apiResult = await httpGet(
+              '/brands',
+              { orderBy, active: ActiveFilter.ALL },
+              expectedErrorResult.statusCode,
+              rootToken,
+            );
 
-          expect(apiResult).toEqual({
-            error: 'UnprocessableEntityException',
-            message: {
-              orderBy: SortMessage.INVALID,
-            },
-            statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-          });
-        });
+            expect(apiResult).toEqual(expectedErrorResult);
+          },
+        );
       });
     });
 

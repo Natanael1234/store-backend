@@ -22,18 +22,36 @@ import { RoleMessage } from '../../../../../enums/messages/role/role-messages.en
 const booleanTransformer = getBooleanTransformer({ defaultValue: false });
 
 export class CreateUserRequestDTO {
+  /**
+   * User name.
+   * Must have from 6 up to 60 characters.
+   *
+   * @example 'Jhon Silverman'
+   */
   @MaxLength(60, { message: NameMessage.MAX_LEN })
   @MinLength(6, { message: NameMessage.MIN_LEN })
   @IsString({ message: NameMessage.STRING })
   @IsNotEmpty({ message: NameMessage.REQUIRED })
   name: string;
 
+  /**
+   * User email.
+   * Must be a valid non repeated email.
+   *
+   * @example "joaodasilva1@email.com"
+   */
   @MaxLength(60, { message: EmailMessage.MAX_LEN })
   @IsEmail({}, { message: EmailMessage.INVALID })
   @IsString({ message: EmailMessage.STRING })
   @IsNotEmpty({ message: EmailMessage.REQUIRED })
   email: string;
 
+  /**
+   * User password.
+   * Should have from 6 up to 60 characters, one uppercase, one lowercase, one symbol and one number.
+   *
+   * @example Abc123*
+   */
   @IsStrongPassword(
     {
       minLength: 3,
@@ -50,12 +68,22 @@ export class CreateUserRequestDTO {
   @IsNotEmpty({ message: PasswordMessage.REQUIRED })
   password: string;
 
+  /**
+   * User roles.
+   *
+   * @example ["ADMIN", "ROOT"]
+   */
   @IsEnum(Role, { each: true, message: RoleMessage.INVALID })
   @ArrayMinSize(1, { message: RoleMessage.MIN_LEN })
   @IsArray({ message: RoleMessage.INVALID })
   @IsNotEmpty({ message: RoleMessage.REQUIRED })
   roles: Role[];
 
+  /**
+   * If user is active. false by default.
+   *
+   * @example true
+   */
   @IsBool({
     requiredMessage: ActiveMessage.REQUIRED,
     invalidTypeMessage: ActiveMessage.TYPE,

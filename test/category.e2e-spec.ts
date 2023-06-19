@@ -14,7 +14,6 @@ import { CategoryRepository } from '../src/modules/stock/repositories/category.r
 import { PaginationConfig } from '../src/modules/system/dtos/request/pagination/configs/pagination.config';
 import { ActiveFilter } from '../src/modules/system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../src/modules/system/enums/filter/deleted-filter/deleted-filter.enum';
-import { SortMessage } from '../src/modules/system/enums/messages/sort-messages/sort-messages.enum';
 import { ValidationPipe } from '../src/modules/system/pipes/custom-validation.pipe';
 import { UserEntity } from '../src/modules/user/models/user/user.entity';
 import { TestCategoryData } from '../src/test/category/test-category-data';
@@ -1036,7 +1035,7 @@ describe('CategoryController (e2e)', () => {
 
           const serviceCategories = await httpGet(
             '/categories',
-            { active: ActiveFilter.ALL, parentIds: JSON.stringify([1, 2]) },
+            { active: ActiveFilter.ALL, parentIds: [1, 2].join(',') },
             HttpStatus.OK,
             rootToken,
           );
@@ -1048,35 +1047,6 @@ describe('CategoryController (e2e)', () => {
             results: expectedResults,
           });
           expect(serviceCategories.results).toEqual(expectedResults);
-        });
-
-        it('should filter categories by null parent', async () => {
-          await createTestScenario();
-          const expectedResults = objectToJSON(
-            (
-              await categoryRepo.find({
-                relations: { parent: true },
-              })
-            ).filter((c) => !c.parent),
-          );
-          try {
-            const serviceCategories = await httpGet(
-              '/categories',
-              { active: ActiveFilter.ALL, parentIds: JSON.stringify([null]) },
-              HttpStatus.OK,
-              rootToken,
-            );
-
-            expect(serviceCategories).toEqual({
-              count: 2,
-              page: 1,
-              pageSize: 12,
-              results: expectedResults,
-            });
-            expect(serviceCategories.results).toEqual(expectedResults);
-          } catch (error) {
-            throw error;
-          }
         });
 
         const idlistTests = new TestDtoIdListFilter({
@@ -1126,7 +1096,7 @@ describe('CategoryController (e2e)', () => {
               {
                 active: ActiveFilter.ALL,
                 parentIds: test.data,
-                orderBy: JSON.stringify([CategoryOrder.NAME_ASC]),
+                orderBy: [CategoryOrder.NAME_ASC].join(','),
               },
               HttpStatus.OK,
               rootToken,
@@ -1187,9 +1157,9 @@ describe('CategoryController (e2e)', () => {
       });
 
       describe('sort', () => {
-        const testSortScenario = new TestSortScenarioBuilder<
+        const { accepts, rejects } = new TestSortScenarioBuilder<
           typeof CategoryOrder
-        >(CategoryOrder, [CategoryOrder.NAME_ASC], 'api');
+        >(CategoryOrder, [CategoryOrder.NAME_ASC], 'api').getTests();
 
         const categoryData = [];
         for (let name of ['Category 1', 'Category 2']) {
@@ -1200,7 +1170,7 @@ describe('CategoryController (e2e)', () => {
           }
         }
 
-        it.each(testSortScenario.generateSuccessTestScenarios())(
+        it.each(accepts)(
           `should order results when orderBy=$description`,
           async ({ orderBySQL, orderBy }) => {
             // prepare
@@ -1214,7 +1184,7 @@ describe('CategoryController (e2e)', () => {
             // execute
             const apiResult = await httpGet(
               '/categories',
-              { orderBy: JSON.stringify(orderBy), active: ActiveFilter.ALL },
+              { orderBy: orderBy, active: ActiveFilter.ALL },
               HttpStatus.OK,
               rootToken,
             );
@@ -1229,29 +1199,23 @@ describe('CategoryController (e2e)', () => {
           },
         );
 
-        it('should fail when receives invalid orderBy item string', async () => {
-          // prepare
-          await categoryRepo.insert(categoryData);
+        it.each(rejects)(
+          `should fail when orderBy=$description`,
+          async ({ orderBy, expectedErrorResult }) => {
+            // prepare
+            await categoryRepo.insert(categoryData);
 
-          // execute
-          const apiResult = await httpGet(
-            '/categories',
-            {
-              orderBy: ['invalid_impossible_and_never_gonna_happen'],
-              active: ActiveFilter.ALL,
-            },
-            HttpStatus.UNPROCESSABLE_ENTITY,
-            rootToken,
-          );
+            // execute
+            const apiResult = await httpGet(
+              '/categories',
+              { orderBy, active: ActiveFilter.ALL },
+              expectedErrorResult.statusCode,
+              rootToken,
+            );
 
-          expect(apiResult).toEqual({
-            error: 'UnprocessableEntityException',
-            message: {
-              orderBy: SortMessage.INVALID,
-            },
-            statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-          });
-        });
+            expect(apiResult).toEqual(expectedErrorResult);
+          },
+        );
       });
     });
 

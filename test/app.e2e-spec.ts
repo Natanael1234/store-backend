@@ -56,18 +56,18 @@ describe('AppController (e2e)', () => {
     await moduleFixture.close();
   });
 
-  describe('/ (GET)', () => {
+  describe('/hello (GET)', () => {
     it('should succed when authorized', async () => {
       const { token } = await authenticationScenario(true);
       return request(app.getHttpServer())
-        .get('/')
+        .get('/hello')
         .set('Authorization', 'bearer ' + token)
         .expect(200)
         .expect('Hello World!');
     });
 
     it('should fail when unauthorized', async () => {
-      return request(app.getHttpServer()).get('/').expect(401);
+      return request(app.getHttpServer()).get('/hello').expect(401);
     });
   });
 });

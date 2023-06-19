@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { SkipAuthentication } from '../../../authentication/decorators/skip-authentication';
 import { Role } from '../../../authentication/enums/role/role.enum';
 import { PaginatedResponseDTO } from '../../../system/dtos/response/pagination/pagination.response.dto';
@@ -19,6 +20,7 @@ import { CreateCategoryRequestDTO } from './dtos/request/create-category/create-
 import { FindCategoriesRequestDTO } from './dtos/request/find-categories/find-categories.request.dto';
 import { UpdateCategoryRequestDTO } from './dtos/request/update-category/update-category.request.dto';
 
+@ApiTags('categories')
 @Controller('categories')
 export class CategoryController {
   constructor(private categoryService: CategoryService) {}

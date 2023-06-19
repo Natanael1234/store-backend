@@ -29,20 +29,25 @@ class Test {
   }
 
   private getNormalizedData() {
-    let normalizedData: any;
     if (this.data === '') {
       return undefined;
     } else if (typeof this.data == 'string') {
-      try {
-        return JSON.parse(this.data);
-      } catch (error) {
-        return this.data;
-      }
+      const arr = this.data.split(',').map((e) => {
+        if (e === 'null') {
+          return null;
+        }
+        const num = Number(e);
+        if (!isNaN(num)) {
+          return num;
+        }
+        return e;
+      });
+      return [...new Set(arr)];
+    } else if (Array.isArray(this.data)) {
+      return [...new Set(this.data)];
     } else {
       return this.data;
     }
-
-    return normalizedData;
   }
 }
 
@@ -113,11 +118,8 @@ class OptionTest {
       return `should validate and return ${JSON.stringify(
         this.test.normalizedData,
       )} when id list is ${this.test.description}`;
-
-      //return `should validate and parse into ${JSON.stringify(this.test.normalizedData)} when ${this.option.description} and value is ${this.test.description}`;
     } else {
       return `should fail when id list is ${this.test.description}`;
-      // return `should not validate when ${option.description} and value is ${this.test.description}`;
     }
   }
 }
@@ -218,46 +220,43 @@ export class TestDtoIdListFilter {
     let data: Test[] = [
       new Test('""', ''),
       new Test('null', null),
-      new Test('"null"', 'null'),
       new Test('[]', []),
       new Test('[1]', [1]),
-      new Test('"[1]"', '[1]'),
       new Test('[1, 2]', [1, 2]),
-      new Test('"[1, 2]"', '[1, 2]'),
+      new Test('[1, 1, 2] (repeated items)', [1, 1, 2]),
       new Test('[null]', [null]),
-      new Test('"[1, null]"', '[1, null]'),
+      new Test('"1"', '1'),
+      new Test('"1,2"', '1,2'),
+      new Test('1,1,2 (repeated items)', '1,1,2'),
+      new Test('"null"', 'null'),
+      new Test('"1, null"', '1,null'),
 
       // invalid
-      new Test("['1']", ['1']),
       new Test('undefined', undefined),
-      new Test('"undefined"', 'undefined'),
-      new Test('"[undefined]"', '[undefined]'),
+      new Test("['1']", ['1']),
+      new Test('[undefined]', [undefined]),
+      new Test('[true]', [true]),
       new Test('1', 1),
-      new Test('"1"', '1'),
       new Test('true', true),
-      new Test('"true"', 'true'),
-      new Test('"invalid"', 'invalid'),
       new Test('{}', {}),
       new Test('"{}"', '{}'),
-      new Test(`"{ "key": 1 }"`, '{ "key" : 1 }'),
-
       new Test('[-1]', [-1]),
       new Test("['-1']", ['-1']),
       new Test('[1.1]', [1.1]),
       new Test("['1.1']", ['1.1']),
       new Test("['-1.1']", ['-1.1']),
-      new Test('[undefined]', '[undefined]'),
       new Test("['']", ['']),
 
-      new Test('"[0]"', '[0]'),
-      new Test('"[-1]"', '[-1]'),
-      new Test('"[1.1]"', '[1.1]'),
-      new Test('"[-1.1]"', '[-1.1]'),
-      new Test('"[\\"non numeric\\"]"', '["non numeric"]'),
-      new Test('"[1, -2]"', '[-2]'),
-      new Test('"[1.1]"', '[1.1]'),
-      new Test('"[-1.1]"', '[-1.1]'),
-      new Test(`"[\\"non numeric\\"]"`, '["non numeric"]'),
+      new Test('"0"', '0'),
+      new Test('"-1"', '-1'),
+      new Test('"1.1"', '1.1'),
+      new Test('"-1.1"', '-1.1'),
+      new Test('"undefined"', 'undefined'),
+      new Test('"true"', 'true'),
+      new Test('"invalid"', 'invalid'),
+
+      new Test('"1,-2"', '1,-2'),
+      new Test('"1.1"', '1.1'),
     ];
 
     if (this.filterOptions.onlyQueryParameters) {

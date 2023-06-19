@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { SkipAuthentication } from '../../../authentication/decorators/skip-authentication';
 import { Role } from '../../../authentication/enums/role/role.enum';
 import { PaginatedResponseDTO } from '../../../system/dtos/response/pagination/pagination.response.dto';
@@ -19,6 +20,7 @@ import { CreateProductRequestDTO } from './dtos/request/create-product/create-pr
 import { FindProductRequestDTO } from './dtos/request/find-products/find-products.request.dto';
 import { UpdateProductRequestDTO } from './dtos/request/update-product/update-product.request.dto';
 
+@ApiTags('products')
 @Controller('products')
 export class ProductController {
   constructor(private productService: ProductService) {}
