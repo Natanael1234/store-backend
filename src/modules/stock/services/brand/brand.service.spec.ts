@@ -28,7 +28,6 @@ import { PaginationConfig } from '../../../system/dtos/request/pagination/config
 import { SortConfig } from '../../../system/dtos/request/sort/configs/sort.config';
 import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
-import { SortMessage } from '../../../system/enums/messages/sort-messages/sort-messages.enum';
 import { CreateBrandRequestDTO } from '../../controllers/brand/dtos/request/create-brand/create-brand.request.dto';
 import { FindBrandRequestDTO } from '../../controllers/brand/dtos/request/find-brands/find-brands.request.dto';
 import { UpdateBrandRequestDTO } from '../../controllers/brand/dtos/request/update-brand/update-brand.request.dto';
@@ -201,6 +200,7 @@ describe('BrandService', () => {
         });
       },
     );
+
     describe.each([
       ...getNameAcceptableValues({
         dtoData: TestBrandData.dataForRepository[1],
@@ -393,11 +393,9 @@ describe('BrandService', () => {
       });
 
       describe('sort', () => {
-        const testSortScenario = new TestSortScenarioBuilder<typeof BrandOrder>(
-          BrandOrder,
-          [BrandOrder.NAME_ASC],
-          'api',
-        );
+        const { accepts, rejects } = new TestSortScenarioBuilder<
+          typeof BrandOrder
+        >(BrandOrder, [BrandOrder.NAME_ASC], 'service').getTests();
 
         const brandData = [];
         for (let name of ['Brand 1', 'Brand 2']) {
@@ -408,19 +406,23 @@ describe('BrandService', () => {
           }
         }
 
-        it.each(testSortScenario.generateSuccessTestScenarios())(
+        it.each(accepts)(
           `should order results when orderBy=$description`,
-          async ({ orderBySQL, orderBy }) => {
+          async ({ orderBySQL, orderBy, description }) => {
             // prepare
             await brandRepo.insert(brandData);
-            const repositoryResults = await brandRepo.find({
-              order: orderBySQL,
+            const findManyOptions: FindManyOptions<BrandEntity> = {
+              where: {},
+              skip: 0,
               take: PaginationConfig.DEFAULT_PAGE_SIZE,
-            });
+              order: orderBySQL,
+            };
+
+            const repositoryResults = await brandRepo.find(findManyOptions);
 
             // execute
             const apiResult = await brandService.find({
-              orderBy: orderBy,
+              orderBy,
               active: ActiveFilter.ALL,
             });
 
@@ -434,31 +436,25 @@ describe('BrandService', () => {
           },
         );
 
-        it('should fail when receives invalid orderBy item string', async () => {
-          // prepare
-          await brandRepo.insert(brandData);
+        it.each(rejects)(
+          'should fail when receives invalid orderBy=$description',
+          async ({ orderBy, constraints, expectedErrorResult }) => {
+            // prepare
+            await brandRepo.insert(brandData);
 
-          // execute
-          const fn = () =>
-            brandService.find({
-              orderBy: [
-                'invalid_impossible_and_never_gonna_happen' as BrandOrder,
-              ],
-              active: ActiveFilter.ALL,
-            });
+            // execute
+            const fn = () =>
+              brandService.find({ orderBy: orderBy, active: ActiveFilter.ALL });
 
-          await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+            await expect(fn()).rejects.toThrow(UnprocessableEntityException);
 
-          try {
-            await fn();
-          } catch (ex) {
-            expect(ex.response).toEqual({
-              error: 'UnprocessableEntityException',
-              message: { orderBy: SortMessage.INVALID },
-              statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-            });
-          }
-        });
+            try {
+              await fn();
+            } catch (ex) {
+              expect(ex.response).toEqual(expectedErrorResult);
+            }
+          },
+        );
       });
 
       describe('combined tests', () => {

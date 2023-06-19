@@ -19,7 +19,6 @@ import { PaginationConfig } from '../src/modules/system/dtos/request/pagination/
 import { SuccessResponseDto } from '../src/modules/system/dtos/response/pagination/success.response.dto';
 import { ActiveFilter } from '../src/modules/system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../src/modules/system/enums/filter/deleted-filter/deleted-filter.enum';
-import { SortMessage } from '../src/modules/system/enums/messages/sort-messages/sort-messages.enum';
 import { ValidationPipe } from '../src/modules/system/pipes/custom-validation.pipe';
 import { UserEntity } from '../src/modules/user/models/user/user.entity';
 import { UserService } from '../src/modules/user/services/user/user.service';
@@ -1152,7 +1151,7 @@ describe('ProductController (e2e)', () => {
 
             const serviceCategories = await httpGet(
               '/products',
-              { active: ActiveFilter.ALL, categoryIds: JSON.stringify([1]) },
+              { active: ActiveFilter.ALL, categoryIds: [1].join(',') },
               HttpStatus.OK,
               rootToken,
             );
@@ -1207,7 +1206,7 @@ describe('ProductController (e2e)', () => {
                 {
                   active: ActiveFilter.ALL,
                   categoryIds: test.data,
-                  orderBy: JSON.stringify([ProductOrder.NAME_ASC]),
+                  orderBy: [ProductOrder.NAME_ASC].join(','),
                 },
                 HttpStatus.OK,
                 rootToken,
@@ -1251,7 +1250,7 @@ describe('ProductController (e2e)', () => {
 
             const serviceCategories = await httpGet(
               '/products',
-              { active: ActiveFilter.ALL, brandIds: JSON.stringify([1]) },
+              { active: ActiveFilter.ALL, brandIds: [1].join(',') },
               HttpStatus.OK,
               rootToken,
             );
@@ -1306,7 +1305,7 @@ describe('ProductController (e2e)', () => {
                 {
                   active: ActiveFilter.ALL,
                   brandIds: test.data,
-                  orderBy: JSON.stringify([ProductOrder.NAME_ASC]),
+                  orderBy: [ProductOrder.NAME_ASC].join(','),
                 },
                 HttpStatus.OK,
                 rootToken,
@@ -1369,9 +1368,9 @@ describe('ProductController (e2e)', () => {
         });
 
         describe('sort', () => {
-          const testSortScenario = new TestSortScenarioBuilder<
+          const { accepts, rejects } = new TestSortScenarioBuilder<
             typeof ProductOrder
-          >(ProductOrder, [ProductOrder.NAME_ASC], 'api');
+          >(ProductOrder, [ProductOrder.NAME_ASC], 'api').getTests();
 
           const productsData = [];
           for (let name of ['Product 1', 'Product 2']) {
@@ -1391,7 +1390,7 @@ describe('ProductController (e2e)', () => {
             }
           }
 
-          it.each(testSortScenario.generateSuccessTestScenarios())(
+          it.each(accepts)(
             `should order results when orderBy=$description`,
             async ({ orderBySQL, orderBy }) => {
               // prepare
@@ -1408,7 +1407,7 @@ describe('ProductController (e2e)', () => {
               // execute
               const apiResult = await httpGet(
                 '/products',
-                { orderBy: JSON.stringify(orderBy), active: ActiveFilter.ALL },
+                { orderBy: orderBy, active: ActiveFilter.ALL },
                 HttpStatus.OK,
                 rootToken,
               );
@@ -1423,31 +1422,25 @@ describe('ProductController (e2e)', () => {
             },
           );
 
-          it('should fail when receives invalid orderBy item string', async () => {
-            // prepare
-            await brandRepo.insert(TestBrandData.buildData(1));
-            await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
-            await productRepo.insert(productsData);
+          it.each(rejects)(
+            'should fail when orderBy=$description',
+            async ({ orderBy, expectedErrorResult }) => {
+              // prepare
+              await brandRepo.insert(TestBrandData.buildData(1));
+              await categoryRepo.bulkCreate(TestCategoryData.dataForRepository);
+              await productRepo.insert(productsData);
 
-            // execute
-            const apiResult = await httpGet(
-              '/products',
-              {
-                orderBy: ['invalid_impossible_and_never_gonna_happen'],
-                active: ActiveFilter.ALL,
-              },
-              HttpStatus.UNPROCESSABLE_ENTITY,
-              rootToken,
-            );
+              // execute
+              const apiResult = await httpGet(
+                '/products',
+                { orderBy, active: ActiveFilter.ALL },
+                expectedErrorResult.statusCode,
+                rootToken,
+              );
 
-            expect(apiResult).toEqual({
-              error: 'UnprocessableEntityException',
-              message: {
-                orderBy: SortMessage.INVALID,
-              },
-              statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-            });
-          });
+              expect(apiResult).toEqual(expectedErrorResult);
+            },
+          );
         });
 
         describe('combined parameters', () => {
@@ -1508,7 +1501,7 @@ describe('ProductController (e2e)', () => {
                   pageSize: 8,
                   deleted: DeletedFilter.DELETED,
                   active: ActiveFilter.INACTIVE,
-                  orderBy: JSON.stringify([ProductOrder.NAME_DESC]),
+                  orderBy: [ProductOrder.NAME_DESC].join(','),
                 },
                 HttpStatus.OK,
                 rootToken,
@@ -1520,7 +1513,7 @@ describe('ProductController (e2e)', () => {
                   pageSize: 8,
                   deleted: DeletedFilter.DELETED,
                   active: ActiveFilter.INACTIVE,
-                  orderBy: JSON.stringify([ProductOrder.NAME_DESC]),
+                  orderBy: [ProductOrder.NAME_DESC].join(','),
                 },
                 HttpStatus.OK,
                 rootToken,
@@ -1532,7 +1525,7 @@ describe('ProductController (e2e)', () => {
                   pageSize: 8,
                   deleted: DeletedFilter.DELETED,
                   active: ActiveFilter.INACTIVE,
-                  orderBy: JSON.stringify([ProductOrder.NAME_DESC]),
+                  orderBy: [ProductOrder.NAME_DESC].join(','),
                 },
                 HttpStatus.OK,
                 rootToken,
@@ -1544,7 +1537,7 @@ describe('ProductController (e2e)', () => {
                   pageSize: 8,
                   deleted: DeletedFilter.DELETED,
                   active: ActiveFilter.INACTIVE,
-                  orderBy: JSON.stringify([ProductOrder.NAME_DESC]),
+                  orderBy: [ProductOrder.NAME_DESC].join(','),
                 },
                 HttpStatus.OK,
                 rootToken,

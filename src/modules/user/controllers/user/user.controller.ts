@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Patch, Post, Query } from '@nestjs/common';
 import { Param, Req } from '@nestjs/common/decorators';
+import { ApiTags } from '@nestjs/swagger';
 import { Role } from '../../../authentication/enums/role/role.enum';
 import { PaginatedResponseDTO } from '../../../system/dtos/response/pagination/pagination.response.dto';
 import { Roles } from '../../decorators/roles/roles.decorator';
@@ -11,6 +12,7 @@ import { UpdatePasswordRequestDTO } from './dtos/request/update-password/update-
 import { UpdateUserRequestDTO } from './dtos/request/update-user/update-user.request.dto';
 import { UpdatePasswordResponseDTO } from './dtos/response/update-password/update-password.response.dto';
 
+@ApiTags('users')
 @Controller('users')
 export class UserController {
   constructor(private userService: UserService) {}

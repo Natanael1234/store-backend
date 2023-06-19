@@ -23,35 +23,70 @@ import { ProductQuantityMessage } from '../../../../../enums/messages/quantity-m
 const booleanTransformer = getBooleanTransformer({ defaultValue: false });
 
 export class CreateProductRequestDTO {
+  /**
+   * Product code.
+   * Must have from 6 up to 60 characters.
+   *
+   * @example "001"
+   */
   @MaxLength(60, { message: CodeMessage.MAX_LEN })
   @MinLength(6, { message: CodeMessage.MIN_LEN })
   @IsString({ message: CodeMessage.STRING })
   @IsNotEmpty({ message: CodeMessage.REQUIRED })
   code: string;
 
+  /**
+   * Product name.
+   * Must have from 6 up to 60 characters.
+   *
+   * @example 'Product A'
+   */
   @MaxLength(60, { message: NameMessage.MAX_LEN })
   @MinLength(6, { message: NameMessage.MIN_LEN })
   @IsString({ message: NameMessage.STRING })
   @IsNotEmpty({ message: NameMessage.REQUIRED })
   name: string;
 
+  /**
+   * Product model.
+   * Must have from 6 up to 60 characters.
+   *
+   * @example 'ABC01'
+   */
   @MaxLength(60, { message: ModelMessage.MAX_LEN })
   @MinLength(6, { message: ModelMessage.MIN_LEN })
   @IsString({ message: ModelMessage.STRING })
   @IsNotEmpty({ message: ModelMessage.REQUIRED })
   model: string;
 
+  /**
+   * Product price.
+   * Greater or equal 0.
+   *
+   * @example 3.99
+   */
   @Min(0, { message: PriceMessage.MIN })
   @IsNumber({}, { message: PriceMessage.NUMBER })
   @IsNotEmpty({ message: PriceMessage.REQUIRED })
   price: number;
 
+  /**
+   * Product name.
+   * Equal or greater 0. Min 0. 0 by default.
+   *
+   * @example 20
+   */
   @Min(0, { message: ProductQuantityMessage.MIN })
   @IsNumber({}, { message: ProductQuantityMessage.NUMBER })
   @Transform(({ value }) => (value == null ? 0 : value))
   @IsOptional()
   quantityInStock?: number;
 
+  /**
+   * If product is active. false by dwfault.
+   *
+   * @example true
+   */
   @IsBool({
     optional: true,
     requiredMessage: ActiveMessage.REQUIRED,
@@ -60,6 +95,11 @@ export class CreateProductRequestDTO {
   @Transform(({ value }) => booleanTransformer(value))
   active?: boolean;
 
+  /**
+   * Brand id.
+   *
+   * @example 1
+   */
   @IsForeignKey({
     invalidTypeMessage: BrandMessage.BRAND_ID_TYPE,
     requiredMessage: BrandMessage.REQUIRED_BRAND_ID,
@@ -69,6 +109,11 @@ export class CreateProductRequestDTO {
   })
   brandId: number;
 
+  /**
+   * Category id.
+   *
+   * @example 1
+   */
   @IsForeignKey({
     invalidTypeMessage: CategoryMessage.CATEGORY_ID_TYPE,
     requiredMessage: CategoryMessage.REQUIRED_CATEGORY_ID,

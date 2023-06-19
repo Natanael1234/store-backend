@@ -8,12 +8,22 @@ import { IsBool } from '../../../../../../system/validators/active-validator/boo
 const booleanTransformer = getBooleanTransformer({ defaultValue: false });
 
 export class CreateBrandRequestDTO {
+  /**
+   * Brand name.
+   *
+   * @example "Brand X"
+   */
   @MaxLength(60, { message: NameMessage.MAX_LEN })
   @MinLength(6, { message: NameMessage.MIN_LEN })
   @IsString({ message: NameMessage.STRING })
   @IsNotEmpty({ message: NameMessage.REQUIRED })
   name: string;
 
+  /**
+   * If brand is active. false by default.
+   *
+   * @example true.
+   */
   @IsBool({
     optional: true,
     invalidTypeMessage: ActiveMessage.TYPE,

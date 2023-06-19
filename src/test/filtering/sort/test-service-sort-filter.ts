@@ -1,8 +1,25 @@
+import { HttpStatus } from '@nestjs/common';
+import { SortMessage } from '../../../modules/system/enums/messages/sort-messages/sort-messages.enum';
+import { getCombinations } from '../../utils/test-array-combinations';
+
+type Test<Enum extends Record<string, string>> = {
+  orderBy: any;
+  normalizedOrderBy?: Enum[keyof Enum][] | string | null | undefined | any;
+  orderBySQL?: any;
+  description?: any;
+  constraints?: any;
+  expectedErrorResult?: {
+    error: string;
+    message: any;
+    statusCode: number;
+  };
+};
+
 export class TestSortScenarioBuilder<Enum extends Record<string, string>> {
   constructor(
     private readonly enumInstance: Enum,
-    private readonly defaultValue: Enum[keyof Enum][],
-    private readonly testType: 'api' | 'service',
+    private readonly defaultValues: Enum[keyof Enum][],
+    private readonly testPurpose: 'api' | 'service',
   ) {}
 
   /** Get all test scenarios.
@@ -10,12 +27,23 @@ export class TestSortScenarioBuilder<Enum extends Record<string, string>> {
    * USAR COM SABEDORIA.
    * De preferência no máximo 5 propriedades (327 iterações).
    */
-  public generateSuccessTestScenarios(limit?: number): {
-    orderBy: Enum[keyof Enum][];
-    orderBySQL: any;
-    description: any;
-  }[] {
-    const testScenarios = this.getCombinations().map(
+  public getTests(limit?: number): {
+    accepts: Test<Enum>[];
+    rejects: Test<Enum>[];
+  } {
+    const valuesArr = [
+      ...Object.values(this.enumInstance),
+    ] as Enum[keyof Enum][];
+
+    const unprocessableResult = {
+      error: 'UnprocessableEntityException',
+      message: { orderBy: SortMessage.INVALID },
+      statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+    };
+    const unprocessableConstraints = { orderBy: SortMessage.INVALID };
+    const combinations = getCombinations(valuesArr);
+
+    let testScenarios: Test<Enum>[] = combinations.map(
       (enumValues: Enum[keyof Enum][]) => {
         return {
           orderBy: enumValues,
@@ -25,97 +53,139 @@ export class TestSortScenarioBuilder<Enum extends Record<string, string>> {
       },
     );
 
-    if (this.testType == 'service') {
-      testScenarios.unshift({
-        orderBy: null,
-        orderBySQL: this.mapOrderByToSQL(null),
-        description: 'null',
-      });
+    testScenarios.unshift(
+      {
+        orderBy: ['null'],
+        constraints: unprocessableConstraints,
+        expectedErrorResult: unprocessableResult,
+      },
+      {
+        orderBy: ['undefined'],
+        constraints: unprocessableConstraints,
+        expectedErrorResult: unprocessableResult,
+      },
+      {
+        orderBy: ['invalid_order_by'],
+        constraints: unprocessableConstraints,
+        expectedErrorResult: unprocessableResult,
+      },
+    );
+
+    // query parameters
+    let queryParamTestScenarios = testScenarios.map((t) => {
+      const orderBy = this.encodeIntoQueryParams(t.orderBy);
+      return {
+        orderBy,
+        constraints: t.constraints,
+        expectedErrorResult: t.expectedErrorResult,
+      };
+    });
+
+    testScenarios.unshift(
+      { orderBy: null },
+      { orderBy: undefined },
+      { orderBy: '' },
+    );
+
+    if (this.testPurpose == 'api') {
+      testScenarios = queryParamTestScenarios;
+    } else {
+      testScenarios.push(...queryParamTestScenarios);
     }
 
-    testScenarios.unshift({
-      orderBy: undefined,
-      orderBySQL: this.mapOrderByToSQL(undefined),
-      description: 'undefined',
-    });
+    for (const scenario of testScenarios) {
+      scenario.description = this.getDescription(scenario.orderBy);
+      scenario.normalizedOrderBy = this.getNormalizedOrderBy(scenario.orderBy);
+      scenario.orderBySQL = this.mapOrderByToSQL(scenario.normalizedOrderBy);
+    }
 
-    testScenarios.unshift({
-      orderBy: [],
-      orderBySQL: this.mapOrderByToSQL(undefined),
-      description: 'empty array',
-    });
-
+    // max amount of tests
     if (testScenarios.length > 300) throw new Error('Test scenario too large'); // TODO: validar caso a caso
-
     if (limit) {
-      return testScenarios.slice(0, limit);
+      testScenarios = testScenarios.slice(0, limit);
     }
-    return testScenarios;
+
+    return {
+      accepts: testScenarios.filter((t) => !t.constraints),
+      rejects: testScenarios.filter((t) => t.constraints),
+    };
   }
 
-  private mapOrderByToSQL(orderBy: Enum[keyof Enum][]): any {
-    if (!orderBy || !orderBy.length) orderBy = this.defaultValue; // default sort
-    let ret: any = {};
-    for (const column of orderBy) {
-      const [key, value] = (column as string).split('_');
-      ret[key] = value.toUpperCase();
+  private encodeIntoQueryParams(orderBy: any) {
+    if (orderBy === undefined) {
+    } else if (orderBy === null) {
+      return 'null';
     }
-    return ret;
-  }
-
-  /** Get all variations of ordering and subsets of enum values. */
-  private getCombinations(): Enum[keyof Enum][][] {
-    const enumValuesArr = [
-      ...Object.values(this.enumInstance),
-    ] as Enum[keyof Enum][];
-    const variants: Enum[keyof Enum][][] = this.getSubsets(enumValuesArr);
-    const combinations: Enum[keyof Enum][][] = [];
-    for (const variant of variants) {
-      const permutations = this.getPermutations(variant);
-      combinations.push(...permutations);
-    }
-    combinations.sort((a, b) => {
-      let aInner = a.map((x) => (x as string).toLowerCase()).join('');
-      let bInner = b.map((x) => (x as string).toLowerCase()).join('');
-      return aInner.localeCompare(bInner);
-    });
-    return combinations;
-  }
-
-  /** Get all possible subserts of enum values. */
-  private getSubsets(
-    enumValuesSetArr: Enum[keyof Enum][],
-  ): Enum[keyof Enum][][] {
-    if (enumValuesSetArr.length === 0) {
-      return [[]];
+    if (orderBy === undefined || orderBy === null || orderBy === '') {
+      return '';
+    } else if (Array.isArray(orderBy)) {
+      return orderBy.join(',');
     } else {
-      let first = enumValuesSetArr[0];
-      let rest = enumValuesSetArr.slice(1);
-      let subsets = this.getSubsets(rest);
-      let subsetsWithFirst = subsets.map((subset) => [first].concat(subset));
-      return subsets.concat(subsetsWithFirst);
+      return JSON.stringify(orderBy);
     }
   }
 
-  /** Get all possible ordering variations of enum values. */
-  private getPermutations(
-    enumValuesSetArr: Enum[keyof Enum][],
-  ): Enum[keyof Enum][][] {
-    if (enumValuesSetArr.length === 1) {
-      return [enumValuesSetArr];
+  private getDescription(orderBy: any): string {
+    if (orderBy === undefined) {
+      return JSON.stringify('undefined');
+    } else if (Array.isArray(orderBy)) {
+      return JSON.stringify(
+        orderBy.map((d) => {
+          if (d === undefined) {
+            return 'undefined';
+          } else if (d === null) {
+            return 'null';
+          } else {
+            return d;
+          }
+        }),
+      );
+    } else if (typeof orderBy == 'string') {
+      const description = `"${orderBy}"`;
+      return description;
     } else {
-      let result: Enum[keyof Enum][][] = [];
-      for (let i = 0; i < enumValuesSetArr.length; i++) {
-        let first = enumValuesSetArr[i];
-        let remaining = enumValuesSetArr
-          .slice(0, i)
-          .concat(enumValuesSetArr.slice(i + 1));
-        let innerPermutations = this.getPermutations(remaining);
-        for (let j = 0; j < innerPermutations.length; j++) {
-          result.push([first].concat(innerPermutations[j]));
-        }
+      const description = JSON.stringify(orderBy);
+      return description;
+    }
+  }
+
+  private getNormalizedOrderBy(orderBy: any) {
+    const defaultValues = this.getDefaultValues();
+    if (
+      (orderBy == '' || orderBy === null || orderBy === undefined) &&
+      defaultValues
+    ) {
+      return defaultValues;
+    } else if (Array.isArray(orderBy)) {
+      if (orderBy.length == 0 && defaultValues) {
+        return defaultValues;
       }
-      return result;
+      return orderBy;
+    } else if (typeof orderBy == 'string') {
+      return [...new Set(orderBy.split(','))];
+    } else {
+      return orderBy;
+    }
+  }
+
+  private mapOrderByToSQL(normalizedData: any): any {
+    const normalizedOrderBy = this.getNormalizedOrderBy(normalizedData);
+    if (Array.isArray(normalizedOrderBy)) {
+      let orderBySQL: any = {};
+      for (const column of normalizedOrderBy) {
+        const [key, value] = (column as string).split('_');
+        if (value == null) {
+          return;
+        }
+        orderBySQL[key] = value.toUpperCase();
+      }
+      return orderBySQL;
+    }
+  }
+
+  private getDefaultValues() {
+    if (this.defaultValues) {
+      return [...new Set(this.defaultValues)];
     }
   }
 }

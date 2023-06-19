@@ -12,6 +12,11 @@ import { getBooleanTransformer } from '../../../../../../system/utils/boolean/bo
 import { IsBool } from '../../../../../../system/validators/active-validator/bool.validator';
 const booleanTransformer = getBooleanTransformer();
 export class UpdateBrandRequestDTO {
+  /**
+   * Brand name.
+   *
+   * @example Brand Y
+   */
   @MaxLength(60, { message: NameMessage.MAX_LEN })
   @MinLength(6, { message: NameMessage.MIN_LEN })
   @IsString({ message: NameMessage.STRING })
@@ -19,6 +24,11 @@ export class UpdateBrandRequestDTO {
   @IsOptional()
   name?: string;
 
+  /**
+   * If brand is active. false by default.
+   *
+   * @example true
+   */
   @IsBool({
     optional: true,
     invalidTypeMessage: ActiveMessage.TYPE,

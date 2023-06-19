@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { SkipAuthentication } from '../../../authentication/decorators/skip-authentication';
 import { Role } from '../../../authentication/enums/role/role.enum';
 import { PaginatedResponseDTO } from '../../../system/dtos/response/pagination/pagination.response.dto';
@@ -18,7 +19,7 @@ import { BrandService } from '../../services/brand/brand.service';
 import { CreateBrandRequestDTO } from './dtos/request/create-brand/create-brand.request.dto';
 import { FindBrandRequestDTO } from './dtos/request/find-brands/find-brands.request.dto';
 import { UpdateBrandRequestDTO } from './dtos/request/update-brand/update-brand.request.dto';
-
+@ApiTags('brands')
 @Controller('brands')
 export class BrandController {
   constructor(private brandService: BrandService) {}

@@ -99,3 +99,13 @@ docker-compose up --build -V
 ```
 
 2 - Run "Debug: NestJS-Store" in VS Code debug tab.
+
+# API Documentation
+
+Execute:
+
+```bash
+docker-compose up --build -V
+```
+
+Acesse: http://localhost:3000/api.

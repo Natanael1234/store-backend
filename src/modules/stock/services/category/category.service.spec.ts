@@ -26,7 +26,6 @@ import { PaginationConfig } from '../../../system/dtos/request/pagination/config
 import { SortConfig } from '../../../system/dtos/request/sort/configs/sort.config';
 import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
-import { SortMessage } from '../../../system/enums/messages/sort-messages/sort-messages.enum';
 
 import { CategoryMessage } from '../../enums/messages/category-messages/category-messages.enum';
 
@@ -912,9 +911,9 @@ describe('CategoryService', () => {
       });
 
       describe('sort', () => {
-        const testSortScenario = new TestSortScenarioBuilder<
+        const { accepts, rejects } = new TestSortScenarioBuilder<
           typeof CategoryOrder
-        >(CategoryOrder, [CategoryOrder.NAME_ASC], 'api');
+        >(CategoryOrder, [CategoryOrder.NAME_ASC], 'service').getTests();
 
         const categoryData = [];
         for (let name of ['Category 1', 'Category 2']) {
@@ -925,7 +924,7 @@ describe('CategoryService', () => {
           }
         }
 
-        it.each(testSortScenario.generateSuccessTestScenarios())(
+        it.each(accepts)(
           `should order results when orderBy=$description`,
           async ({ orderBySQL, orderBy }) => {
             // prepare
@@ -952,31 +951,25 @@ describe('CategoryService', () => {
           },
         );
 
-        it('should fail when receives invalid orderBy item string', async () => {
-          // prepare
-          await categoryRepo.insert(categoryData);
+        it.each(rejects)(
+          'should fail when orderBy=$description',
+          async ({ orderBy, expectedErrorResult }) => {
+            // prepare
+            await categoryRepo.insert(categoryData);
 
-          // execute
-          const fn = () =>
-            categoryService.find({
-              orderBy: [
-                'invalid_impossible_and_never_gonna_happen' as CategoryOrder,
-              ],
-              active: ActiveFilter.ALL,
-            });
+            // execute
+            const fn = () =>
+              categoryService.find({ orderBy, active: ActiveFilter.ALL });
 
-          await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+            await expect(fn()).rejects.toThrow(UnprocessableEntityException);
 
-          try {
-            await fn();
-          } catch (ex) {
-            expect(ex.response).toEqual({
-              error: 'UnprocessableEntityException',
-              message: { orderBy: SortMessage.INVALID },
-              statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-            });
-          }
-        });
+            try {
+              await fn();
+            } catch (ex) {
+              expect(ex.response).toEqual(expectedErrorResult);
+            }
+          },
+        );
       });
 
       describe('combined tests', () => {

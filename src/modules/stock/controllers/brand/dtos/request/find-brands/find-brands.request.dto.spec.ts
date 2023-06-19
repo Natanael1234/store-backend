@@ -139,23 +139,23 @@ describe('FindBrandRequestDTO', () => {
   });
 
   describe('sort', () => {
-    const testSort = new TestDtoSort(defaultDtoResult, BrandOrder, [
-      BrandOrder.NAME_ASC,
-    ]);
+    const { accepts, rejects } = new TestDtoSort(BrandOrder, [
+      { description: 'user sort options', values: [BrandOrder.NAME_ASC] },
+    ]).getTestData();
 
-    it.each(testSort.acceptData)(
-      '$description',
-      async ({ data, expectedResult, description }) => {
-        await testAccepts(data, expectedResult);
-      },
-    );
+    it.each(accepts)('$description', async ({ test }) => {
+      const data = { ...defaultDtoResult };
+      data.orderBy = test.data;
+      const expectedResult = { ...defaultDtoResult };
+      expectedResult.orderBy = test.normalizedData;
+      await testAccepts(data, expectedResult);
+    });
 
-    it.each(testSort.errorData)(
-      '$description',
-      async ({ data, constraints }) => {
-        await testErrors(data, constraints);
-      },
-    );
+    it.each(rejects)('$description', async ({ test, constraints }) => {
+      const data = { ...defaultDtoResult };
+      data.orderBy = test.data;
+      await testErrors(data, constraints);
+    });
   });
 
   describe('multiple errors', () => {
@@ -187,7 +187,7 @@ describe('FindBrandRequestDTO', () => {
         isInt: PaginationMessage.PAGE_SIZE_INT,
       });
       expect(errors[5].constraints).toEqual({
-        isEnum: SortMessage.INVALID,
+        isSorting: SortMessage.INVALID,
       });
     });
   });

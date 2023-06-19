@@ -16,6 +16,12 @@ import { IsBool } from '../../../../../../system/validators/active-validator/boo
 const booleanTransformer = getBooleanTransformer();
 
 export class UpdateUserRequestDTO {
+  /**
+   * User name.
+   * Must have from 6 up to 60 characters.
+   *
+   * @example 'Jhon Silverman'
+   */
   @MaxLength(60, { message: NameMessage.MAX_LEN })
   @MinLength(6, { message: NameMessage.MIN_LEN })
   @IsString({ message: NameMessage.STRING })
@@ -23,6 +29,12 @@ export class UpdateUserRequestDTO {
   @IsOptional()
   name?: string;
 
+  /**
+   * User email.
+   * Must be a valid non repeated email.
+   *
+   * @example "joaodasilva1@email.com"
+   */
   @MaxLength(60, { message: EmailMessage.MAX_LEN })
   @IsEmail({}, { message: EmailMessage.INVALID })
   @IsString({ message: EmailMessage.STRING })
@@ -37,6 +49,11 @@ export class UpdateUserRequestDTO {
   // @IsOptional()
   // roles?: Role[];
 
+  /**
+   * If user is active. Default false.
+   *
+   * @example true
+   */
   @IsBool({
     requiredMessage: ActiveMessage.REQUIRED,
     invalidTypeMessage: ActiveMessage.TYPE,

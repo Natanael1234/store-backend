@@ -15,6 +15,7 @@ import { SortMessage } from '../../../../../../system/enums/messages/sort-messag
 import { TextMessage } from '../../../../../../system/enums/messages/text-messages/text-messages.enum';
 import { validateFirstError } from '../../../../../../system/utils/validation';
 import { CategoryMessage } from '../../../../../enums/messages/category-messages/category-messages.enum';
+import { CategoryOrder } from '../../../../../enums/sort/category-order/category-order.enum';
 import { BrandOrder } from '../../../../../models/brand-order/brand-order.enum';
 import { FindCategoriesRequestDTO } from './find-categories.request.dto';
 
@@ -184,23 +185,23 @@ describe('FindCategoriesRequestDTO', () => {
   });
 
   describe('sort', () => {
-    const testSort = new TestDtoSort(defaultDtoResult, BrandOrder, [
-      BrandOrder.NAME_ASC,
-    ]);
+    const { accepts, rejects } = new TestDtoSort(CategoryOrder, [
+      { description: 'user sort options', values: [CategoryOrder.NAME_ASC] },
+    ]).getTestData();
 
-    it.each(testSort.acceptData)(
-      '$description',
-      async ({ data, expectedResult, description }) => {
-        await testAccepts(data, expectedResult);
-      },
-    );
+    it.each(accepts)('$description', async ({ test }) => {
+      const data = { ...defaultDtoResult };
+      data.orderBy = test.data;
+      const expectedResult = { ...defaultDtoResult };
+      expectedResult.orderBy = test.normalizedData;
+      await testAccepts(data, expectedResult);
+    });
 
-    it.each(testSort.errorData)(
-      '$description',
-      async ({ data, constraints }) => {
-        await testErrors(data, constraints);
-      },
-    );
+    it.each(rejects)('$description', async ({ test, constraints }) => {
+      const data = { ...defaultDtoResult };
+      data.orderBy = test.data;
+      await testErrors(data, constraints);
+    });
   });
 
   describe('multiple errors', () => {
@@ -236,7 +237,7 @@ describe('FindCategoriesRequestDTO', () => {
         isInt: PaginationMessage.PAGE_SIZE_INT,
       });
       expect(errors[6].constraints).toEqual({
-        isEnum: SortMessage.INVALID,
+        isSorting: SortMessage.INVALID,
       });
     });
   });

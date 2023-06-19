@@ -33,8 +33,8 @@ describe('IdList decorator', () => {
 
   describe.each(rejects)(
     'options=$options.data',
-    ({ description, test, options, constraints }) => {
-      it(description, async () => {
+    ({ test, options, constraints }) => {
+      it('should fail when id list is ' + test.description, async () => {
         const errors = await validateFirstError(
           { ids: test.data },
           getClazz(options.data),

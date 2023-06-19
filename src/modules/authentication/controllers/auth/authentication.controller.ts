@@ -1,4 +1,5 @@
 import { Body, Controller, Post } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { SkipAuthentication } from '../../decorators/skip-authentication';
 import { LoginRequestDto } from '../../dtos/requests/login/login.request.dto';
 import { LogoutRequestDto } from '../../dtos/requests/logout/logout.request.dto';
@@ -9,6 +10,7 @@ import { RefreshResponseDto } from '../../dtos/responses/refresh.response.dto';
 import { RegisterResponseDto } from '../../dtos/responses/register.response.dto';
 import { AuthenticationService } from '../../services/authentication/authentication.service';
 
+@ApiTags('auth')
 @Controller('authentication')
 export class AuthenticationController {
   constructor(private readonly authService: AuthenticationService) {}
