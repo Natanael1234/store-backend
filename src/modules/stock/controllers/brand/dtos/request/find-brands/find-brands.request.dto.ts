@@ -1,14 +1,11 @@
-import { Expose, Transform } from 'class-transformer';
-import { IsOptional, IsString } from 'class-validator';
 import { Active } from '../../../../../../system/decorators/active/active.decorator';
 import { Deleted } from '../../../../../../system/decorators/deleted/deleted.decorator';
 import { PageSize } from '../../../../../../system/decorators/pagination/page-size.decorator';
 import { Page } from '../../../../../../system/decorators/pagination/page.decorator';
 import { Sort } from '../../../../../../system/decorators/sort/sort.decorator';
+import { TextQuery } from '../../../../../../system/decorators/text-query/text-query.decorator';
 import { ActiveFilter } from '../../../../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../../../../system/enums/filter/deleted-filter/deleted-filter.enum';
-import { TextMessage } from '../../../../../../system/enums/messages/text-messages/text-messages.enum';
-import { textSearchTransformer } from '../../../../../../system/utils/text-seach/text-search-transformer';
 import { BrandOrder } from '../../../../../models/brand-order/brand-order.enum';
 
 export class FindBrandRequestDTO {
@@ -17,10 +14,7 @@ export class FindBrandRequestDTO {
    *
    * @example "roduct 1"
    */
-  @IsString({ message: TextMessage.STRING })
-  @IsOptional()
-  @Transform((options) => textSearchTransformer(options.value))
-  @Expose()
+  @TextQuery()
   query?: string;
 
   /**

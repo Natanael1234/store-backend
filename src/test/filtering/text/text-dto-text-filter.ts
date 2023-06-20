@@ -1,27 +1,27 @@
 import { TextMessage } from '../../../modules/system/enums/messages/text-messages/text-messages.enum';
 
 export class TestDtoTextFilter {
-  constructor(private readonly defaultDTOData: object) {}
+  constructor() {}
 
   get acceptData() {
     const data = [
       {
         description:
           'should pass validation and transform properties when query is defined',
-        data: { query: 'teste' },
-        expectedResult: { ...this.defaultDTOData, query: 'teste' },
+        data: 'test',
+        expectedData: 'test',
       },
       {
         description:
           'should pass validation and transform properties when query is null',
-        data: { query: null },
-        expectedResult: { ...this.defaultDTOData, query: null },
+        data: null,
+        expectedData: null,
       },
       {
         description:
           'should pass validation and transform properties when query is undefined',
-        data: { query: undefined },
-        expectedResult: { ...this.defaultDTOData, query: undefined },
+        data: undefined,
+        expectedData: undefined,
       },
     ];
     return data;
@@ -31,27 +31,27 @@ export class TestDtoTextFilter {
     const data = [
       {
         description: '"query" is boolean',
-        data: { query: true },
+        data: true,
         constraints: { isString: TextMessage.STRING },
       },
       {
         description: '"query" is number',
-        data: { query: 4334556 },
+        data: 4334556,
         constraints: { isString: TextMessage.STRING },
       },
       {
         description: '"query" is object',
-        data: { query: {} },
+        data: {},
         constraints: { isString: TextMessage.STRING },
       },
       {
         description: '"query" is array',
-        data: { query: [] },
+        data: [],
         constraints: { isString: TextMessage.STRING },
       },
       {
         description: '"query" is boolean',
-        data: { query: true },
+        data: true,
         constraints: { isString: TextMessage.STRING },
       },
     ];
