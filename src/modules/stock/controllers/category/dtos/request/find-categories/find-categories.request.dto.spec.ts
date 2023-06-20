@@ -69,14 +69,18 @@ describe('FindCategoriesRequestDTO', () => {
   });
 
   describe('query', () => {
-    const textFilter = new TestDtoTextFilter(defaultDtoResult);
+    const textFilter = new TestDtoTextFilter();
 
     it.each(textFilter.acceptData)(
       '$description',
-      async ({ data, expectedResult }) => {
-        const dto = plainToInstance(FindCategoriesRequestDTO, data);
-        expect(dto).toEqual(expectedResult);
-        const errors = await validateFirstError(data, FindCategoriesRequestDTO);
+      async ({ data, expectedData }) => {
+        const dtoData = { ...defaultDtoResult, query: data };
+        const dto = plainToInstance(FindCategoriesRequestDTO, dtoData);
+        expect(dto).toEqual({ ...defaultDtoResult, query: expectedData });
+        const errors = await validateFirstError(
+          dtoData,
+          FindCategoriesRequestDTO,
+        );
         expect(errors).toHaveLength(0);
       },
     );
@@ -84,7 +88,11 @@ describe('FindCategoriesRequestDTO', () => {
     it.each(textFilter.errorData)(
       'should fail when $description',
       async ({ data, constraints }) => {
-        const errors = await validateFirstError(data, FindCategoriesRequestDTO);
+        const dtoData = { ...defaultDtoResult, query: data };
+        const errors = await validateFirstError(
+          dtoData,
+          FindCategoriesRequestDTO,
+        );
         expect(errors).toHaveLength(1);
         expect(errors[0].constraints).toEqual(constraints);
       },

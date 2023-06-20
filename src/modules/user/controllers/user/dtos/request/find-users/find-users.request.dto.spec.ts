@@ -62,14 +62,15 @@ describe('FindUserRequestDTO', () => {
   });
 
   describe('query', () => {
-    const textFilter = new TestDtoTextFilter(defaultDtoResult);
+    const textFilter = new TestDtoTextFilter();
 
     it.each(textFilter.acceptData)(
       '$description',
-      async ({ data, expectedResult }) => {
-        const dto = plainToInstance(FindUserRequestDTO, data);
-        expect(dto).toEqual(expectedResult);
-        const errors = await validateFirstError(data, FindUserRequestDTO);
+      async ({ data, expectedData }) => {
+        const dtoData = { ...defaultDtoResult, query: data };
+        const dto = plainToInstance(FindUserRequestDTO, dtoData);
+        expect(dto).toEqual({ ...defaultDtoResult, query: expectedData });
+        const errors = await validateFirstError(dtoData, FindUserRequestDTO);
         expect(errors).toHaveLength(0);
       },
     );
@@ -77,7 +78,8 @@ describe('FindUserRequestDTO', () => {
     it.each(textFilter.errorData)(
       'should fail when $description',
       async ({ data, constraints }) => {
-        const errors = await validateFirstError(data, FindUserRequestDTO);
+        const dtoData = { ...defaultDtoResult, query: data };
+        const errors = await validateFirstError(dtoData, FindUserRequestDTO);
         expect(errors).toHaveLength(1);
         expect(errors[0].constraints).toEqual(constraints);
       },
