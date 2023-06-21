@@ -6,6 +6,7 @@ import { AuthenticationModule } from './modules/authentication/authentication.mo
 import { StockModule } from './modules/stock/stock.module';
 import { DatabaseModule } from './modules/system/database/database.module';
 import { UserModule } from './modules/user/user.module';
+import { ImageModule } from './modules/system/upload/image/image.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { UserModule } from './modules/user/user.module';
     // CachingModule,
     DatabaseModule,
     StockModule,
+    ImageModule,
   ],
   controllers: [AppController],
   providers: [AppService],
