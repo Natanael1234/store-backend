@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { MulterModule } from '@nestjs/platform-express';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TreeRepository } from 'typeorm';
@@ -27,7 +28,9 @@ import { CategoryRepository } from '../modules/stock/repositories/category.repos
 import { BrandService } from '../modules/stock/services/brand/brand.service';
 import { CategoryService } from '../modules/stock/services/category/category.service';
 import { ProductService } from '../modules/stock/services/product/product.service';
+import { CloudStorageModule } from '../modules/system/cloud-storage/cloud-storage.module';
 import { EncryptionService } from '../modules/system/encryption/services/encryption/encryption.service';
+import { ImageController } from '../modules/system/image/controller/image.controller';
 import { UserController } from '../modules/user/controllers/user/user.controller';
 import { RolesGuard } from '../modules/user/guards/roles/roles.guard';
 import { UserEntity } from '../modules/user/models/user/user.entity';
@@ -53,6 +56,15 @@ export async function getTestingModule(
       JwtModule.register({
         secret: JWTConfigs.ACCESS_TOKEN_SECRET,
         signOptions: { expiresIn: JWTConfigs.ACCESS_TOKEN_EXPIRATION },
+      }),
+      MulterModule.register({}),
+      CloudStorageModule.forRoot({
+        endPoint: 'test.com',
+        port: 9000,
+        useSSL: false,
+        accessKey: 'access_key',
+        secretKey: 'secret_key',
+        bucketName: 'test-store-bucket',
       }),
       // CacheModule.register(), // TODO: verificar se não dará conflito com o de produção
       ...(additionalMetadata?.imports || []),
@@ -83,6 +95,7 @@ export async function getTestingModule(
       BrandController,
       ProductController,
       CategoryController,
+      ImageController,
       ...(additionalMetadata?.controllers || []),
     ],
   }).compile();

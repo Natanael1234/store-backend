@@ -20,3 +20,13 @@ process.env.ACCESS_TOKEN_EXPIRATION = envTestParameters.ACCESS_TOKEN_EXPIRATION;
 process.env.REFRESH_TOKEN_SECRET = envTestParameters.REFRESH_TOKEN_SECRET;
 process.env.REFRESH_TOKEN_EXPIRATION =
   envTestParameters.REFRESH_TOKEN_EXPIRATION;
+
+process.env.MINIO_ENDPOINT = envTestParameters.MINIO_ENDPOINT;
+process.env.MINIO_PORT = envTestParameters.MINIO_PORT;
+process.env.MINIO_CONSOLE_PORT = envTestParameters.MINIO_CONSOLE_PORT;
+process.env.MINIO_ACCESS_KEY = envTestParameters.MINIO_ACCESS_KEY;
+process.env.MINIO_SECRET_KEY = envTestParameters.MINIO_SECRET_KEY;
+process.env.MINIO_USER = envTestParameters.MINIO_USER;
+process.env.MINIO_PASSWORD = envTestParameters.MINIO_PASSWORD;
+process.env.MINIO_USE_SSL = envTestParameters.MINIO_USE_SSL;
+process.env.MINIO_BUCKET_NAME = envTestParameters.MINIO_BUCKET_NAME;
