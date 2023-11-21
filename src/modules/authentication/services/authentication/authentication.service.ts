@@ -5,12 +5,12 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { UnprocessableEntityException } from '@nestjs/common/exceptions';
-import { AuthorizationMessage } from '../../../system/enums/messages/authorization-messages/authorization-messages.enum';
-import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
-import { NameMessage } from '../../../system/enums/messages/name-messages/name-messages.enum';
-import { PasswordMessage } from '../../../system/enums/messages/password-messages/password-messages.enum';
-import { UserMessage } from '../../../user/enums/messages/user/user-messages.ts/user-messages.enum';
-import { UserEntity } from '../../../user/models/user/user.entity';
+import { AuthorizationMessage } from '../../../system/messages/authorization/authorization.messages.enum';
+import { EmailMessage } from '../../../system/messages/email/email.messages.enum';
+import { NameMessage } from '../../../system/messages/name/name.messages.enum';
+import { PasswordMessage } from '../../../system/messages/password/password.messages.enum';
+import { UserMessage } from '../../../user/enums/messages/user/user.messages.enum';
+import { User } from '../../../user/models/user/user.entity';
 import { UserService } from '../../../user/services/user/user.service';
 import { LoginRequestDto } from '../../dtos/requests/login/login.request.dto';
 import { RegisterRequestDto } from '../../dtos/requests/register/register.request.dto';
@@ -19,10 +19,10 @@ import { LoginResponseDto } from '../../dtos/responses/login.response.dto';
 import { LogoutResponseDto } from '../../dtos/responses/logout.response.dto';
 import { RefreshResponseDto } from '../../dtos/responses/refresh.response.dto';
 import { RegisterResponseDto } from '../../dtos/responses/register.response.dto';
-import { AccessTokenMessage } from '../../enums/access-token-messages.ts/access-token-messages.enum';
-import { CredentialsMessage } from '../../enums/cretentials-messages.ts/credentials-messages.enum';
-import { RefreshTokenMessage } from '../../enums/refresh-token-messages.ts/refresh-token-messages.enum';
 import { Role } from '../../enums/role/role.enum';
+import { AccessTokenMessage } from '../../messages/access-token/access-token.messages.enum';
+import { CredentialsMessage } from '../../messages/cretentials/credentials.messages.enum';
+import { RefreshTokenMessage } from '../../messages/refresh-token/refresh-token.messages.enum';
 import { TokenService } from '../token/token.service';
 
 @Injectable()
@@ -120,7 +120,7 @@ export class AuthenticationService {
   }
 
   private buildResponsePayload(
-    user: UserEntity,
+    user: User,
     accessToken: string,
     refreshToken?: string,
   ): AuthenticationPayloadDto {

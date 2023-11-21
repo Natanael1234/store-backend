@@ -1,6 +1,6 @@
 import { JwtService } from '@nestjs/jwt';
 
-export function testDecodedAccessToken(decodedAccessToken, userId) {
+export function testDecodedAccessToken(decodedAccessToken, userId: string) {
   expect(decodedAccessToken).toBeDefined();
   expect(decodedAccessToken['sub']).toEqual(`${userId}`);
   expect(decodedAccessToken['exp']).toBeDefined();
@@ -8,7 +8,7 @@ export function testDecodedAccessToken(decodedAccessToken, userId) {
   // TODO: validate times
 }
 
-export function testeDecodedRefreshToken(decodedRefreshToken, userId) {
+export function testeDecodedRefreshToken(decodedRefreshToken, userId: string) {
   expect(decodedRefreshToken).toBeDefined();
   expect(decodedRefreshToken['sub']).toEqual(`${userId}`);
   expect(decodedRefreshToken['iat']).toBeDefined();
@@ -22,7 +22,7 @@ export function testeDecodedRefreshToken(decodedRefreshToken, userId) {
 export function testDecodedTokenPayload(
   jwtService: JwtService,
   payload,
-  userId,
+  userId: string,
 ) {
   expect(payload).toBeDefined();
   expect(payload.type).toEqual('bearer');
@@ -48,9 +48,12 @@ export function testDecodedTokenUser(user, expectedUserData) {
 
 export function testAuthenticationResponse(
   jwtService: JwtService,
-  response,
+  response: {
+    data: { user; payload };
+    status: 'success';
+  },
   expectedUserData: {
-    id: number;
+    id: string;
     name: string;
     email: string;
     active: boolean;

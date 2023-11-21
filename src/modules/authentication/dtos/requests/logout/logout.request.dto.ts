@@ -1,5 +1,5 @@
 import { IsNotEmpty, IsString, Matches } from 'class-validator';
-import { RefreshTokenMessage } from '../../../enums/refresh-token-messages.ts/refresh-token-messages.enum';
+import { RefreshTokenMessage } from '../../../messages/refresh-token/refresh-token.messages.enum';
 import { getJWTTokenRegexp } from '../../refresh-token.regex';
 
 export class LogoutRequestDto {

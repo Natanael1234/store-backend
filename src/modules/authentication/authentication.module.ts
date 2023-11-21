@@ -4,12 +4,12 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EncryptionModule } from '../system/encryption/encryption.module';
-import { UserEntity } from '../user/models/user/user.entity';
+import { User } from '../user/models/user/user.entity';
 import { UserModule } from '../user/user.module';
-import { JWTConfigs } from './configs/jwt.config';
+import { JWTConfigs } from './configs/jwt.configs';
 import { AuthenticationController } from './controllers/auth/authentication.controller';
 import { JwtAuthenticationGuard } from './guards/jwt/jwt-auth.guard';
-import { RefreshTokenEntity } from './models/refresh-token.entity';
+import { RefreshToken } from './models/refresh-token.entity';
 import { RefreshTokenRepository } from './repositories/refresh-token.repository';
 import { AuthenticationService } from './services/authentication/authentication.service';
 import { TokenService } from './services/token/token.service';
@@ -24,7 +24,7 @@ import { LocalStrategy } from './strategies/local/local.strategy';
         expiresIn: JWTConfigs.ACCESS_TOKEN_EXPIRATION,
       },
     }),
-    TypeOrmModule.forFeature([RefreshTokenEntity, UserEntity]),
+    TypeOrmModule.forFeature([RefreshToken, User]),
     UserModule,
     PassportModule,
     // CachingModule,

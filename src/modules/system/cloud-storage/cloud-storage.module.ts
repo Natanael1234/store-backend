@@ -3,7 +3,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import {
   CloudStorageConfigs,
   CloudStorageService,
-} from './services/file/cloud-storage.service';
+} from './services/cloud-storage/cloud-storage.service';
 
 @Module({
   imports: [

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { UserService } from '../../../user/services/user/user.service';
-import { JWTConfigs } from '../../configs/jwt.config';
+import { JWTConfigs } from '../../configs/jwt.configs';
 
 export interface AccessTokenPayload {
   sub: number;

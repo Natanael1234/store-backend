@@ -2,8 +2,10 @@ import { applyDecorators } from '@nestjs/common';
 import { Expose, Transform } from 'class-transformer';
 import { IsEnum } from 'class-validator';
 import { DeletedFilter } from '../../enums/filter/deleted-filter/deleted-filter.enum';
-import { DeletedMessage } from '../../enums/messages/deleted-messages/deleted-messages.enum';
-import { getEnumTransformer } from '../../utils/enum/enum-transformer';
+import { BoolMessage } from '../../messages/bool/bool.messages';
+import { getEnumTransformer } from '../transformers/enum/enum-transformer';
+
+const DeletedMessage = new BoolMessage('deleted');
 
 const deletedEnumTransformer = getEnumTransformer(DeletedFilter, {
   defaultValue: DeletedFilter.NOT_DELETED,

@@ -7,39 +7,39 @@ describe('MinioConfigs', () => {
     expect(MinioCongifs).toBeDefined();
   });
 
-  it('endpoint should be defined', () => {
+  it('ENDPOINT should be defined', () => {
     expect(MinioCongifs.ENDPOINT).toEqual(envTestParameters.MINIO_ENDPOINT);
   });
 
-  it('port should be defined', () => {
+  it('PORT should be defined', () => {
     expect(MinioCongifs.PORT).toEqual(+envTestParameters.MINIO_PORT);
   });
 
-  it('console port should be defined', () => {
+  it('CONSOLE_PORT should be defined', () => {
     expect(MinioCongifs.CONSOLE_PORT).toEqual(
       +envTestParameters.MINIO_CONSOLE_PORT,
     );
   });
 
-  it('use ssl should be defined', () => {
+  it('USE_SSL should be defined', () => {
     expect(MinioCongifs.USE_SSL).toEqual(envTestParameters.MINIO_USE_SSL);
   });
 
-  it('access key should be defined', () => {
+  it('ACCESS_KEY should be defined', () => {
     expect(MinioCongifs.ACCESS_KEY).toEqual(envTestParameters.MINIO_ACCESS_KEY);
   });
 
-  it('secret key should be defined', () => {
+  it('SECRET_KEY should be defined', () => {
     expect(MinioCongifs.SECRET_KEY).toEqual(envTestParameters.MINIO_SECRET_KEY);
   });
 
-  it('bucket name should be defined', () => {
+  it('BUCKET_NAME should be defined', () => {
     expect(MinioCongifs.BUCKET_NAME).toEqual(
       envTestParameters.MINIO_BUCKET_NAME,
     );
   });
 
-  it('publicPolicy method should be defined', () => {
+  it('getPublicReadPolicy method should be defined', () => {
     expect(MinioCongifs.getPublicReadPolicy).toBeDefined();
   });
 

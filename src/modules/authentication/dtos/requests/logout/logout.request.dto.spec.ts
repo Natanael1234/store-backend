@@ -1,7 +1,7 @@
 import { plainToInstance } from 'class-transformer';
+import { validateFirstError } from '../../../../system/utils/validation/validation';
+import { RefreshTokenMessage } from '../../../messages/refresh-token/refresh-token.messages.enum';
 import { LogoutRequestDto } from './logout.request.dto';
-import { validateFirstError } from '../../../../system/utils/validation';
-import { RefreshTokenMessage } from '../../../enums/refresh-token-messages.ts/refresh-token-messages.enum';
 
 describe('LogoutRequestDto', () => {
   it('should pass validation', async () => {
@@ -13,57 +13,45 @@ describe('LogoutRequestDto', () => {
     expect(errors).toHaveLength(0);
   });
 
-  it.each([
-    {
-      refreshTokenDescription: 'number',
-      refreshToken: 2323232,
-      expectedErrors: { isString: RefreshTokenMessage.STRING },
-    },
-    {
-      refreshTokenDescription: 'boolean',
-      refreshToken: true,
-      expectedErrors: { isString: RefreshTokenMessage.STRING },
-    },
-    {
-      refreshTokenDescription: 'array',
-      refreshToken: [],
-      expectedErrors: { isString: RefreshTokenMessage.STRING },
-    },
-    {
-      refreshTokenDescription: 'object',
-      refreshToken: {},
-      expectedErrors: { isString: RefreshTokenMessage.STRING },
-    },
-    {
-      refreshTokenDescription: 'null',
-      refreshToken: null,
-      expectedErrors: { isNotEmpty: RefreshTokenMessage.REQUIRED },
-    },
-    {
-      refreshTokenDescription: 'undefined',
-      refreshToken: undefined,
-      expectedErrors: { isNotEmpty: RefreshTokenMessage.REQUIRED },
-    },
-    {
-      refreshTokenDescription: 'empty',
-      refreshToken: '',
-      expectedErrors: { isNotEmpty: RefreshTokenMessage.REQUIRED },
-    },
-    {
-      refreshTokenDescription: 'invalid',
-      refreshToken: 'invalid_token',
-      expectedErrors: { matches: RefreshTokenMessage.INVALID },
-    },
-  ])(
-    'should fail validation when refreshToken is $refreshTokenDescription',
-    async ({ refreshToken, expectedErrors }) => {
-      const data = { refreshToken };
-      const errors = await validateFirstError(data, LogoutRequestDto);
+  async function testReject(refreshToken, expectedErrors) {
+    const data = { refreshToken };
+    const errors = await validateFirstError(data, LogoutRequestDto);
 
-      expect(errors).toHaveLength(1);
-      expect(errors[0].property).toEqual('refreshToken');
-      expect(errors[0].value).toEqual(data.refreshToken);
-      expect(errors[0].constraints).toEqual(expectedErrors);
-    },
-  );
+    expect(errors).toHaveLength(1);
+    expect(errors[0].property).toEqual('refreshToken');
+    expect(errors[0].value).toEqual(data.refreshToken);
+    expect(errors[0].constraints).toEqual(expectedErrors);
+  }
+
+  it('should fail validation when refreshToken is number', async () => {
+    await testReject(2323232, { isString: RefreshTokenMessage.STRING });
+  });
+
+  it('should fail validation when refreshToken is boolean', async () => {
+    await testReject(true, { isString: RefreshTokenMessage.STRING });
+  });
+
+  it('should fail validation when refreshToken is array', async () => {
+    await testReject([], { isString: RefreshTokenMessage.STRING });
+  });
+
+  it('should fail validation when refreshToken is object', async () => {
+    await testReject({}, { isString: RefreshTokenMessage.STRING });
+  });
+
+  it('should fail validation when refreshToken is null', async () => {
+    await testReject(null, { isNotEmpty: RefreshTokenMessage.REQUIRED });
+  });
+
+  it('should fail validation when refreshToken is undefined', async () => {
+    await testReject(undefined, { isNotEmpty: RefreshTokenMessage.REQUIRED });
+  });
+
+  it('should fail validation when refreshToken is empty', async () => {
+    await testReject('', { isNotEmpty: RefreshTokenMessage.REQUIRED });
+  });
+
+  it('should fail validation when refreshToken is invalid', async () => {
+    await testReject('invalid_token', { matches: RefreshTokenMessage.INVALID });
+  });
 });

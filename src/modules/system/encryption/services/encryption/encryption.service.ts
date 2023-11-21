@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { createDecipheriv, createCipheriv, randomBytes, scrypt } from 'crypto';
+import { createCipheriv, createDecipheriv, randomBytes, scrypt } from 'crypto';
 import { promisify } from 'util';
-import { EncryptationConfigs } from '../../configs/encryptation.config';
+import { EncryptationConfigs } from '../../configs/encryptation.configs';
 import { EncryptedDataDto } from '../../dtos/encrypted-data.dto';
 
 @Injectable()

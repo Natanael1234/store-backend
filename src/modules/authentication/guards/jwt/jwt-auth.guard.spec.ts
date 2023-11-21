@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { UserEntity } from '../../../user/models/user/user.entity';
+import { User } from '../../../user/models/user/user.entity';
 import { JwtAuthenticationGuard } from './jwt-auth.guard';
 
 describe('JwtAutthGuard', () => {
@@ -37,8 +37,8 @@ describe('JwtAutthGuard', () => {
 
   describe('handleRequest', () => {
     it('should return user when only receive user', () => {
-      const user = new UserEntity();
-      user.id = 3;
+      const user = new User();
+      user.id = 'fake-uuid'; // TODO: testar
       const ret = guard.handleRequest(null, user, null);
       expect(ret).toStrictEqual(user);
     });
@@ -50,13 +50,12 @@ describe('JwtAutthGuard', () => {
 
     it('should fail when receive error', () => {
       const fn = () =>
-        guard.handleRequest(new NotFoundException(), new UserEntity(), null);
+        guard.handleRequest(new NotFoundException(), new User(), null);
       expect(fn).toThrow(NotFoundException);
     });
 
     it('should fail when receive info', () => {
-      const fn = () =>
-        guard.handleRequest(null, new UserEntity(), new Error('test'));
+      const fn = () => guard.handleRequest(null, new User(), new Error('test'));
       expect(fn).toThrow(Error);
     });
 
@@ -64,7 +63,7 @@ describe('JwtAutthGuard', () => {
       const fn = () =>
         guard.handleRequest(
           new NotFoundException(),
-          new UserEntity(),
+          new User(),
           new Error('test'),
         );
       expect(fn).toThrow(NotFoundException);

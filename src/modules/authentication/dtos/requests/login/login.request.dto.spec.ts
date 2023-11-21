@@ -1,158 +1,214 @@
-import { EmailMessage } from '../../../../system/enums/messages/email-messages/email-messages.enum';
-import { PasswordMessage } from '../../../../system/enums/messages/password-messages/password-messages.enum';
-import { validateFirstError } from '../../../../system/utils/validation';
+import { TextMessage } from '../../../../system/messages/text/text.messages';
+import { validateFirstError } from '../../../../system/utils/validation/validation';
+import { UserConfigs } from '../../../../user/configs/user/user.configs';
 import { LoginRequestDto } from './login.request.dto';
+
+const { EMAIL_MAX_LENGTH, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } =
+  UserConfigs;
 
 const validate = async (data) => validateFirstError(data, LoginRequestDto);
 
+async function testAccept(data) {
+  const errors = await validate(data);
+  expect(errors).toHaveLength(0);
+}
+
+async function testReject(property, data, expectedErrors) {
+  const errors = await validateFirstError(data, LoginRequestDto);
+  expect(errors).toHaveLength(1);
+  expect(errors[0].property).toEqual(property);
+  expect(errors[0].value).toEqual(data[property]);
+  expect(errors[0].constraints).toEqual(expectedErrors);
+}
+
+const EmailMessage = new TextMessage('email', {
+  maxLength: EMAIL_MAX_LENGTH,
+});
+
+const PasswordMessage = new TextMessage('password', {
+  minLength: PASSWORD_MIN_LENGTH,
+  maxLength: PASSWORD_MAX_LENGTH,
+});
+
 describe('LoginRequestDto', () => {
   it('should pass validation', async () => {
-    const data = { email: 'user@email.com', password: '123456' };
-    const errors = await validate(data);
-
-    expect(errors).toHaveLength(0);
+    await testAccept({ email: 'user@email.com', password: '123456' });
   });
 
   describe('email', () => {
-    it.each([
-      {
-        emailDescription: 'number',
-        email: 2323232,
-        expectedErrors: { isString: EmailMessage.STRING },
-      },
-      {
-        emailDescription: 'boolean',
-        email: true,
-        expectedErrors: { isString: EmailMessage.STRING },
-      },
-      {
-        emailDescription: 'array',
-        email: [],
-        expectedErrors: { isString: EmailMessage.STRING },
-      },
-      {
-        emailDescription: 'object',
-        email: {},
-        expectedErrors: { isString: EmailMessage.STRING },
-      },
-      {
-        emailDescription: 'null',
-        email: null,
-        expectedErrors: { isNotEmpty: EmailMessage.REQUIRED },
-      },
-      {
-        emailDescription: 'undefined',
-        email: undefined,
-        expectedErrors: { isNotEmpty: EmailMessage.REQUIRED },
-      },
-      {
-        emailDescription: 'empty',
-        email: '',
-        expectedErrors: { isNotEmpty: EmailMessage.REQUIRED },
-      },
-      {
-        emailDescription: 'invalid formated',
-        email: 'email.com',
-        expectedErrors: { isEmail: EmailMessage.INVALID },
-      },
-    ])(
-      'should fail when email is $emailDescription',
-      async ({ email, expectedErrors }) => {
-        const data = { email, password: '123456' };
-        const errors = await validateFirstError(data, LoginRequestDto);
-
-        expect(errors).toHaveLength(1);
-        expect(errors[0].property).toEqual('email');
-        expect(errors[0].value).toEqual(data.email);
-        expect(errors[0].constraints).toEqual(expectedErrors);
-      },
-    );
-
-    it('should validate only when the email has less than 60 characters', async () => {
-      const data = [
-        { email: 'x'.repeat(50) + '@email.com', password: 'Ab123*' },
-        { email: 'x'.repeat(51) + '@email.com', password: 'Ab123*' },
-      ];
-
-      const validations = [await validate(data[0]), await validate(data[1])];
-
-      expect(validations[0]).toHaveLength(0);
-      expect(validations[1]).toHaveLength(1);
-      expect(validations[1][0].property).toEqual('email');
-      expect(validations[1][0].value).toEqual(data[1].email);
-      expect(validations[1][0].constraints).toEqual({
-        maxLength: EmailMessage.MAX_LEN,
+    it('should accept when email has maximum allowed length', async () => {
+      await testAccept({
+        email: 'x'.repeat(EMAIL_MAX_LENGTH - 10) + '@email.com',
+        password: 'Ab123*',
       });
+    });
+
+    it('should reject when email is number', async () => {
+      await testReject(
+        'email',
+        { email: 2323232, password: 'Ab123*' },
+        { isText: EmailMessage.INVALID },
+      );
+    });
+
+    it('should reject when email is boolean', async () => {
+      await testReject(
+        'email',
+        { email: true, password: 'Ab123*' },
+        { isText: EmailMessage.INVALID },
+      );
+    });
+
+    it('should reject when email is array', async () => {
+      await testReject(
+        'email',
+        { email: [], password: 'Ab123*' },
+        { isText: EmailMessage.INVALID },
+      );
+    });
+
+    it('should reject when email is object', async () => {
+      await testReject(
+        'email',
+        { email: {}, password: 'Ab123*' },
+        { isText: EmailMessage.INVALID },
+      );
+    });
+
+    it('should reject when email is null', async () => {
+      await testReject(
+        'email',
+        { email: null, password: 'Ab123*' },
+        { isText: EmailMessage.NULL },
+      );
+    });
+
+    it('should reject when email is undefined', async () => {
+      await testReject(
+        'email',
+        { email: undefined, password: 'Ab123*' },
+        { isText: EmailMessage.REQUIRED },
+      );
+    });
+
+    it('should reject when email is empty', async () => {
+      await testReject(
+        'email',
+        { email: '', password: 'Ab123*' },
+        { isText: EmailMessage.INVALID },
+      );
+    });
+
+    it('should reject when email has invalid format', async () => {
+      await testReject(
+        'email',
+        { email: 'email.com', password: 'Ab123*' },
+        { isText: EmailMessage.INVALID },
+      );
+    });
+
+    it('should reject when email longer than allowed', async () => {
+      await testReject(
+        'email',
+        {
+          email: 'x'.repeat(EMAIL_MAX_LENGTH - 10 + 1) + '@email.com',
+          password: 'Ab123*',
+        },
+        { isText: EmailMessage.MAX_LEN },
+      );
     });
   });
 
   describe('password', () => {
-    it.each([
-      {
-        passwordDescription: 'number',
-        password: 2323232,
-        expectedErrors: { isString: PasswordMessage.STRING },
-      },
-      {
-        passwordDescription: 'boolean',
-        password: true,
-        expectedErrors: { isString: PasswordMessage.STRING },
-      },
-      {
-        passwordDescription: 'array',
-        password: [],
-        expectedErrors: { isString: PasswordMessage.STRING },
-      },
-      {
-        passwordDescription: 'object',
-        password: {},
-        expectedErrors: { isString: PasswordMessage.STRING },
-      },
-      {
-        passwordDescription: 'null',
-        password: null,
-        expectedErrors: { isNotEmpty: PasswordMessage.REQUIRED },
-      },
-      {
-        passwordDescription: 'undefined',
-        password: undefined,
-        expectedErrors: { isNotEmpty: PasswordMessage.REQUIRED },
-      },
-      {
-        passwordDescription: 'empty',
-        password: '',
-        expectedErrors: { isNotEmpty: PasswordMessage.REQUIRED },
-      },
-    ])(
-      'should fail validation when password is $passwordDescription',
-      async ({ password, expectedErrors }) => {
-        const data = { email: 'user@email.com', password };
-        const errors = await validate(data);
+    it('should reject when password has min allowed length', async () => {
+      await testAccept({
+        email: 'user@email.com',
+        password: 'Ab1*' + 'x'.repeat(PASSWORD_MIN_LENGTH - 4),
+      });
+    });
 
-        expect(errors).toHaveLength(1);
-        expect(errors[0].property).toEqual('password');
-        expect(errors[0].value).toEqual(data.password);
-        expect(errors[0].constraints).toEqual(expectedErrors);
-      },
-    );
+    it('should reject when password is number', async () => {
+      await testReject(
+        'password',
+        { email: 'user@email.com', password: 2323232 },
+        { isText: PasswordMessage.INVALID },
+      );
+    });
+
+    it('should reject when password is true', async () => {
+      await testReject(
+        'password',
+        { email: 'user@email.com', password: true },
+        { isText: PasswordMessage.INVALID },
+      );
+    });
+
+    it('should reject when password is []', async () => {
+      await testReject(
+        'password',
+        { email: 'user@email.com', password: [] },
+        { isText: PasswordMessage.INVALID },
+      );
+    });
+
+    it('should reject when password is {}', async () => {
+      await testReject(
+        'password',
+        { email: 'user@email.com', password: {} },
+        { isText: PasswordMessage.INVALID },
+      );
+    });
+
+    it('should reject when password is null', async () => {
+      await testReject(
+        'password',
+        { email: 'user@email.com', password: null },
+        { isText: PasswordMessage.NULL },
+      );
+    });
+
+    it('should reject when password is undefined', async () => {
+      await testReject(
+        'password',
+        { email: 'user@email.com', password: undefined },
+        { isText: PasswordMessage.REQUIRED },
+      );
+    });
+
+    it('should reject when password is empty string', async () => {
+      await testReject(
+        'password',
+        { email: 'user@email.com', password: '' },
+        { isText: PasswordMessage.MIN_LEN },
+      );
+    });
+
+    it('should reject when password is longer than allowed', async () => {
+      await testReject(
+        'password',
+        {
+          email: 'user@email.com',
+          password: 'Ab1*' + 'x'.repeat(PASSWORD_MAX_LENGTH - 4 + 1),
+        },
+        { isText: PasswordMessage.MAX_LEN },
+      );
+    });
   });
 
   describe('multiple errors', () => {
-    it('should fail validation when there are multiple errors', async () => {
+    it('should reject when there are multiple errors', async () => {
       const data = { email: '@emailcom', password: '12345' };
       const errors = await validate(data);
-
       expect(errors).toHaveLength(2);
-
       expect(errors[0].property).toEqual('email');
       expect(errors[0].value).toEqual(data.email);
       expect(errors[0].constraints).toEqual({
-        isEmail: EmailMessage.INVALID,
+        isText: EmailMessage.INVALID,
       });
       expect(errors[1].property).toEqual('password');
       expect(errors[1].value).toEqual(data.password);
       expect(errors[1].constraints).toEqual({
-        minLength: PasswordMessage.MIN_LEN,
+        isText: PasswordMessage.MIN_LEN,
       });
     });
   });

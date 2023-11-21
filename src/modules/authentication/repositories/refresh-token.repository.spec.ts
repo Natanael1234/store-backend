@@ -2,57 +2,67 @@ import { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { getTestingModule } from '../../../.jest/test-config.module';
-import { UserMessage } from '../../user/enums/messages/user/user-messages.ts/user-messages.enum';
-import { UserEntity } from '../../user/models/user/user.entity';
-import { RefreshTokenMessage } from '../enums/refresh-token-messages.ts/refresh-token-messages.enum';
+import { EncryptionService } from '../../system/encryption/services/encryption/encryption.service';
+import { UserConstants } from '../../user/constants/user/user-entity.constants';
+import { UserMessage } from '../../user/enums/messages/user/user.messages.enum';
+import { User } from '../../user/models/user/user.entity';
 import { Role } from '../enums/role/role.enum';
-import { RefreshTokenEntity } from '../models/refresh-token.entity';
+import { RefreshTokenMessage } from '../messages/refresh-token/refresh-token.messages.enum';
+import { RefreshToken } from '../models/refresh-token.entity';
 import { RefreshTokenRepository } from './refresh-token.repository';
 
 describe('RefreshTokenRepository', () => {
   let module: TestingModule;
   let refreshTokenRepo: RefreshTokenRepository;
-  let userRepo: Repository<UserEntity>;
-
-  const userData1 = {
-    name: 'User 1',
-    email: 'user1@email.com',
-    roles: [Role.ROOT],
-    hash: { iv: 'bla', encryptedData: 'blabla' },
-  };
-  const userData2 = {
-    name: 'User 2',
-    email: 'user2@email.com',
-    roles: [Role.ADMIN],
-    hash: { iv: 'bla', encryptedData: 'blabla' },
-  };
-  const userData3 = {
-    name: 'User 3',
-    email: 'user3@email.com',
-    roles: [Role.USER],
-    hash: { iv: 'bla', encryptedData: 'blabla' },
-  };
-  const usersData = [userData1, userData2, userData3];
+  let userRepo: Repository<User>;
+  let encryptionService: EncryptionService;
 
   beforeEach(async () => {
     module = await getTestingModule();
     refreshTokenRepo = module.get<RefreshTokenRepository>(
       RefreshTokenRepository,
     );
-    userRepo = module.get<Repository<UserEntity>>(
-      getRepositoryToken(UserEntity),
-    );
+    userRepo = module.get<Repository<User>>(getRepositoryToken(User));
+    encryptionService = module.get<EncryptionService>(EncryptionService);
   });
 
   afterEach(async () => {
     await module.close(); // TODO: é necessário?
   });
 
-  async function createUsers(usersData: any[]) {
-    for (const userData of usersData) {
-      await userRepo.insert(userRepo.create(userData));
+  async function insertUsers(
+    ...users: {
+      name: string;
+      email: string;
+      password: string;
+      active?: boolean;
+      roles: Role[];
+    }[]
+  ) {
+    const ids = [];
+    for (const user of users) {
+      const ret = await userRepo
+        .createQueryBuilder()
+        .insert()
+        .into(User)
+        .values({
+          name: user.name,
+          email: user.email,
+          hash: await encryptionService.encrypt(user.password),
+          roles: user.roles,
+          active: user.active,
+        })
+        .execute();
+      ids.push(ret.identifiers[0].id);
     }
+    return ids;
   }
+
+  type RefreshTokenData = {
+    revoked?: boolean;
+    expiresAt: Date;
+    userId: string;
+  };
 
   async function createRefreshTokens(refreshTokensData: any[]) {
     for (const refreshTokenData of refreshTokensData) {
@@ -60,8 +70,17 @@ describe('RefreshTokenRepository', () => {
     }
   }
 
-  function validateRefreshToken(validationData: any, refreshToken: any) {
-    expect(refreshToken).toBeInstanceOf(RefreshTokenEntity);
+  function testValidateRefreshToken(
+    validationData: {
+      id: number;
+      revoked: boolean;
+      expiresBefore: number;
+      expiresAfter: number;
+      userId: string;
+    },
+    refreshToken: RefreshToken,
+  ) {
+    expect(refreshToken).toBeInstanceOf(RefreshToken);
     expect(refreshToken.id).toBe(validationData.id);
     expect(refreshToken.revoked).toBe(validationData.revoked);
     expect(refreshToken.userId).toBe(validationData.userId);
@@ -81,17 +100,40 @@ describe('RefreshTokenRepository', () => {
     it('should create a refresh token', async () => {
       const ttl = 2000;
       const expiresAfter = new Date().getTime() + ttl;
-      await createUsers(usersData);
-      const users = await userRepo.find();
+
+      const [userId1, userId2, userId3] = await insertUsers(
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          roles: [Role.ROOT],
+          password: 'Abcd*1',
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          roles: [Role.ADMIN],
+          password: 'Abcd*2',
+        },
+        {
+          name: 'User 3',
+          email: 'user3@email.com',
+          roles: [Role.USER],
+          password: 'Abcd*3',
+        },
+      );
+
+      const users = await userRepo
+        .createQueryBuilder(UserConstants.USER)
+        .getMany();
+
       const returnedRefreshToken = await refreshTokenRepo.createRefreshToken(
         users[1],
         2000,
       );
       const expiresBefore = new Date().getTime() + ttl;
       const createdRefreshTokens = await refreshTokenRepo.find({
-        where: { userId: 2 },
+        where: { userId: userId2 },
       });
-
       expect(createRefreshTokens).toHaveLength(1);
       expect(returnedRefreshToken).toBeDefined();
       const validationData = {
@@ -99,10 +141,10 @@ describe('RefreshTokenRepository', () => {
         revoked: false,
         expiresBefore,
         expiresAfter,
-        userId: 2,
+        userId: userId2,
       };
-      await validateRefreshToken(validationData, returnedRefreshToken);
-      await validateRefreshToken(validationData, createdRefreshTokens[0]);
+      await testValidateRefreshToken(validationData, returnedRefreshToken);
+      await testValidateRefreshToken(validationData, createdRefreshTokens[0]);
       expect(returnedRefreshToken.expiresAt).toEqual(
         createdRefreshTokens[0].expiresAt,
       );
@@ -112,15 +154,33 @@ describe('RefreshTokenRepository', () => {
       const ttl1 = 1000;
       const ttl2 = 2000;
       const ttl3 = 3000;
-      await createUsers(usersData);
+      const [userId1, userId2, userId3] = await insertUsers(
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          roles: [Role.ROOT],
+          password: 'Abcd*1',
+          active: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          roles: [Role.ADMIN],
+          password: 'Abcd*2',
+          active: true,
+        },
+        {
+          name: 'User 3',
+          email: 'user3@email.com',
+          roles: [Role.USER],
+          password: 'Abcd*3',
+          active: true,
+        },
+      );
 
-      const validationData = {
-        id: 1,
-        revoked: false,
-        userId: 2,
-      };
-
-      const users = await userRepo.find();
+      const users = await userRepo
+        .createQueryBuilder(UserConstants.USER)
+        .getMany();
 
       const expiresAfter1 = new Date().getTime() + ttl1;
       await refreshTokenRepo.createRefreshToken(users[0], ttl1);
@@ -138,33 +198,33 @@ describe('RefreshTokenRepository', () => {
 
       expect(createdRefreshTokens).toHaveLength(3);
 
-      validateRefreshToken(
+      testValidateRefreshToken(
         {
           id: 1,
           revoked: false,
-          userId: 1,
+          userId: userId1,
           expiresAfter: expiresAfter1,
           expiresBefore: expiresBefore1,
         },
         createdRefreshTokens[0],
       );
 
-      validateRefreshToken(
+      testValidateRefreshToken(
         {
           id: 2,
           revoked: false,
-          userId: 2,
+          userId: userId2,
           expiresAfter: expiresAfter2,
           expiresBefore: expiresBefore2,
         },
         createdRefreshTokens[1],
       );
 
-      validateRefreshToken(
+      testValidateRefreshToken(
         {
           id: 3,
           revoked: false,
-          userId: 2,
+          userId: userId2,
           expiresAfter: expiresAfter3,
           expiresBefore: expiresBefore3,
         },
@@ -185,21 +245,73 @@ describe('RefreshTokenRepository', () => {
 
     it('should fail when user id is undefined', async () => {
       const fn = async () =>
-        refreshTokenRepo.createRefreshToken(new UserEntity(), 1000);
+        refreshTokenRepo.createRefreshToken(new User(), 1000);
       expect(fn()).rejects.toThrow(UserMessage.ID_REQUIRED);
     });
 
     it('should fail when ttl is undefined', async () => {
-      await createUsers(usersData);
-      const user = await userRepo.findOne({ where: { id: 2 } });
+      const [userId1, userId2, userId3] = await insertUsers(
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          roles: [Role.ROOT],
+          password: 'Abcd*1',
+          active: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          roles: [Role.ADMIN],
+          password: 'Abcd*2',
+          active: true,
+        },
+        {
+          name: 'User 3',
+          email: 'user3@email.com',
+          roles: [Role.USER],
+          password: 'Abcd*3',
+          active: true,
+        },
+      );
+
+      const user = await userRepo
+        .createQueryBuilder(UserConstants.USER)
+        .where(UserConstants.USER_ID_EQUALS_TO, { userId: userId2 })
+        .getOne();
+
       const fn = async () =>
         refreshTokenRepo.createRefreshToken(user, undefined);
       expect(fn()).rejects.toThrow('ttl is required');
     });
 
     it('should fail when ttl is null', async () => {
-      await createUsers(usersData);
-      const user = await userRepo.findOne({ where: { id: 2 } });
+      const [userId1, userId2, userId3] = await insertUsers(
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          roles: [Role.ROOT],
+          password: 'Abcd*1',
+          active: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          roles: [Role.ADMIN],
+          password: 'Abcd*2',
+          active: true,
+        },
+        {
+          name: 'User 3',
+          email: 'user3@email.com',
+          roles: [Role.USER],
+          password: 'Abcd*3',
+          active: true,
+        },
+      );
+      const user = await userRepo
+        .createQueryBuilder(UserConstants.USER)
+        .where(UserConstants.USER_ID_EQUALS_TO, { userId: userId2 })
+        .getOne();
       const fn = async () => refreshTokenRepo.createRefreshToken(user, null);
       expect(fn()).rejects.toThrow('ttl is required');
     });
@@ -210,8 +322,33 @@ describe('RefreshTokenRepository', () => {
       const ttl1 = 1000;
       const ttl2 = 2000;
       const ttl3 = 3000;
-      await createUsers(usersData);
-      const users = await userRepo.find();
+
+      const [userId1, userId2, userId3] = await insertUsers(
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          roles: [Role.ROOT],
+          password: 'Abcd*1',
+          active: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          roles: [Role.ADMIN],
+          password: 'Abcd*2',
+          active: true,
+        },
+        {
+          name: 'User 3',
+          email: 'user3@email.com',
+          roles: [Role.USER],
+          password: 'Abcd*3',
+          active: true,
+        },
+      );
+      const users = await userRepo
+        .createQueryBuilder(UserConstants.USER)
+        .getMany();
       const expiresAfter1 = new Date().getTime() + ttl1;
       await refreshTokenRepo.createRefreshToken(users[0], 1000);
       const expiresBefore1 = new Date().getTime() + ttl1;
@@ -226,33 +363,33 @@ describe('RefreshTokenRepository', () => {
       const refreshToken2 = await refreshTokenRepo.findTokenById(2);
       const refreshToken3 = await refreshTokenRepo.findTokenById(3);
 
-      validateRefreshToken(
+      testValidateRefreshToken(
         {
           id: 1,
           revoked: false,
-          userId: 1,
+          userId: userId1,
           expiresAfter: expiresAfter1,
           expiresBefore: expiresBefore1,
         },
         refreshToken1,
       );
 
-      validateRefreshToken(
+      testValidateRefreshToken(
         {
           id: 2,
           revoked: false,
-          userId: 2,
+          userId: userId2,
           expiresAfter: expiresAfter2,
           expiresBefore: expiresBefore2,
         },
         refreshToken2,
       );
 
-      validateRefreshToken(
+      testValidateRefreshToken(
         {
           id: 3,
           revoked: false,
-          userId: 2,
+          userId: userId2,
           expiresAfter: expiresAfter3,
           expiresBefore: expiresBefore3,
         },
@@ -260,18 +397,17 @@ describe('RefreshTokenRepository', () => {
       );
     });
 
-    it('should fail when user id is null', async () => {
+    it('should fail when token  id is null', async () => {
       const fn = async () => await refreshTokenRepo.findTokenById(null);
       await expect(fn()).rejects.toThrow(UserMessage.ID_REQUIRED);
     });
 
-    it('should fail when user id is undefined', async () => {
+    it('should fail when token is undefined', async () => {
       const fn = async () => await refreshTokenRepo.findTokenById(undefined);
       await expect(fn()).rejects.toThrow(UserMessage.ID_REQUIRED);
     });
 
     it('should fail when token is inexistent', async () => {
-      await createUsers(usersData);
       const fn = async () => await refreshTokenRepo.findTokenById(10);
       await expect(fn()).rejects.toThrow(RefreshTokenMessage.NOT_FOUND);
     });

@@ -1,12 +1,13 @@
 import { applyDecorators } from '@nestjs/common';
 import { Expose, Transform } from 'class-transformer';
 import { IsInt } from 'class-validator';
-import { PaginationMessage } from '../../enums/messages/pagination-messages/pagination-messages.enum';
-import { normalizePageValue } from '../../utils/pagination/pagination-transformer';
+import { PaginationMessage } from '../../messages/pagination/pagination.messages.enum';
+import { normalizePageValue } from './transformers/pagination/pagination-transformer';
 
 export function Page() {
   const decorators = applyDecorators(
-    IsInt({ message: PaginationMessage.PAGE_INT }),
+    // TODO: talvez não esteja usando a mensagem pois não ocorre mais erro
+    IsInt({ message: PaginationMessage.PAGE_INVALID }),
     Transform((options) => normalizePageValue(options.obj.page)),
     Expose(),
   );

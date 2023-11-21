@@ -69,16 +69,24 @@ describe('RolesGuard', () => {
     expect(guard.canActivate(mockContext)).toBe(false);
   });
 
-  it.each([
-    { description: 'is null', data: { user: null } },
-    { description: 'is undefined', data: { user: null } },
-    { description: 'is not defined', data: {} },
-  ])('should deny access if user is $description', ({ data }) => {
+  async function testReject(data: { user?: any }) {
     jest
       .spyOn(reflector, 'getAllAndOverride')
       .mockReturnValue([Role.ROOT, Role.ADMIN]);
     mockContext.switchToHttp().getRequest.mockReturnValue(data);
 
     expect(guard.canActivate(mockContext)).toBe(false);
+  }
+
+  it('should deny access if user is null', async () => {
+    await testReject({ user: null });
+  });
+
+  it('should deny access if user is undefined', async () => {
+    await testReject({ user: undefined });
+  });
+
+  it('should deny access if user is not defined', async () => {
+    await testReject({});
   });
 });
