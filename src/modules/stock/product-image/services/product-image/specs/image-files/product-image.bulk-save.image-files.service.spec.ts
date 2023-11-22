@@ -127,8 +127,6 @@ describe('ProductImageService.bulkSave (imageFiles)', () => {
   }
 
   describe('imageFiles', () => {
-    it('should save images when imageFiles is defined and additionalDataDto is not defined', async () => {});
-
     it('should reject when both imageFiles and additionalDataDto are empty (no data to create or update)', async () => {
       const [productId1] = await testBuildProductImageCreationScenario(1);
       const fn = () =>

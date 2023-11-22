@@ -476,5 +476,5 @@ describe('ProductImageService.bulkSave (metadata.delete)', () => {
     });
   });
 
-  it.skip('should allow to save metadatas when the difference in quantidy between created and deleted is allowed', async () => {});
+  it.skip('should allow to save metadatas when the difference in quantity between created and deleted is allowed', async () => {});
 });
