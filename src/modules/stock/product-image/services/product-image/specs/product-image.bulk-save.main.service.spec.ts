@@ -24,7 +24,6 @@ import { ImagesMetadataMessage } from '../../../../../system/decorators/images-m
 import { ExceptionText } from '../../../../../system/messages/exception-text/exception-text.enum';
 import { Brand } from '../../../../brand/models/brand/brand.entity';
 import { CategoryRepository } from '../../../../category/repositories/category.repository';
-import { ProductConstants } from '../../../../product/constants/product/product-entity.constants';
 import { Product } from '../../../../product/models/product/product.entity';
 import { ProductImageConstants } from '../../../constants/product-image/product-image-entity.constants';
 import { ProductImage } from '../../../models/product-image/product-image.entity';
@@ -122,99 +121,6 @@ describe('ProductImageService.bulkSave (main)', () => {
     ].slice(0, quantity);
     const productIds = await insertProducts(...productData);
     return productIds;
-  }
-
-  /**
-   * Create test image update scenario. Create product and related images.
-   * @returns
-   */
-  async function testBuildProductImageUpdateScenario() {
-    // create products and related data
-    const [brandId1, brandId2, brandId3] = await insertBrands(
-      { name: 'Brand 1', active: true },
-      { name: 'Brand 2', active: false },
-      { name: 'Brand 3', active: false },
-    );
-    const [categoryId1, categoryId2, categoryId3, categoryId4] =
-      await insertCategories(
-        { name: 'Category 1', active: true },
-        { name: 'Category 2', active: true, parentPosition: 1 },
-        { name: 'Category 3', active: false, parentPosition: 2 },
-        { name: 'Category 4', active: false, parentPosition: 1 },
-      );
-    const [productId1, productId2, productId3] = await insertProducts(
-      {
-        code: '00000001',
-        name: 'Product 1',
-        model: 'Model 1',
-        price: 50,
-        quantityInStock: 5,
-        active: true,
-        brandId: brandId1,
-        categoryId: categoryId1,
-      },
-      {
-        code: '00000002',
-        name: 'Product 2',
-        model: 'Model 2',
-        price: 100,
-        quantityInStock: 4,
-        active: false,
-        brandId: brandId1,
-        categoryId: categoryId1,
-      },
-      {
-        code: '00000003',
-        name: 'Product 3',
-        model: 'Model 3',
-        price: 20,
-        brandId: brandId2,
-        categoryId: categoryId2,
-      },
-    );
-    const files = await TestImages.buildFiles(3);
-    const ret1_2 = await productImageService.bulkSave(
-      productId1,
-      files.slice(0, 2),
-      {
-        metadatas: [
-          {
-            name: 'Image 1',
-            main: true,
-            active: false,
-            imageIdx: 0,
-          },
-          {
-            name: 'Image 2',
-            main: false,
-            active: true,
-            imageIdx: 1,
-          },
-        ],
-      },
-    );
-    const ret3 = await productImageService.bulkSave(
-      productId2,
-      files.slice(2),
-      {
-        metadatas: [
-          {
-            name: 'Image 3',
-            active: true,
-            imageIdx: 0,
-          },
-        ],
-      },
-    );
-    return await productRepo
-      .createQueryBuilder(ProductConstants.PRODUCT)
-      .leftJoinAndSelect(
-        ProductConstants.PRODUCT_IMAGES,
-        ProductConstants.IMAGES,
-      )
-      .orderBy(ProductConstants.PRODUCT_NAME, SortConstants.ASC)
-      .addOrderBy(ProductConstants.IMAGES_NAME, SortConstants.ASC)
-      .getMany();
   }
 
   it('product image service should be defined', () => {
