@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  HttpStatus,
-  UnprocessableEntityException,
-} from '@nestjs/common';
+import { HttpStatus, UnprocessableEntityException } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -25,13 +21,12 @@ import {
 } from '../../../../../../test/product/test-product-utils';
 import { SortConstants } from '../../../../../system/constants/sort/sort.constants';
 import { ImagesMetadataMessage } from '../../../../../system/decorators/images-metadata/messages/images-metadata/images-metadata.messages.enum';
-import { SaveFileMetadataDto } from '../../../../../system/decorators/images-metadata/save-file-metadata.dto';
 import { ExceptionText } from '../../../../../system/messages/exception-text/exception-text.enum';
 import { Brand } from '../../../../brand/models/brand/brand.entity';
 import { CategoryRepository } from '../../../../category/repositories/category.repository';
 import { ProductConstants } from '../../../../product/constants/product/product-entity.constants';
 import { Product } from '../../../../product/models/product/product.entity';
-import { ProductImageConfigs } from '../../../configs/product-image/product-image.configs';
+import { ProductImageConstants } from '../../../constants/product-image/product-image-entity.constants';
 import { ProductImage } from '../../../models/product-image/product-image.entity';
 import { ProductImageService } from '../product-image.service';
 
@@ -226,7 +221,7 @@ describe('ProductImageService.bulkSave (main)', () => {
     expect(productImageService).toBeDefined();
   });
 
-  it.skip('should both create and update images of a product', async () => {
+  it('should both create and update images of a product', async () => {
     const [productId1, productId2] =
       await testBuildProductImageCreationScenario(2);
     const files = await TestImages.buildFiles(3);
@@ -236,7 +231,8 @@ describe('ProductImageService.bulkSave (main)', () => {
       {
         metadatas: [
           {
-            name: 'name 1',
+            imageIdx: 0,
+            name: 'Image 1',
             description: 'description 1',
             active: true,
             main: true,
@@ -246,19 +242,22 @@ describe('ProductImageService.bulkSave (main)', () => {
     );
     const imagesProduct2 = await productImageService.bulkSave(
       productId1,
-      files.slice(1, 2),
+      files.slice(1, 3), // one image with metadata and one image without metadata
       {
         metadatas: [
+          // create
           {
-            name: 'name 2',
+            imageIdx: 0,
+            name: 'Image 2',
             description: 'description 2',
             main: true,
             active: true,
           },
+          // update
           {
             imageId: imagesProduct1[0].id,
-            name: 'new name 1',
-            description: 'new description 1',
+            name: 'Image 1b',
+            description: 'description 1b',
             main: false,
             active: false,
           },
@@ -297,6 +296,20 @@ describe('ProductImageService.bulkSave (main)', () => {
         extension: 'jpeg',
         size: 5215,
       },
+      // image 3
+      {
+        productId: productId1,
+        isThumbnail: false,
+        extension: 'jpg',
+        size: 5921,
+      },
+      // thumbnail 3
+      {
+        productId: productId1,
+        isThumbnail: true,
+        extension: 'jpeg',
+        size: 2709,
+      },
     ];
 
     function validateBucket(
@@ -329,8 +342,17 @@ describe('ProductImageService.bulkSave (main)', () => {
         id: productId1,
         images: [
           {
-            name: 'new name 1',
-            description: 'new description 1',
+            name: null,
+            description: null,
+            image: bucket[4].name,
+            thumbnail: bucket[5].name,
+            main: false,
+            active: false,
+            productId: productId1,
+          },
+          {
+            name: 'Image 1b',
+            description: 'description 1b',
             image: bucket[0].name,
             thumbnail: bucket[1].name,
             main: false,
@@ -338,7 +360,7 @@ describe('ProductImageService.bulkSave (main)', () => {
             productId: productId1,
           },
           {
-            name: 'name 2',
+            name: 'Image 2',
             description: 'description 2',
             image: bucket[2].name,
             thumbnail: bucket[3].name,
@@ -360,7 +382,10 @@ describe('ProductImageService.bulkSave (main)', () => {
 
     // registers in database
 
-    const imageRegisters = await productImageRepo.find({});
+    const imageRegisters = await productImageRepo
+      .createQueryBuilder(ProductImageConstants.PRODUCT_IMAGE)
+      .orderBy(ProductImageConstants.PRODUCT_IMAGE_NAME, SortConstants.ASC)
+      .getMany();
 
     testValidateProductImages(imageRegisters, expectedRegisterData[0].images);
   });
@@ -504,41 +529,6 @@ describe('ProductImageService.bulkSave (main)', () => {
         error: ExceptionText.UNPROCESSABLE_ENTITY,
         message: ImagesMetadataMessage.IMAGE_OR_METADATA_NOT_DEFINED,
         statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-      });
-    }
-  });
-
-  it.skip('should reject when creating and updading more images than allowed', async () => {
-    const [productId1] = await testBuildProductImageCreationScenario(1);
-    const imageFiles = await TestImages.buildFiles(
-      ProductImageConfigs.MAX_IMAGE_COUNT + 1,
-    );
-    const metadatas: SaveFileMetadataDto[] = [];
-    for (let i = 0; i < imageFiles.length; i++) {
-      metadatas.push({
-        name: `Image ${i + 1}`,
-        description: `Description ${i + 1}`,
-        imageIdx: i,
-      });
-    }
-    const imagesBefore = await productImageRepo.find();
-    const fn = () =>
-      productImageService.bulkSave(productId1, imageFiles, {
-        metadatas,
-      });
-    // TODO: move to constants
-    const expectedMessage = `Maximum number of images reached. A product can have a maximum of ${ProductImageConfigs.MAX_IMAGE_COUNT} images`;
-    await expect(fn()).rejects.toThrow(BadRequestException);
-    const imagesAfter = await productImageRepo.find();
-    expect(imagesBefore).toStrictEqual(imagesAfter);
-    await expect(fn()).rejects.toThrow(expectedMessage);
-    try {
-      await fn();
-    } catch (ex) {
-      expect(ex.response).toEqual({
-        error: ExceptionText.BAD_REQUEST,
-        message: expectedMessage,
-        statusCode: HttpStatus.BAD_REQUEST,
       });
     }
   });
