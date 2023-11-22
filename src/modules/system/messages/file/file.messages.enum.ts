@@ -15,5 +15,6 @@ export enum FileMessage {
   INVALID_DIRECTORY_NAME = 'Invalid directory name',
 
   FILE_METADATA_NOT_DEFINED = 'File metadata not defined',
+  // TODO: necessário?
   AMOUNT_OF_METADATA_DIFFERENT_FROM_THE_AMOUNT_OF_FILES = 'Amount of metadata different from the amount of files',
 }

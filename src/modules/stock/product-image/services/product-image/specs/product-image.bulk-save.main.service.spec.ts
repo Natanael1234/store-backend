@@ -390,7 +390,7 @@ describe('ProductImageService.bulkSave (main)', () => {
     testValidateProductImages(imageRegisters, expectedRegisterData[0].images);
   });
 
-  it.skip('should reject when both imageFiles and metadatas are empty', async () => {
+  it('should reject when both imageFiles and metadatas are empty', async () => {
     // create test scenario
 
     const [productId1, productId2] =
@@ -402,8 +402,9 @@ describe('ProductImageService.bulkSave (main)', () => {
     await productImageService.bulkSave(productId1, files.slice(0, 1), {
       metadatas: [
         {
-          name: 'name 1',
-          description: 'description 1',
+          imageIdx: 0,
+          name: 'Image 1',
+          description: 'Description 1',
           active: true,
           main: true,
         },

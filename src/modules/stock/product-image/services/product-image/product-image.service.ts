@@ -343,13 +343,13 @@ export class ProductImageService {
       throw new UnprocessableEntityException(FileMessage.EMPTY_FILE_LIST);
     }
 
-    if (additionalDataDto.metadatas) {
-      if (additionalDataDto.metadatas.length != imageFiles.length) {
-        throw new UnprocessableEntityException(
-          FileMessage.AMOUNT_OF_METADATA_DIFFERENT_FROM_THE_AMOUNT_OF_FILES,
-        );
-      }
-    }
+    // if (additionalDataDto.metadatas) {
+    //   if (additionalDataDto.metadatas.length != imageFiles.length) {
+    //     throw new UnprocessableEntityException(
+    //       FileMessage.AMOUNT_OF_METADATA_DIFFERENT_FROM_THE_AMOUNT_OF_FILES,
+    //     );
+    //   }
+    // }
     if (!additionalDataDto.metadatas) {
       // if received file data but not file metadata create metadatas to each file
       additionalDataDto.metadatas = [];
