@@ -280,54 +280,40 @@ describe('ProductImageService.bulkSave (metadata.imageId)', () => {
     expect(bucket).toHaveLength(6);
     const savedFilenames = [...new Set(bucket.map((item) => item.name))];
     expect(savedFilenames).toHaveLength(bucket.length);
+
+    const images = await getImages();
     testValidateBuckedItems(
       [
         // image 1
         {
-          productId: product1.id,
-          isThumbnail: false,
-          extension: 'jpg',
+          path: `/private/products/${product1.id}/images/${images[0].id}.jpg`,
           size: 5921,
         },
         {
-          productId: product1.id,
-          isThumbnail: true,
-          extension: 'jpeg',
+          path: `/private/products/${product1.id}/images/${images[0].id}.thumbnail.jpeg`,
           size: 2709,
         },
         // image 2
         {
-          productId: product1.id,
-          isThumbnail: false,
-          extension: 'png',
+          path: `/public/products/${product1.id}/images/${images[1].id}.png`,
           size: 191777,
         },
         {
-          productId: product1.id,
-          isThumbnail: true,
-          extension: 'jpeg',
+          path: `/public/products/${product1.id}/images/${images[1].id}.thumbnail.jpeg`,
           size: 5215,
         },
         // image 3
         {
-          productId: product2.id,
-          isThumbnail: false,
-          extension: 'jpg',
+          path: `/public/products/${product2.id}/images/${images[2].id}.jpg`,
           size: 5921,
         },
         {
-          productId: product2.id,
-          isThumbnail: true,
-          extension: 'jpeg',
+          path: `/public/products/${product2.id}/images/${images[2].id}.thumbnail.jpeg`,
           size: 2709,
         },
       ],
       bucket,
     );
-    const images = await productImageRepo
-      .createQueryBuilder(ProductImageConstants.PRODUCT_IMAGE)
-      .orderBy(ProductImageConstants.PRODUCT_IMAGE_NAME, SortConstants.ASC)
-      .getMany();
 
     // reorder items to match name sort order
     testValidateProductImages(images, [
@@ -376,54 +362,39 @@ describe('ProductImageService.bulkSave (metadata.imageId)', () => {
     expect(bucket).toHaveLength(6);
     const savedFilenames = [...new Set(bucket.map((item) => item.name))];
     expect(savedFilenames).toHaveLength(bucket.length);
+    const images = await getImages();
     testValidateBuckedItems(
       [
         // image 1
         {
-          productId: product1.id,
-          isThumbnail: false,
-          extension: 'jpg',
+          path: `/private/products/${product1.id}/images/${images[0].id}.jpg`,
           size: 5921,
         },
         {
-          productId: product1.id,
-          isThumbnail: true,
-          extension: 'jpeg',
+          path: `/private/products/${product1.id}/images/${images[0].id}.thumbnail.jpeg`,
           size: 2709,
         },
         // image 2
         {
-          productId: product1.id,
-          isThumbnail: false,
-          extension: 'png',
+          path: `/public/products/${product1.id}/images/${images[1].id}.png`,
           size: 191777,
         },
         {
-          productId: product1.id,
-          isThumbnail: true,
-          extension: 'jpeg',
+          path: `/public/products/${product1.id}/images/${images[1].id}.thumbnail.jpeg`,
           size: 5215,
         },
         // image 3
         {
-          productId: product2.id,
-          isThumbnail: false,
-          extension: 'jpg',
+          path: `/public/products/${product2.id}/images/${images[2].id}.jpg`,
           size: 5921,
         },
         {
-          productId: product2.id,
-          isThumbnail: true,
-          extension: 'jpeg',
+          path: `/public/products/${product2.id}/images/${images[2].id}.thumbnail.jpeg`,
           size: 2709,
         },
       ],
       bucket,
     );
-    const images = await productImageRepo
-      .createQueryBuilder(ProductImageConstants.PRODUCT_IMAGE)
-      .orderBy(ProductImageConstants.PRODUCT_IMAGE_NAME, SortConstants.ASC)
-      .getMany();
 
     // reorder items to match name sort order
     testValidateProductImages(images, [

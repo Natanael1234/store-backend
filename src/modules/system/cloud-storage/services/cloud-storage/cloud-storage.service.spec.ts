@@ -71,20 +71,20 @@ describe('CloudStorageService', () => {
       const [file1, file2] = await TestImages.buildFiles(2);
       const ret1 = await fileService.save(
         file1,
-        'test/images/33445-342455.jpg',
+        '/public/test/images/33445-342455.jpg',
       );
       expect(ret1).toEqual(undefined);
       const ret2 = await fileService.save(
         file2,
-        'test/images/45367-324565465.png',
+        '/public/test/images/45367-324565465.png',
       );
       expect(ret2).toEqual(undefined);
       validateBuckets([
         {
           name: 'test-store-bucket',
           expectedFiles: [
-            { name: 'test/images/33445-342455.jpg', size: 5921 },
-            { name: 'test/images/45367-324565465.png', size: 191777 },
+            { name: '/public/test/images/33445-342455.jpg', size: 5921 },
+            { name: '/public/test/images/45367-324565465.png', size: 191777 },
           ],
         },
       ]);
@@ -92,34 +92,43 @@ describe('CloudStorageService', () => {
 
     describe('files', () => {
       it('should reject when file is null', async () => {
-        const fn = () => fileService.save(null, 'test/images');
+        const fn = () => fileService.save(null, '/public/test/images');
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_DATA_REQUIRED);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
       });
 
       it('should reject when file is undefined', async () => {
-        const fn = () => fileService.save(undefined, 'test/images');
+        const fn = () => fileService.save(undefined, '/public/test/images');
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_DATA_REQUIRED);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
       });
 
       it('should reject when file is int', async () => {
         const fn = () =>
-          fileService.save(1 as unknown as Express.Multer.File, 'test/images');
+          fileService.save(
+            1 as unknown as Express.Multer.File,
+            '/public/test/images',
+          );
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_DATA_INVALID);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
       });
 
       it('should reject when file is boolean', async () => {
         const fn = () =>
-          fileService.save([] as unknown as Express.Multer.File, 'test/images');
+          fileService.save(
+            [] as unknown as Express.Multer.File,
+            '/public/test/images',
+          );
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_DATA_INVALID);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
       });
 
       it('should reject when file is object', async () => {
         const fn = () =>
-          fileService.save({} as unknown as Express.Multer.File, 'test/images');
+          fileService.save(
+            {} as unknown as Express.Multer.File,
+            '/public/test/images',
+          );
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_DATA_INVALID);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
       });
@@ -128,7 +137,7 @@ describe('CloudStorageService', () => {
         const fn = () =>
           fileService.save(
             'invalid' as unknown as Express.Multer.File,
-            'test/images',
+            '/public/test/images',
           );
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_DATA_INVALID);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
@@ -138,7 +147,7 @@ describe('CloudStorageService', () => {
         const fn = () =>
           fileService.save(
             true as unknown as Express.Multer.File,
-            'test/images',
+            '/public/test/images',
           );
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_DATA_INVALID);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
@@ -147,7 +156,7 @@ describe('CloudStorageService', () => {
       it('should reject when file buffer has wrong type', async () => {
         const [file1] = await TestImages.buildFiles(1);
         file1.buffer = true as unknown as Buffer;
-        const fn = () => fileService.save(file1, 'test/images');
+        const fn = () => fileService.save(file1, '/public/test/images');
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_DATA_INVALID);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         expect(Object.values(Client._getBucketsSnapshot())).toHaveLength(0);
@@ -216,28 +225,31 @@ describe('CloudStorageService', () => {
   describe('list', () => {
     it('should list files and directories inside a directory', async () => {
       const files = await TestImages.buildFiles(5);
-      await fileService.save(files[0], 'test/3424-34255.jpg');
-      await fileService.save(files[1], 'test/324554-354365.png');
-      await fileService.save(files[2], 'test/images/342845954-3423456.jpg');
+      await fileService.save(files[0], '/public/test/3424-34255.jpg');
+      await fileService.save(files[1], '/public/test/324554-354365.png');
+      await fileService.save(
+        files[2],
+        '/public/test/images/342845954-3423456.jpg',
+      );
       await fileService.save(
         files[3],
-        'test/images/somedirectory/344234-34344.png',
+        '/public/test/images/somedirectory/344234-34344.png',
       );
       await fileService.save(
         files[4],
-        'test/images/somedirectory/342345-3245.png',
+        '/public/test/images/somedirectory/342345-3245.png',
       );
 
-      const ret = await fileService.list('test/images/');
+      const ret = await fileService.list('/public/test/images/');
 
       expect(ret).toEqual([
-        'test/images/342845954-3423456.jpg',
-        'test/images/somedirectory/',
+        '/public/test/images/342845954-3423456.jpg',
+        '/public/test/images/somedirectory/',
       ]);
     });
 
     it('should return empty list when directory does not exists', async () => {
-      const ret = await fileService.list('test/images');
+      const ret = await fileService.list('/public/test/images');
       expect(ret).toEqual([]);
     });
 
@@ -271,6 +283,8 @@ describe('CloudStorageService', () => {
       await expect(fn()).rejects.toThrow(StorageMessage.DIRECTORY_INVALID);
     });
 
+    it.skip('should reject when directory is invalid string', async () => {});
+
     it('should reject when directory is object', async () => {
       const fn = () => fileService.list({} as unknown as string);
       await expect(fn()).rejects.toThrow(UnprocessableEntityException);
@@ -281,9 +295,9 @@ describe('CloudStorageService', () => {
   describe('get', () => {
     it('should get object ', async () => {
       const files = await TestImages.buildFiles(2);
-      await fileService.save(files[0], 'test/3424-34255.jpg');
-      await fileService.save(files[1], 'test/324554-354365.png');
-      const objects = await fileService.list('test');
+      await fileService.save(files[0], '/public/test/3424-34255.jpg');
+      await fileService.save(files[1], '/public/test/324554-354365.png');
+      const objects = await fileService.list('/public/test');
       const buffers = [
         await fileService.get(objects[0]),
         await fileService.get(objects[1]),
@@ -298,8 +312,8 @@ describe('CloudStorageService', () => {
 
     it('should reject when file does not exists', async () => {
       const [file] = await TestImages.buildFiles(1);
-      await fileService.save(file, 'test/3424-34255.jpg');
-      const fn = () => fileService.get('test/inexsistent.jpg');
+      await fileService.save(file, '/public/test/3424-34255.jpg');
+      const fn = () => fileService.get('/public/test/inexsistent.jpg');
       await expect(fn()).rejects.toThrow(NotFoundException);
       await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NOT_FOUND);
     });
@@ -307,7 +321,7 @@ describe('CloudStorageService', () => {
     describe('objectName', () => {
       it('should reject when objectName is null', async () => {
         const [file] = await TestImages.buildFiles(1);
-        await fileService.save(file, 'test/3424-34255.jpg');
+        await fileService.save(file, '/public/test/3424-34255.jpg');
         const fn = () => fileService.get(null);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_REQUIRED);
@@ -315,7 +329,7 @@ describe('CloudStorageService', () => {
 
       it('should reject when objectName is undefined', async () => {
         const [file] = await TestImages.buildFiles(1);
-        await fileService.save(file, 'test/3424-34255.jpg');
+        await fileService.save(file, '/public/test/3424-34255.jpg');
         const fn = () => fileService.get(undefined);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_REQUIRED);
@@ -323,7 +337,7 @@ describe('CloudStorageService', () => {
 
       it('should reject when objectName is number', async () => {
         const [file] = await TestImages.buildFiles(1);
-        await fileService.save(file, 'test/3424-34255.jpg');
+        await fileService.save(file, '/public/test/3424-34255.jpg');
         const fn = () => fileService.get(1 as unknown as string);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_INVALID);
@@ -331,7 +345,7 @@ describe('CloudStorageService', () => {
 
       it('should reject when objectName is boolean', async () => {
         const [file] = await TestImages.buildFiles(1);
-        await fileService.save(file, 'test/3424-34255.jpg');
+        await fileService.save(file, '/public/test/3424-34255.jpg');
         const fn = () => fileService.get(true as unknown as string);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_INVALID);
@@ -339,7 +353,7 @@ describe('CloudStorageService', () => {
 
       it('should reject when objectName is array', async () => {
         const [file] = await TestImages.buildFiles(1);
-        await fileService.save(file, 'test/3424-34255.jpg');
+        await fileService.save(file, '/public/test/3424-34255.jpg');
         const fn = () => fileService.get([] as unknown as string);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_INVALID);
@@ -347,7 +361,7 @@ describe('CloudStorageService', () => {
 
       it('should reject when objectName is object', async () => {
         const [file] = await TestImages.buildFiles(1);
-        await fileService.save(file, 'test/3424-34255.jpg');
+        await fileService.save(file, '/public/test/3424-34255.jpg');
         const fn = () => fileService.get({} as unknown as string);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_INVALID);
@@ -364,16 +378,19 @@ describe('CloudStorageService', () => {
 
     it('should delete files', async () => {
       const files = await TestImages.buildFiles(5);
-      await fileService.save(files[0], 'test/3424-34255.jpg');
-      await fileService.save(files[1], 'test/324554-354365.png');
-      await fileService.save(files[2], 'test/images/342845954-3423456.jpg');
+      await fileService.save(files[0], '/public/test/3424-34255.jpg');
+      await fileService.save(files[1], '/public/test/324554-354365.png');
+      await fileService.save(
+        files[2],
+        '/public/test/images/342845954-3423456.jpg',
+      );
       await fileService.save(
         files[3],
-        'test/images/somedirectory/344234-34344.png',
+        '/public/test/images/somedirectory/344234-34344.png',
       );
       await fileService.save(
         files[4],
-        'test/images/somedirectory/342345-3245.png',
+        '/public/test/images/somedirectory/342345-3245.png',
       );
       const fileBefore = listFiles();
       const ret = await fileService.delete([fileBefore[2]]);
@@ -389,19 +406,24 @@ describe('CloudStorageService', () => {
 
     it('should not fail when fails does not exists', async () => {
       const files = await TestImages.buildFiles(5);
-      await fileService.save(files[0], 'test/3424-34255.jpg');
-      await fileService.save(files[1], 'test/324554-354365.png');
-      await fileService.save(files[2], 'test/images/342845954-3423456.jpg');
+      await fileService.save(files[0], '/public/test/3424-34255.jpg');
+      await fileService.save(files[1], '/public/test/324554-354365.png');
+      await fileService.save(
+        files[2],
+        '/public/test/images/342845954-3423456.jpg',
+      );
       await fileService.save(
         files[3],
-        'test/images/somedirectory/344234-34344.png',
+        '/public/test/images/somedirectory/344234-34344.png',
       );
       await fileService.save(
         files[4],
-        'test/images/somedirectory/342345-3245.png',
+        '/public/test/images/somedirectory/342345-3245.png',
       );
       const fileBefore = listFiles();
-      const ret = await fileService.delete(['test/inexistent-file.jpg']);
+      const ret = await fileService.delete([
+        '/public/test/inexistent-file.jpg',
+      ]);
       expect(ret).toBeUndefined();
       const filesAfter = listFiles();
       expect(filesAfter).toEqual(fileBefore);
@@ -410,8 +432,11 @@ describe('CloudStorageService', () => {
     describe('objectIList', () => {
       it('should reject when objectsList parameter is null', async () => {
         const files = await TestImages.buildFiles(2);
-        await fileService.save(files[0], 'test/3424-34255.jpg');
-        await fileService.save(files[1], 'test/images/342845954-3423456.jpg');
+        await fileService.save(files[0], '/public/test/3424-34255.jpg');
+        await fileService.save(
+          files[1],
+          '/public/test/images/342845954-3423456.jpg',
+        );
         const filesBefore = listFiles();
         const fn = () => fileService.delete(null);
         await expect(fn()).rejects.toThrow(
@@ -424,8 +449,11 @@ describe('CloudStorageService', () => {
 
       it('should reject when objectsList parameter is undeined', async () => {
         const files = await TestImages.buildFiles(2);
-        await fileService.save(files[0], 'test/3424-34255.jpg');
-        await fileService.save(files[1], 'test/images/342845954-3423456.jpg');
+        await fileService.save(files[0], '/public/test/3424-34255.jpg');
+        await fileService.save(
+          files[1],
+          '/public/test/images/342845954-3423456.jpg',
+        );
         const filesBefore = listFiles();
         const fn = () => fileService.delete(undefined);
         await expect(fn()).rejects.toThrow(
@@ -438,8 +466,11 @@ describe('CloudStorageService', () => {
 
       it('should reject when objectsList parameter is number', async () => {
         const files = await TestImages.buildFiles(2);
-        await fileService.save(files[0], 'test/3424-34255.jpg');
-        await fileService.save(files[1], 'test/images/342845954-3423456.jpg');
+        await fileService.save(files[0], '/public/test/3424-34255.jpg');
+        await fileService.save(
+          files[1],
+          '/public/test/images/342845954-3423456.jpg',
+        );
         const filesBefore = listFiles();
         const fn = () => fileService.delete(1 as unknown as string[]);
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_INVALID);
@@ -450,8 +481,11 @@ describe('CloudStorageService', () => {
 
       it('should reject when objectsList parameter is boolean', async () => {
         const files = await TestImages.buildFiles(2);
-        await fileService.save(files[0], 'test/3424-34255.jpg');
-        await fileService.save(files[1], 'test/images/342845954-3423456.jpg');
+        await fileService.save(files[0], '/public/test/3424-34255.jpg');
+        await fileService.save(
+          files[1],
+          '/public/test/images/342845954-3423456.jpg',
+        );
         const filesBefore = listFiles();
         const fn = () => fileService.delete(true as unknown as string[]);
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_INVALID);
@@ -462,8 +496,11 @@ describe('CloudStorageService', () => {
 
       it('should reject when objectsList parameter is string', async () => {
         const files = await TestImages.buildFiles(2);
-        await fileService.save(files[0], 'test/3424-34255.jpg');
-        await fileService.save(files[1], 'test/images/342845954-3423456.jpg');
+        await fileService.save(files[0], '/public/test/3424-34255.jpg');
+        await fileService.save(
+          files[1],
+          '/public/test/images/342845954-3423456.jpg',
+        );
         const filesBefore = listFiles();
         const fn = () => fileService.delete('[]' as unknown as string[]);
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_INVALID);
@@ -474,8 +511,11 @@ describe('CloudStorageService', () => {
 
       it('should reject when objectsList parameter is object', async () => {
         const files = await TestImages.buildFiles(2);
-        await fileService.save(files[0], 'test/3424-34255.jpg');
-        await fileService.save(files[1], 'test/images/342845954-3423456.jpg');
+        await fileService.save(files[0], '/public/test/3424-34255.jpg');
+        await fileService.save(
+          files[1],
+          '/public/test/images/342845954-3423456.jpg',
+        );
         const filesBefore = listFiles();
         const fn = () => fileService.delete({} as unknown as string[]);
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_INVALID);
@@ -488,7 +528,7 @@ describe('CloudStorageService', () => {
     describe('objectList item', () => {
       it('should reject when a item of objects parameter is null', async () => {
         const [file] = await TestImages.buildFiles(1);
-        await fileService.save(file, 'test/3424-34255.jpg');
+        await fileService.save(file, '/public/test/3424-34255.jpg');
         const filesBefore = listFiles();
         const fn = () => fileService.delete([null]);
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_REQUIRED);
@@ -499,7 +539,7 @@ describe('CloudStorageService', () => {
 
       it('should reject when a item of objects parameter is undefined', async () => {
         const [file] = await TestImages.buildFiles(1);
-        await fileService.save(file, 'test/3424-34255.jpg');
+        await fileService.save(file, '/public/test/3424-34255.jpg');
         const filesBefore = listFiles();
         const fn = () => fileService.delete([undefined]);
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_REQUIRED);
@@ -510,7 +550,7 @@ describe('CloudStorageService', () => {
 
       it('should reject when a item of objects parameter item is mumber', async () => {
         const [file] = await TestImages.buildFiles(1);
-        await fileService.save(file, 'test/3424-34255.jpg');
+        await fileService.save(file, '/public/test/3424-34255.jpg');
         const filesBefore = listFiles();
         const fn = () => fileService.delete([1 as unknown as string]);
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_INVALID);
@@ -521,7 +561,7 @@ describe('CloudStorageService', () => {
 
       it('should reject when a item of objects parameter item is boolean', async () => {
         const [file] = await TestImages.buildFiles(1);
-        await fileService.save(file, 'test/3424-34255.jpg');
+        await fileService.save(file, '/public/test/3424-34255.jpg');
         const filesBefore = listFiles();
         const fn = () => fileService.delete([true as unknown as string]);
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_INVALID);
@@ -532,7 +572,7 @@ describe('CloudStorageService', () => {
 
       it('should reject when a item of objects parameter item is array', async () => {
         const [file] = await TestImages.buildFiles(1);
-        await fileService.save(file, 'test/3424-34255.jpg');
+        await fileService.save(file, '/public/test/3424-34255.jpg');
         const filesBefore = listFiles();
         const fn = () => fileService.delete([[] as unknown as string]);
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_INVALID);
@@ -543,7 +583,7 @@ describe('CloudStorageService', () => {
 
       it('should reject when a item of objects parameter item is object', async () => {
         const [file] = await TestImages.buildFiles(1);
-        await fileService.save(file, 'test/3424-34255.jpg');
+        await fileService.save(file, '/public/test/3424-34255.jpg');
         const filesBefore = listFiles();
         const fn = () => fileService.delete([{} as unknown as string]);
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_INVALID);
@@ -557,20 +597,23 @@ describe('CloudStorageService', () => {
   describe('copy', () => {
     it('should copy a file', async () => {
       const [file1, file2] = await TestImages.buildFiles(2);
-      await fileService.save(file1, 'test/images/33445-342455.jpg');
-      await fileService.save(file2, 'test/images/45367-324565465.png');
+      await fileService.save(file1, '/public/test/images/33445-342455.jpg');
+      await fileService.save(file2, '/public/test/images/45367-324565465.png');
       const ret = await fileService.copy(
-        'test/images/subfolder/23434554-34645.jpg',
-        'test/images/33445-342455.jpg',
+        '/public/test/images/subfolder/23434554-34645.jpg',
+        '/public/test/images/33445-342455.jpg',
       );
       expect(ret).toBeUndefined();
       validateBuckets([
         {
           name: 'test-store-bucket',
           expectedFiles: [
-            { name: 'test/images/33445-342455.jpg', size: 5921 },
-            { name: 'test/images/45367-324565465.png', size: 191777 },
-            { name: 'test/images/subfolder/23434554-34645.jpg', size: 5921 },
+            { name: '/public/test/images/33445-342455.jpg', size: 5921 },
+            { name: '/public/test/images/45367-324565465.png', size: 191777 },
+            {
+              name: '/public/test/images/subfolder/23434554-34645.jpg',
+              size: 5921,
+            },
           ],
         },
       ]);
@@ -581,21 +624,21 @@ describe('CloudStorageService', () => {
 
     it('should copy a file overwriting another file', async () => {
       const [file1, file2, file3] = await TestImages.buildFiles(3);
-      await fileService.save(file1, 'test/images/33445-342455.jpg');
-      await fileService.save(file2, 'test/images/45367-324565465.png');
-      await fileService.save(file3, 'test/images/54455-4554455.png');
+      await fileService.save(file1, '/public/test/images/33445-342455.jpg');
+      await fileService.save(file2, '/public/test/images/45367-324565465.png');
+      await fileService.save(file3, '/public/test/images/54455-4554455.png');
       const ret = await fileService.copy(
-        'test/images/54455-4554455.png',
-        'test/images/33445-342455.jpg',
+        '/public/test/images/54455-4554455.png',
+        '/public/test/images/33445-342455.jpg',
       );
       expect(ret).toBeUndefined();
       validateBuckets([
         {
           name: 'test-store-bucket',
           expectedFiles: [
-            { name: 'test/images/33445-342455.jpg', size: 5921 },
-            { name: 'test/images/45367-324565465.png', size: 191777 },
-            { name: 'test/images/54455-4554455.png', size: 5921 },
+            { name: '/public/test/images/33445-342455.jpg', size: 5921 },
+            { name: '/public/test/images/45367-324565465.png', size: 191777 },
+            { name: '/public/test/images/54455-4554455.png', size: 5921 },
           ],
         },
       ]);
@@ -607,8 +650,8 @@ describe('CloudStorageService', () => {
     it('should fail copying a inexistent file', async () => {
       const fn = () =>
         fileService.copy(
-          'test/images/32434-343434.png',
-          'test/images/inexistent_file.jpg',
+          '/public/test/images/32434-343434.png',
+          '/public/test/images/inexistent_file.jpg',
         );
       await expect(fn()).rejects.toThrow(NotFoundException);
       await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NOT_FOUND);
@@ -618,7 +661,8 @@ describe('CloudStorageService', () => {
     describe('objectName', () => {
       it('should reject when objectName is null', async () => {
         await TestImages.buildFiles(1);
-        const fn = () => fileService.copy(null, 'folder/12345-67890.jpg');
+        const fn = () =>
+          fileService.copy(null, '/public/folder/12345-67890.jpg');
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_REQUIRED);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         expect(Object.values(Client._getBucketsSnapshot())).toHaveLength(0);
@@ -626,7 +670,8 @@ describe('CloudStorageService', () => {
 
       it('should reject when objectName is undefined', async () => {
         await TestImages.buildFiles(1);
-        const fn = () => fileService.copy(undefined, 'folder/12345-67890.jpg');
+        const fn = () =>
+          fileService.copy(undefined, '/public/folder/12345-67890.jpg');
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_REQUIRED);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         expect(Object.values(Client._getBucketsSnapshot())).toHaveLength(0);
@@ -635,7 +680,10 @@ describe('CloudStorageService', () => {
       it('should reject when objectName is number', async () => {
         await TestImages.buildFiles(1);
         const fn = () =>
-          fileService.copy(1 as unknown as string, 'folder/12345-67890.jpg');
+          fileService.copy(
+            1 as unknown as string,
+            '/public/folder/12345-67890.jpg',
+          );
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_INVALID);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         expect(Object.values(Client._getBucketsSnapshot())).toHaveLength(0);
@@ -644,7 +692,10 @@ describe('CloudStorageService', () => {
       it('should reject when objectName is boolean', async () => {
         await TestImages.buildFiles(1);
         const fn = () =>
-          fileService.copy(true as unknown as string, 'folder/12345-67890.jpg');
+          fileService.copy(
+            true as unknown as string,
+            '/public/folder/12345-67890.jpg',
+          );
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_INVALID);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         expect(Object.values(Client._getBucketsSnapshot())).toHaveLength(0);
@@ -653,7 +704,10 @@ describe('CloudStorageService', () => {
       it('should reject when objectName is invalid string', async () => {
         await TestImages.buildFiles(1);
         const fn = () =>
-          fileService.copy('dssdsddsds....  sasdfd', 'folder/12345-67890.jpg');
+          fileService.copy(
+            'dssdsddsds....  sasdfd',
+            '/public/folder/12345-67890.jpg',
+          );
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_INVALID);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         expect(Object.values(Client._getBucketsSnapshot())).toHaveLength(0);
@@ -662,7 +716,10 @@ describe('CloudStorageService', () => {
       it('should reject when objectName is array', async () => {
         await TestImages.buildFiles(1);
         const fn = () =>
-          fileService.copy([] as unknown as string, 'folder/12345-67890.jpg');
+          fileService.copy(
+            [] as unknown as string,
+            '/public/folder/12345-67890.jpg',
+          );
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_INVALID);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         expect(Object.values(Client._getBucketsSnapshot())).toHaveLength(0);
@@ -671,7 +728,10 @@ describe('CloudStorageService', () => {
       it('should reject when objectName is object', async () => {
         await TestImages.buildFiles(1);
         const fn = () =>
-          fileService.copy({} as unknown as string, 'folder/12345-67890.jpg');
+          fileService.copy(
+            {} as unknown as string,
+            '/public/folder/12345-67890.jpg',
+          );
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_INVALID);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         expect(Object.values(Client._getBucketsSnapshot())).toHaveLength(0);
@@ -681,7 +741,8 @@ describe('CloudStorageService', () => {
     describe('sourceObject', () => {
       it('should reject when sourceObject is null', async () => {
         await TestImages.buildFiles(1);
-        const fn = () => fileService.copy('folder/12345-67890.jpg', null);
+        const fn = () =>
+          fileService.copy('/public/folder/12345-67890.jpg', null);
         await expect(fn()).rejects.toThrow(
           StorageMessage.SOURCE_OBJECT_NAME_REQUIRED,
         );
@@ -691,7 +752,8 @@ describe('CloudStorageService', () => {
 
       it('should reject when sourceObject is undefined', async () => {
         await TestImages.buildFiles(1);
-        const fn = () => fileService.copy('folder/12345-67890.jpg', undefined);
+        const fn = () =>
+          fileService.copy('/public/folder/12345-67890.jpg', undefined);
         await expect(fn()).rejects.toThrow(
           StorageMessage.SOURCE_OBJECT_NAME_REQUIRED,
         );
@@ -702,7 +764,10 @@ describe('CloudStorageService', () => {
       it('should reject when sourceObject is number', async () => {
         await TestImages.buildFiles(1);
         const fn = () =>
-          fileService.copy('folder/12345-67890.jpg', 1 as unknown as string);
+          fileService.copy(
+            '/public/folder/12345-67890.jpg',
+            1 as unknown as string,
+          );
         await expect(fn()).rejects.toThrow(
           StorageMessage.SOURCE_OBJECT_NAME_INVALID,
         );
@@ -713,7 +778,10 @@ describe('CloudStorageService', () => {
       it('should reject when sourceObject is boolean', async () => {
         await TestImages.buildFiles(1);
         const fn = () =>
-          fileService.copy('folder/12345-67890.jpg', true as unknown as string);
+          fileService.copy(
+            '/public/folder/12345-67890.jpg',
+            true as unknown as string,
+          );
         await expect(fn()).rejects.toThrow(
           StorageMessage.SOURCE_OBJECT_NAME_INVALID,
         );
@@ -724,7 +792,10 @@ describe('CloudStorageService', () => {
       it('should reject when sourceObject is invalid string', async () => {
         await TestImages.buildFiles(1);
         const fn = () =>
-          fileService.copy('folder/12345-67890.jpg', 'dssdsddsds....  sasdfd');
+          fileService.copy(
+            '/public/folder/12345-67890.jpg',
+            'dssdsddsds....  sasdfd',
+          );
         await expect(fn()).rejects.toThrow(
           StorageMessage.SOURCE_OBJECT_NAME_INVALID,
         );
@@ -735,7 +806,10 @@ describe('CloudStorageService', () => {
       it('should reject when sourceObject is array', async () => {
         await TestImages.buildFiles(1);
         const fn = () =>
-          fileService.copy('folder/12345-67890.jpg', [] as unknown as string);
+          fileService.copy(
+            '/public/folder/12345-67890.jpg',
+            [] as unknown as string,
+          );
         await expect(fn()).rejects.toThrow(
           StorageMessage.SOURCE_OBJECT_NAME_INVALID,
         );
@@ -746,7 +820,10 @@ describe('CloudStorageService', () => {
       it('should reject when sourceObject is object', async () => {
         await TestImages.buildFiles(1);
         const fn = () =>
-          fileService.copy('folder/12345-67890.jpg', {} as unknown as string);
+          fileService.copy(
+            '/public/folder/12345-67890.jpg',
+            {} as unknown as string,
+          );
         await expect(fn()).rejects.toThrow(
           StorageMessage.SOURCE_OBJECT_NAME_INVALID,
         );
@@ -759,22 +836,25 @@ describe('CloudStorageService', () => {
   describe('move', () => {
     it('should move a file', async () => {
       const [file1, file2] = await TestImages.buildFiles(2);
-      await fileService.save(file1, 'test/images/33445-342455.jpg');
-      await fileService.save(file2, 'test/images/45367-324565465.png');
+      await fileService.save(file1, '/public/test/images/33445-342455.jpg');
+      await fileService.save(file2, '/public/test/images/45367-324565465.png');
       const buffers = Client._getBucketBuffers('test-store-bucket');
       const buffer1 = buffers[0].buffer;
       const buffer2 = buffers[1].buffer;
       const ret = await fileService.move(
-        'test/images/subfolder/23434554-34645.jpg',
-        'test/images/33445-342455.jpg',
+        '/public/test/images/subfolder/23434554-34645.jpg',
+        '/public/test/images/33445-342455.jpg',
       );
       expect(ret).toBeUndefined();
       validateBuckets([
         {
           name: 'test-store-bucket',
           expectedFiles: [
-            { name: 'test/images/45367-324565465.png', size: 191777 },
-            { name: 'test/images/subfolder/23434554-34645.jpg', size: 5921 },
+            { name: '/public/test/images/45367-324565465.png', size: 191777 },
+            {
+              name: '/public/test/images/subfolder/23434554-34645.jpg',
+              size: 5921,
+            },
           ],
         },
       ]);
@@ -784,23 +864,23 @@ describe('CloudStorageService', () => {
 
     it('should move a file overwriting another file', async () => {
       const [file1, file2, file3] = await TestImages.buildFiles(3);
-      await fileService.save(file1, 'test/images/33445-342455.jpg');
-      await fileService.save(file2, 'test/images/45367-324565465.png');
-      await fileService.save(file3, 'test/images/54455-4554455.png');
+      await fileService.save(file1, '/public/test/images/33445-342455.jpg');
+      await fileService.save(file2, '/public/test/images/45367-324565465.png');
+      await fileService.save(file3, '/public/test/images/54455-4554455.png');
       const buffers = Client._getBucketBuffers('test-store-bucket');
       const buffer1 = buffers[0].buffer;
       const buffer2 = buffers[1].buffer;
       const ret = await fileService.move(
-        'test/images/54455-4554455.png',
-        'test/images/33445-342455.jpg',
+        '/public/test/images/54455-4554455.png',
+        '/public/test/images/33445-342455.jpg',
       );
       expect(ret).toBeUndefined();
       validateBuckets([
         {
           name: 'test-store-bucket',
           expectedFiles: [
-            { name: 'test/images/45367-324565465.png', size: 191777 },
-            { name: 'test/images/54455-4554455.png', size: 5921 },
+            { name: '/public/test/images/45367-324565465.png', size: 191777 },
+            { name: '/public/test/images/54455-4554455.png', size: 5921 },
           ],
         },
       ]);
@@ -811,8 +891,8 @@ describe('CloudStorageService', () => {
         {
           name: 'test-store-bucket',
           expectedFiles: [
-            { name: 'test/images/45367-324565465.png', size: 191777 },
-            { name: 'test/images/54455-4554455.png', size: 5921 },
+            { name: '/public/test/images/45367-324565465.png', size: 191777 },
+            { name: '/public/test/images/54455-4554455.png', size: 5921 },
           ],
         },
       ]);
@@ -820,12 +900,12 @@ describe('CloudStorageService', () => {
 
     it('should fail moving a inexistent file', async () => {
       const [file1, file2, file3] = await TestImages.buildFiles(3);
-      await fileService.save(file1, 'test/images/33445-342455.jpg');
-      await fileService.save(file2, 'test/images/45367-324565465.png');
+      await fileService.save(file1, '/public/test/images/33445-342455.jpg');
+      await fileService.save(file2, '/public/test/images/45367-324565465.png');
       const fn = () =>
         fileService.move(
-          'test/images/32434-343434.png',
-          'test/images/inexistent_file.jpg',
+          '/public/test/images/32434-343434.png',
+          '/public/test/images/inexistent_file.jpg',
         );
       const buffers = Client._getBucketBuffers('test-store-bucket');
       const buffer1 = buffers[0].buffer;
@@ -839,8 +919,8 @@ describe('CloudStorageService', () => {
         {
           name: 'test-store-bucket',
           expectedFiles: [
-            { name: 'test/images/33445-342455.jpg', size: 5921 },
-            { name: 'test/images/45367-324565465.png', size: 191777 },
+            { name: '/public/test/images/33445-342455.jpg', size: 5921 },
+            { name: '/public/test/images/45367-324565465.png', size: 191777 },
           ],
         },
       ]);
@@ -857,7 +937,8 @@ describe('CloudStorageService', () => {
 
       it('should reject when objectName is undefined', async () => {
         await TestImages.buildFiles(1);
-        const fn = () => fileService.move(undefined, 'folder/12345-67890.jpg');
+        const fn = () =>
+          fileService.move(undefined, '/public/folder/12345-67890.jpg');
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_REQUIRED);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         expect(Object.values(Client._getBucketsSnapshot())).toHaveLength(0);
@@ -866,7 +947,10 @@ describe('CloudStorageService', () => {
       it('should reject when objectName is number', async () => {
         await TestImages.buildFiles(1);
         const fn = () =>
-          fileService.move(1 as unknown as string, 'folder/12345-67890.jpg');
+          fileService.move(
+            1 as unknown as string,
+            '/public/folder/12345-67890.jpg',
+          );
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_INVALID);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         expect(Object.values(Client._getBucketsSnapshot())).toHaveLength(0);
@@ -875,7 +959,10 @@ describe('CloudStorageService', () => {
       it('should reject when objectName is boolean', async () => {
         await TestImages.buildFiles(1);
         const fn = () =>
-          fileService.move(true as unknown as string, 'folder/12345-67890.jpg');
+          fileService.move(
+            true as unknown as string,
+            '/public/folder/12345-67890.jpg',
+          );
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_INVALID);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         expect(Object.values(Client._getBucketsSnapshot())).toHaveLength(0);
@@ -884,7 +971,10 @@ describe('CloudStorageService', () => {
       it('should reject when objectName is invalid string', async () => {
         await TestImages.buildFiles(1);
         const fn = () =>
-          fileService.move('dssdsddsds....  sasdfd', 'folder/12345-67890.jpg');
+          fileService.move(
+            'dssdsddsds....  sasdfd',
+            '/public/folder/12345-67890.jpg',
+          );
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_INVALID);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         expect(Object.values(Client._getBucketsSnapshot())).toHaveLength(0);
@@ -893,7 +983,10 @@ describe('CloudStorageService', () => {
       it('should reject when objectName is array', async () => {
         await TestImages.buildFiles(1);
         const fn = () =>
-          fileService.move([] as unknown as string, 'folder/12345-67890.jpg');
+          fileService.move(
+            [] as unknown as string,
+            '/public/folder/12345-67890.jpg',
+          );
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_INVALID);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         expect(Object.values(Client._getBucketsSnapshot())).toHaveLength(0);
@@ -902,7 +995,10 @@ describe('CloudStorageService', () => {
       it('should reject when objectName is object', async () => {
         await TestImages.buildFiles(1);
         const fn = () =>
-          fileService.move({} as unknown as string, 'folder/12345-67890.jpg');
+          fileService.move(
+            {} as unknown as string,
+            '/public/folder/12345-67890.jpg',
+          );
         await expect(fn()).rejects.toThrow(StorageMessage.OBJECT_NAME_INVALID);
         await expect(fn()).rejects.toThrow(UnprocessableEntityException);
         expect(Object.values(Client._getBucketsSnapshot())).toHaveLength(0);
@@ -912,7 +1008,8 @@ describe('CloudStorageService', () => {
     describe('sourceObject', () => {
       it('should reject when sourceObject is null', async () => {
         await TestImages.buildFiles(1);
-        const fn = () => fileService.move('folder/12345-67890.jpg', null);
+        const fn = () =>
+          fileService.move('/public/folder/12345-67890.jpg', null);
         await expect(fn()).rejects.toThrow(
           StorageMessage.SOURCE_OBJECT_NAME_REQUIRED,
         );
@@ -922,7 +1019,8 @@ describe('CloudStorageService', () => {
 
       it('should reject when sourceObject is undefined', async () => {
         await TestImages.buildFiles(1);
-        const fn = () => fileService.move('folder/12345-67890.jpg', undefined);
+        const fn = () =>
+          fileService.move('/public/folder/12345-67890.jpg', undefined);
         await expect(fn()).rejects.toThrow(
           StorageMessage.SOURCE_OBJECT_NAME_REQUIRED,
         );
@@ -933,7 +1031,10 @@ describe('CloudStorageService', () => {
       it('should reject when sourceObject is number', async () => {
         await TestImages.buildFiles(1);
         const fn = () =>
-          fileService.move('folder/12345-67890.jpg', 1 as unknown as string);
+          fileService.move(
+            '/public/folder/12345-67890.jpg',
+            1 as unknown as string,
+          );
         await expect(fn()).rejects.toThrow(
           StorageMessage.SOURCE_OBJECT_NAME_INVALID,
         );
@@ -944,7 +1045,10 @@ describe('CloudStorageService', () => {
       it('should reject when sourceObject is boolean', async () => {
         await TestImages.buildFiles(1);
         const fn = () =>
-          fileService.move('folder/12345-67890.jpg', true as unknown as string);
+          fileService.move(
+            '/public/folder/12345-67890.jpg',
+            true as unknown as string,
+          );
         await expect(fn()).rejects.toThrow(
           StorageMessage.SOURCE_OBJECT_NAME_INVALID,
         );
@@ -955,7 +1059,10 @@ describe('CloudStorageService', () => {
       it('should reject when sourceObject is invalid string', async () => {
         await TestImages.buildFiles(1);
         const fn = () =>
-          fileService.move('folder/12345-67890.jpg', 'dssdsddsds....  sasdfd');
+          fileService.move(
+            '/public/folder/12345-67890.jpg',
+            'dssdsddsds....  sasdfd',
+          );
         await expect(fn()).rejects.toThrow(
           StorageMessage.SOURCE_OBJECT_NAME_INVALID,
         );
@@ -966,7 +1073,10 @@ describe('CloudStorageService', () => {
       it('should reject when sourceObject is array', async () => {
         await TestImages.buildFiles(1);
         const fn = () =>
-          fileService.move('folder/12345-67890.jpg', [] as unknown as string);
+          fileService.move(
+            '/public/folder/12345-67890.jpg',
+            [] as unknown as string,
+          );
         await expect(fn()).rejects.toThrow(
           StorageMessage.SOURCE_OBJECT_NAME_INVALID,
         );
@@ -977,7 +1087,10 @@ describe('CloudStorageService', () => {
       it('should reject when sourceObject is object', async () => {
         await TestImages.buildFiles(1);
         const fn = () =>
-          fileService.move('folder/12345-67890.jpg', {} as unknown as string);
+          fileService.move(
+            '/public/folder/12345-67890.jpg',
+            {} as unknown as string,
+          );
         await expect(fn()).rejects.toThrow(
           StorageMessage.SOURCE_OBJECT_NAME_INVALID,
         );

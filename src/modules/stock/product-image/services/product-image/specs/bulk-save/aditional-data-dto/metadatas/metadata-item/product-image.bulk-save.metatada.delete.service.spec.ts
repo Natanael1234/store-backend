@@ -12,6 +12,7 @@ import {
   TestCategoryInsertParams,
   testInsertCategories,
 } from '../../../../../../../../../../test/category/test-category-utils';
+import { testValidateBuckedItems } from '../../../../../../../../../../test/images/test-bucket-item-utils';
 import { TestImages } from '../../../../../../../../../../test/images/test-images';
 import { testValidateProductImages } from '../../../../../../../../../../test/product-image/test-product-image-utils';
 import {
@@ -150,7 +151,7 @@ describe('ProductImageService.bulkSave (metadata.delete)', () => {
       const products = await createDeletionTestScenario();
       const bucketsBefore = Client._getBucketsSnapshot();
       const imageFiles = await TestImages.buildFiles(1);
-      const ret = await productImageService.bulkSave(
+      const retImages = await productImageService.bulkSave(
         products[0].id,
         imageFiles,
         { metadatas: [{ name: 'Image 4', delete: true, imageIdx: 0 }] },
@@ -160,7 +161,7 @@ describe('ProductImageService.bulkSave (metadata.delete)', () => {
         products[0].images[1],
         products[1].images[0],
       ];
-      testValidateProductImages(ret, expectedResults.slice(0, 2));
+      testValidateProductImages(retImages, expectedResults.slice(0, 2));
       const images = await getImages();
       expect(
         images.map((image) => {
@@ -176,7 +177,48 @@ describe('ProductImageService.bulkSave (metadata.delete)', () => {
         { name: 'Image 4', deleted: true },
       ]);
 
-      // expect(Client._getBucketsSnapshot()).toEqual(bucketsBefore); // TODO: remove from bucket
+      const bucket = Client._getBucketSnapshot('test-store-bucket');
+      testValidateBuckedItems(
+        [
+          // image 1
+          {
+            path: `/private/products/${products[0].id}/images/${images[0].id}.jpg`,
+            size: 5921,
+          },
+          {
+            path: `/private/products/${products[0].id}/images/${images[0].id}.thumbnail.jpeg`,
+            size: 2709,
+          },
+          // image 2
+          {
+            path: `/public/products/${products[0].id}/images/${images[1].id}.png`,
+            size: 191777,
+          },
+          {
+            path: `/public/products/${products[0].id}/images/${images[1].id}.thumbnail.jpeg`,
+            size: 5215,
+          },
+          // image 3
+          {
+            path: `/public/products/${products[1].id}/images/${images[2].id}.jpg`,
+            size: 5921,
+          },
+          {
+            path: `/public/products/${products[1].id}/images/${images[2].id}.thumbnail.jpeg`,
+            size: 2709,
+          },
+          // image 4
+          {
+            path: `/deleted/products/${products[0].id}/images/${images[3].id}.jpg`,
+            size: 5921,
+          },
+          {
+            path: `/deleted/products/${products[0].id}/images/${images[3].id}.thumbnail.jpeg`,
+            size: 2709,
+          },
+        ],
+        bucket,
+      );
     });
 
     it('should reject create image when metadata.delete is null', async () => {
@@ -327,7 +369,39 @@ describe('ProductImageService.bulkSave (metadata.delete)', () => {
       testValidateProductImages(ret, expectedResults.slice(1, 2));
       const images = await getImages();
       testValidateProductImages(images, expectedResults);
-      expect(Client._getBucketsSnapshot()).toEqual(bucketsBefore); // TODO: remove from bucket
+      const bucket = Client._getBucketSnapshot('test-store-bucket');
+      testValidateBuckedItems(
+        [
+          // image 2
+          {
+            path: `/public/products/${products[0].id}/images/${products[0].images[1].id}.png`,
+            size: 191777,
+          },
+          {
+            path: `/public/products/${products[0].id}/images/${products[0].images[1].id}.thumbnail.jpeg`,
+            size: 5215,
+          },
+          // image 3
+          {
+            path: `/public/products/${products[1].id}/images/${products[1].images[0].id}.jpg`,
+            size: 5921,
+          },
+          {
+            path: `/public/products/${products[1].id}/images/${products[1].images[0].id}.thumbnail.jpeg`,
+            size: 2709,
+          },
+          // image 1
+          {
+            path: `/deleted/products/${products[0].id}/images/${products[0].images[0].id}.jpg`,
+            size: 5921,
+          },
+          {
+            path: `/deleted/products/${products[0].id}/images/${products[0].images[0].id}.thumbnail.jpeg`,
+            size: 2709,
+          },
+        ],
+        bucket,
+      );
     });
 
     it('should reject update image when metadata.delete is null', async () => {

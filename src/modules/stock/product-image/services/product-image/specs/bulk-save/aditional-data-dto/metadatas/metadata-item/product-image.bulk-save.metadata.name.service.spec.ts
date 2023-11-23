@@ -235,7 +235,7 @@ describe('ProductImageService.bulkSave (metadata.name)', () => {
       const [productId1] = await testBuildProductImageCreationScenario(1);
       const files = await TestImages.buildFiles(1);
 
-      const ret = await productImageService.bulkSave(productId1, files, {
+      const retImages = await productImageService.bulkSave(productId1, files, {
         metadatas: [{ name, imageIdx: 0 }],
       });
 
@@ -243,16 +243,13 @@ describe('ProductImageService.bulkSave (metadata.name)', () => {
       const bucket = Client._getBucketSnapshot('test-store-bucket');
       testValidateBuckedItems(
         [
+          // image 1
           {
-            productId: productId1,
-            isThumbnail: false,
-            extension: 'jpg',
+            path: `/private/products/${productId1}/images/${retImages[0].id}.jpg`,
             size: 5921,
           },
           {
-            productId: productId1,
-            isThumbnail: true,
-            extension: 'jpeg',
+            path: `/private/products/${productId1}/images/${retImages[0].id}.thumbnail.jpeg`,
             size: 2709,
           },
         ],
@@ -269,7 +266,7 @@ describe('ProductImageService.bulkSave (metadata.name)', () => {
           productId: productId1,
         },
       ];
-      testValidateProductImages(ret, expectedResults);
+      testValidateProductImages(retImages, expectedResults);
       const images = await getImages();
       testValidateProductImages(images, expectedResults);
     });
@@ -279,7 +276,7 @@ describe('ProductImageService.bulkSave (metadata.name)', () => {
       const [productId1] = await testBuildProductImageCreationScenario(1);
       const files = await TestImages.buildFiles(1);
 
-      const ret = await productImageService.bulkSave(productId1, files, {
+      const retImages = await productImageService.bulkSave(productId1, files, {
         metadatas: [{ name, imageIdx: 0 }],
       });
 
@@ -287,16 +284,13 @@ describe('ProductImageService.bulkSave (metadata.name)', () => {
       const bucket = Client._getBucketSnapshot('test-store-bucket');
       testValidateBuckedItems(
         [
+          // image 1
           {
-            productId: productId1,
-            isThumbnail: false,
-            extension: 'jpg',
+            path: `/private/products/${productId1}/images/${retImages[0].id}.jpg`,
             size: 5921,
           },
           {
-            productId: productId1,
-            isThumbnail: true,
-            extension: 'jpeg',
+            path: `/private/products/${productId1}/images/${retImages[0].id}.thumbnail.jpeg`,
             size: 2709,
           },
         ],
@@ -313,7 +307,7 @@ describe('ProductImageService.bulkSave (metadata.name)', () => {
           productId: productId1,
         },
       ];
-      testValidateProductImages(ret, expectedResults);
+      testValidateProductImages(retImages, expectedResults);
       const images = await getImages();
       testValidateProductImages(images, expectedResults);
     });
@@ -323,24 +317,25 @@ describe('ProductImageService.bulkSave (metadata.name)', () => {
       const [productId1] = await testBuildProductImageCreationScenario(1);
       const imageFiles = await TestImages.buildFiles(1);
 
-      const ret = await productImageService.bulkSave(productId1, imageFiles, {
-        metadatas: [{ name, imageIdx: 0 }],
-      });
+      const retImages = await productImageService.bulkSave(
+        productId1,
+        imageFiles,
+        {
+          metadatas: [{ name, imageIdx: 0 }],
+        },
+      );
 
       expect(Client._getBucketsSnapshot()).toBeDefined();
       const bucket = Client._getBucketSnapshot('test-store-bucket');
       testValidateBuckedItems(
         [
+          // image 1
           {
-            productId: productId1,
-            isThumbnail: false,
-            extension: 'jpg',
+            path: `/private/products/${productId1}/images/${retImages[0].id}.jpg`,
             size: 5921,
           },
           {
-            productId: productId1,
-            isThumbnail: true,
-            extension: 'jpeg',
+            path: `/private/products/${productId1}/images/${retImages[0].id}.thumbnail.jpeg`,
             size: 2709,
           },
         ],
@@ -357,7 +352,7 @@ describe('ProductImageService.bulkSave (metadata.name)', () => {
           productId: productId1,
         },
       ];
-      testValidateProductImages(ret, expectedResults);
+      testValidateProductImages(retImages, expectedResults);
       const images = await getImages();
       testValidateProductImages(images, expectedResults);
     });
@@ -372,18 +367,16 @@ describe('ProductImageService.bulkSave (metadata.name)', () => {
 
       expect(Client._getBucketsSnapshot()).toBeDefined();
       const bucket = Client._getBucketSnapshot('test-store-bucket');
+      const images = await getImages();
       testValidateBuckedItems(
         [
+          // image 1
           {
-            productId: productId1,
-            isThumbnail: false,
-            extension: 'jpg',
+            path: `/private/products/${productId1}/images/${images[0].id}.jpg`,
             size: 5921,
           },
           {
-            productId: productId1,
-            isThumbnail: true,
-            extension: 'jpeg',
+            path: `/private/products/${productId1}/images/${images[0].id}.thumbnail.jpeg`,
             size: 2709,
           },
         ],
@@ -401,7 +394,6 @@ describe('ProductImageService.bulkSave (metadata.name)', () => {
         },
       ];
       testValidateProductImages(ret, expectedResults);
-      const images = await getImages();
       testValidateProductImages(images, expectedResults);
     });
 

@@ -7,6 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
 import { Repository } from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
 import { CloudStorageService } from '../../../../system/cloud-storage/services/cloud-storage/cloud-storage.service';
 import { SortConstants } from '../../../../system/constants/sort/sort.constants';
 import { ImagesMetadataMessage } from '../../../../system/decorators/images-metadata/messages/images-metadata/images-metadata.messages.enum';
@@ -27,6 +28,7 @@ import { SaveFileAdditionalDataRequestDTO } from '../../dtos/save-file-additiona
 import { ProductImage } from '../../models/product-image/product-image.entity';
 
 const ProductIdMessage = new UuidMessage('product id');
+const ProductImageIdMessage = new UuidMessage('product image id');
 const NameMessage = new TextMessage('name', {
   maxLength: ProductImageConfigs.NAME_MAX_LENGTH,
 });
@@ -188,55 +190,63 @@ export class ProductImageService {
         );
       }
 
-      // file prefix (directory)
-
-      const prefix = this.getProductImagesPrefix(productId);
-
       // TODO: add transactions (database and storage). Should not keep images in storage if failed to save in the database.
 
       // if creating new image
 
       if (metadata.file) {
         // images in storage
+        const imageId = uuidv4();
 
-        const filename = this.cloudStorageService.generateUniqueObjectname(
+        // file extension
+        const extension = this.imageService.extractFilenameExtension(
           metadata.file.originalname,
         );
 
-        const imagePath = `${prefix}/${filename}`;
+        // file state
+        const state = metadata.delete
+          ? 'deleted'
+          : metadata.active
+          ? 'public'
+          : 'private';
+
+        // file path
+        const imagePath = this.getProductImagesPath(
+          state,
+          productId,
+          imageId,
+          extension,
+          false,
+        );
+
+        // thumbnail path
+        const thumbnailPath = this.getProductImagesPath(
+          state,
+          productId,
+          imageId,
+          'jpeg',
+          true,
+        );
 
         // save the image
-
         await this.cloudStorageService.save(metadata.file, imagePath);
 
         // thumbnail in storage
-
         const thumbnailFile = await this.imageService.generateThumbnail(
           metadata.file,
         );
 
-        // change thumbnail file extension to jpeg
-
-        const thumbnailFilename = this.imageService.changeFilenameExtension(
-          filename,
-          'jpeg',
-        );
-
-        // set thumbnail location to subdirectory 'thumbnails'
-
-        const thumbnailPath = `${prefix}/thumbnails/${thumbnailFilename}`;
-
         // save the thumbnail in storage
-
         await this.cloudStorageService.save(thumbnailFile, thumbnailPath);
 
         // add image to save in database
-
         const productImage = new ProductImage();
         productImage.productId = productId;
 
-        // name
+        // id
+        productImage.id = imageId;
 
+        // name
         if (metadata.name !== undefined) {
           productImage.name = metadata.name;
         }
@@ -247,23 +257,18 @@ export class ProductImageService {
         }
 
         // image
-
         productImage.image = imagePath;
 
         // thumbnail
-
         productImage.thumbnail = thumbnailPath;
 
         // main
-
         productImage.main = !!metadata.main;
 
         // active
-
         productImage.active = !!metadata.active;
 
         // delete
-
         if (metadata.delete === true) {
           productImage.deletedAt = new Date();
         }
@@ -280,33 +285,76 @@ export class ProductImageService {
         );
 
         // name
-
-        if (metadata.name !== undefined) {
+        if (metadata.name !== undefined && metadata.name != productImage.name) {
           productImage.name = metadata.name;
         }
 
         // description
-
-        if (metadata.description !== undefined) {
+        if (
+          metadata.description !== undefined &&
+          metadata.description != productImage.description
+        ) {
           productImage.description = metadata.description;
         }
 
         // main
-
-        if (metadata.main !== undefined) {
+        if (metadata.main !== undefined && metadata.main != productImage.main) {
           productImage.main = metadata.main;
         }
 
-        // active
+        let changedState = false;
 
-        if (metadata.active !== undefined) {
-          productImage.active = metadata.active;
+        // active
+        if (
+          metadata.active !== undefined &&
+          metadata.active != productImage.active
+        ) {
+          changedState = true;
+          productImage.active = !!metadata.active;
         }
 
         // delete
-
-        if (metadata.delete !== undefined) {
+        if (
+          metadata.delete !== undefined &&
+          metadata.delete != !!productImage.deletedAt
+        ) {
+          changedState = true;
           productImage.deletedAt = new Date();
+        }
+
+        if (changedState) {
+          let state;
+          if (productImage.deletedAt) {
+            state = 'deleted';
+          } else if (productImage.active) {
+            state = 'public';
+          } else {
+            state = 'private';
+          }
+          const extension = this.imageService.extractFilenameExtension(
+            productImage.image,
+          );
+          const oldImagePath = productImage.image;
+          const oldThumbnailPath = productImage.thumbnail;
+          productImage.image = this.getProductImagesPath(
+            state,
+            productImage.productId,
+            productImage.id,
+            extension,
+            false,
+          );
+          productImage.thumbnail = this.getProductImagesPath(
+            state,
+            productImage.productId,
+            productImage.id,
+            'jpeg',
+            true,
+          );
+          this.cloudStorageService.move(productImage.image, oldImagePath);
+          this.cloudStorageService.move(
+            productImage.thumbnail,
+            oldThumbnailPath,
+          );
         }
       }
     }
@@ -427,48 +475,31 @@ export class ProductImageService {
     return value && !Array.isArray(value) && typeof value == 'object';
   }
 
-  /**
-   * Builds a file path.
-   * @param productId product id.
-   * @param file filename. Ex.: 3445345-453456.png
-   * @returns file path. Ex.: images/products/f136f640-90b7-11ed-a2a0-fd911f8f7f38/3445345-453456.png
-   */
-  private buildImageFilepath(productId: string, file: string) {
-    return `${this.getProductImagesPrefix(productId)}/${file}`;
-  }
-
-  /**
-   * Builds a thumbnail file path.
-   * @param productId product id.
-   * @param file filename. Ex.: 3445345-453456.png
-   * @returns file path. Ex.: images/products/5/thumbnails/3445345-453456.jpeg
-   */
-  private buildThumbnailFilepath(productId: string, file: string) {
-    return `${this.getProductThumbnailsPrefix(productId)}/${file}`.replace(
-      /\.[a-zA-Z]+$/gm,
-      '.jpeg',
-    );
-  }
-
-  /**
-   * Get a prefix (directory) for product thumbanils.
-   * @param productId product id.
-   * @returns prefix. Ex.: images/products/f136f640-90b7-11ed-a2a0-fd911f8f7f38/thumbnails
-   */
-  private getProductThumbnailsPrefix(productId: string) {
-    const prefix = this.getProductImagesPrefix(productId);
-    return `${prefix}/thumbnails`;
-  }
-
-  /**
-   * Get a prefix (directory) for product images.
-   * @param productId product id.
-   * @returns prefix. Ex.: images/products/f136f640-90b7-11ed-a2a0-fd911f8f7f38
-   */
-  private getProductImagesPrefix(productId: string) {
+  private getProductImagesPath(
+    state: 'public' | 'deleted' | 'private' = 'private',
+    productId: string,
+    imageId: string,
+    fileExtension: string,
+    isThumbnail: boolean = false,
+  ) {
     if (!productId) {
-      throw new UnprocessableEntityException(ProductMessage.ID_REQUIRED);
+      throw new UnprocessableEntityException(ProductIdMessage.REQUIRED);
     }
-    return `images/products/${productId}`;
+    if (!isValidUUID(productId)) {
+      throw new UnprocessableEntityException(ProductIdMessage.INVALID);
+    }
+    if (!imageId) {
+      throw new UnprocessableEntityException(ProductImageIdMessage.REQUIRED);
+    }
+    if (!isValidUUID(imageId)) {
+      throw new UnprocessableEntityException(ProductImageIdMessage.INVALID);
+    }
+    const directory = `/${state}/products/${productId}/images`;
+    const filename =
+      imageId +
+      (isThumbnail ? '.thumbnail' : '') +
+      (fileExtension ? '.' + fileExtension : '');
+    const objectpath = `${directory}/${filename}`;
+    return objectpath;
   }
 }

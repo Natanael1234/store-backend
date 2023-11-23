@@ -114,7 +114,7 @@ describe('ProductImageService', () => {
       await expect(fn).toThrow(FileMessage.FILE_NAME_NOT_DEFINED);
     });
 
-    it('should fail when filename is ""', async () => {
+    it('should fail when filename is empty string', async () => {
       const fn = () =>
         service.changeFilenameExtension('test/file.something.png', '');
 
@@ -122,12 +122,151 @@ describe('ProductImageService', () => {
       await expect(fn).toThrow(FileMessage.INVALID_FILE_EXTENSION);
     });
 
-    it('should fail when extension is invalid', async () => {
+    it('should fail when filename is number', async () => {
+      const fn = () =>
+        service.changeFilenameExtension(1 as unknown as string, 'png');
+
+      await expect(fn).toThrow(UnprocessableEntityException);
+      await expect(fn).toThrow(FileMessage.INVALID_FILE_NAME);
+    });
+
+    it('should fail when filename is boolean', async () => {
+      const fn = () =>
+        service.changeFilenameExtension(true as unknown as string, 'png');
+
+      await expect(fn).toThrow(UnprocessableEntityException);
+      await expect(fn).toThrow(FileMessage.INVALID_FILE_NAME);
+    });
+
+    it('should fail when filename is array', async () => {
+      const fn = () =>
+        service.changeFilenameExtension([] as unknown as string, 'png');
+
+      await expect(fn).toThrow(UnprocessableEntityException);
+      await expect(fn).toThrow(FileMessage.INVALID_FILE_NAME);
+    });
+
+    it('should fail when filename is object', async () => {
+      const fn = () =>
+        service.changeFilenameExtension({} as unknown as string, 'png');
+
+      await expect(fn).toThrow(UnprocessableEntityException);
+      await expect(fn).toThrow(FileMessage.INVALID_FILE_NAME);
+    });
+
+    it('should fail when extension is invalid string', async () => {
       const fn = () =>
         service.changeFilenameExtension('test/file.something.png', 'invalid');
 
       await expect(fn).toThrow(UnprocessableEntityException);
       await expect(fn).toThrow(FileMessage.INVALID_FILE_EXTENSION);
+    });
+
+    it('should fail when extension is number', async () => {
+      const fn = () =>
+        service.changeFilenameExtension(
+          'test/file.something.png',
+          1 as unknown as string,
+        );
+
+      await expect(fn).toThrow(UnprocessableEntityException);
+      await expect(fn).toThrow(FileMessage.INVALID_FILE_EXTENSION);
+    });
+
+    it('should fail when extension is boolean', async () => {
+      const fn = () =>
+        service.changeFilenameExtension(
+          'test/file.something.png',
+          true as unknown as string,
+        );
+
+      await expect(fn).toThrow(UnprocessableEntityException);
+      await expect(fn).toThrow(FileMessage.INVALID_FILE_EXTENSION);
+    });
+
+    it('should fail when extension is array', async () => {
+      const fn = () =>
+        service.changeFilenameExtension(
+          'test/file.something.png',
+          [] as unknown as string,
+        );
+
+      await expect(fn).toThrow(UnprocessableEntityException);
+      await expect(fn).toThrow(FileMessage.INVALID_FILE_EXTENSION);
+    });
+
+    it('should fail when extension is object', async () => {
+      const fn = () =>
+        service.changeFilenameExtension(
+          'test/file.something.png',
+          {} as unknown as string,
+        );
+
+      await expect(fn).toThrow(UnprocessableEntityException);
+      await expect(fn).toThrow(FileMessage.INVALID_FILE_EXTENSION);
+    });
+  });
+
+  describe('extractExtension', () => {
+    it('should extract filename extension', async () => {
+      const result = service.extractFilenameExtension(
+        'test/file.something.png',
+      );
+      expect(result).toEqual('png');
+    });
+
+    it('should return null when file has no extension', async () => {
+      const result = service.extractFilenameExtension('test/file');
+      expect(result).toEqual(null);
+    });
+
+    it('should fail when filename is null', async () => {
+      const fn = () => service.extractFilenameExtension(null);
+
+      await expect(fn).toThrow(UnprocessableEntityException);
+      await expect(fn).toThrow(FileMessage.FILE_NAME_NOT_DEFINED);
+    });
+
+    it('should fail when filename is undefined', async () => {
+      const fn = () => service.extractFilenameExtension(undefined);
+
+      await expect(fn).toThrow(UnprocessableEntityException);
+      await expect(fn).toThrow(FileMessage.FILE_NAME_NOT_DEFINED);
+    });
+
+    it('should fail when filename is empty string', async () => {
+      const fn = () => service.extractFilenameExtension('');
+
+      await expect(fn).toThrow(UnprocessableEntityException);
+      await expect(fn).toThrow(FileMessage.FILE_NAME_NOT_DEFINED);
+    });
+
+    it('should fail when filename is boolean', async () => {
+      const fn = () =>
+        service.extractFilenameExtension(true as unknown as string);
+
+      await expect(fn).toThrow(UnprocessableEntityException);
+      await expect(fn).toThrow(FileMessage.INVALID_FILE_NAME);
+    });
+
+    it('should fail when filename is number', async () => {
+      const fn = () => service.extractFilenameExtension(1 as unknown as string);
+
+      await expect(fn).toThrow(UnprocessableEntityException);
+      await expect(fn).toThrow(FileMessage.INVALID_FILE_NAME);
+    });
+
+    it('should fail when filename is object', async () => {
+      const fn = () => service.extractFilenameExtension(1 as unknown as string);
+
+      await expect(fn).toThrow(UnprocessableEntityException);
+      await expect(fn).toThrow(FileMessage.INVALID_FILE_NAME);
+    });
+    it('should fail when filename is array', async () => {
+      const fn = () => service.extractFilenameExtension(1 as unknown as string);
+
+      await expect(fn).toThrow(UnprocessableEntityException);
+      await expect(fn).toThrow(FileMessage.INVALID_FILE_NAME);
     });
   });
 });

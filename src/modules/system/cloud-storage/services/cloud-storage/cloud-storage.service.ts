@@ -48,7 +48,9 @@ export class CloudStorageService {
     if (typeof filename != 'string') {
       return false;
     }
-    if (/^([a-z0-9_-]+\/)*[a-z0-9_-]+\.[a-z0-9]+$/gi.test(filename)) {
+    const regexp =
+      /^(\/(private|public|deleted)\/)((([\w]+-)*[\w]+)\/)*((([\w]+-)*[\w]))+(\.[\w]+)*$/gi;
+    if (regexp.test(filename)) {
       return true;
     }
     return false;

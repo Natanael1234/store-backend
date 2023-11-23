@@ -250,16 +250,13 @@ describe('ProductImageService.bulkSave (metadata.active)', () => {
       const bucket = Client._getBucketSnapshot('test-store-bucket');
       testValidateBuckedItems(
         [
+          // image 1
           {
-            productId: productId1,
-            isThumbnail: false,
-            extension: 'jpg',
+            path: `/public/products/${productId1}/images/${ret[0].id}.jpg`,
             size: 5921,
           },
           {
-            productId: productId1,
-            isThumbnail: true,
-            extension: 'jpeg',
+            path: `/public/products/${productId1}/images/${ret[0].id}.thumbnail.jpeg`,
             size: 2709,
           },
         ],
@@ -301,16 +298,13 @@ describe('ProductImageService.bulkSave (metadata.active)', () => {
       const bucket = Client._getBucketSnapshot('test-store-bucket');
       testValidateBuckedItems(
         [
+          // image 1
           {
-            productId: productId1,
-            isThumbnail: false,
-            extension: 'jpg',
+            path: `/private/products/${productId1}/images/${ret[0].id}.jpg`,
             size: 5921,
           },
           {
-            productId: productId1,
-            isThumbnail: true,
-            extension: 'jpeg',
+            path: `/private/products/${productId1}/images/${ret[0].id}.thumbnail.jpeg`,
             size: 2709,
           },
         ],
@@ -496,8 +490,6 @@ describe('ProductImageService.bulkSave (metadata.active)', () => {
   describe('update', () => {
     it('should accept update image when metadata.active is boolean', async () => {
       const products = await testBuildProductImageUpdateScenario();
-      const imagesBefore = await getImages();
-      const bucketsBefore = Client._getBucketsSnapshot();
       const ret = await productImageService.bulkSave(products[0].id, null, {
         metadatas: [
           {
@@ -512,7 +504,7 @@ describe('ProductImageService.bulkSave (metadata.active)', () => {
         {
           ...products[0].images[0],
           name: 'Image 1 b',
-          active: !products[0].images[0].active,
+          active: true,
         },
         products[0].images[1],
         products[1].images[0],
@@ -520,11 +512,42 @@ describe('ProductImageService.bulkSave (metadata.active)', () => {
       testValidateProductImages(ret, expectedResults.slice(0, 2));
       const images = await getImages();
       testValidateProductImages(images, expectedResults);
-      expect(Client._getBucketsSnapshot()).toEqual(bucketsBefore);
+      const bucket = Client._getBucketSnapshot('test-store-bucket');
+      const expectedBucketData = [
+        // image 2
+        {
+          path: `/public/products/${products[0].id}/images/${products[0].images[1].id}.png`,
+          size: 191777,
+        },
+        {
+          path: `/public/products/${products[0].id}/images/${products[0].images[1].id}.thumbnail.jpeg`,
+          size: 5215,
+        },
+        // image 3
+        {
+          path: `/public/products/${products[1].id}/images/${products[1].images[0].id}.jpg`,
+          size: 5921,
+        },
+        {
+          path: `/public/products/${products[1].id}/images/${products[1].images[0].id}.thumbnail.jpeg`,
+          size: 2709,
+        },
+        // image 1 (move to private = copy and delete)
+        {
+          path: `/public/products/${products[0].id}/images/${products[0].images[0].id}.jpg`,
+          size: 5921,
+        },
+        {
+          path: `/public/products/${products[0].id}/images/${products[0].images[0].id}.thumbnail.jpeg`,
+          size: 2709,
+        },
+      ];
+      testValidateBuckedItems(expectedBucketData, bucket);
     });
 
     it('should accept update image when metadata.active is undefined', async () => {
       const products = await testBuildProductImageUpdateScenario();
+      const bucketBefore = Client._getBucketSnapshot('test-store-bucket');
       const ret = await productImageService.bulkSave(products[0].id, null, {
         metadatas: [
           {
@@ -542,6 +565,8 @@ describe('ProductImageService.bulkSave (metadata.active)', () => {
       testValidateProductImages(ret, expectedResults.slice(0, 2));
       const images = await getImages();
       testValidateProductImages(images, expectedResults);
+      const bucketAfter = Client._getBucketSnapshot('test-store-bucket');
+      expect(bucketBefore).toEqual(bucketAfter);
     });
 
     it('should reject update image when metadata.active is null', async () => {

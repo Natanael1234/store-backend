@@ -141,9 +141,7 @@ describe('ProductImageService.bulkSave (additionalDataDto.metadatas)', () => {
     // image 1
     testValidateBucketItem(
       {
-        productId: productId1,
-        isThumbnail: false,
-        extension: 'jpg',
+        path: `/private/products/${productId1}/images/${updloadRet[0].id}.jpg`,
         size: 5921,
       },
       bucket[0],
@@ -151,9 +149,7 @@ describe('ProductImageService.bulkSave (additionalDataDto.metadatas)', () => {
     // thumbnail of image 1
     testValidateBucketItem(
       {
-        productId: productId1,
-        isThumbnail: true,
-        extension: 'jpeg',
+        path: `/private/products/${productId1}/images/${updloadRet[0].id}.thumbnail.jpeg`,
         size: 2709,
       },
       bucket[1],
@@ -192,9 +188,7 @@ describe('ProductImageService.bulkSave (additionalDataDto.metadatas)', () => {
     // image 1
     testValidateBucketItem(
       {
-        productId: productId1,
-        isThumbnail: false,
-        extension: 'jpg',
+        path: `/private/products/${productId1}/images/${updloadRet[0].id}.jpg`,
         size: 5921,
       },
       bucket[0],
@@ -202,9 +196,7 @@ describe('ProductImageService.bulkSave (additionalDataDto.metadatas)', () => {
     // thumbnail of image 1
     testValidateBucketItem(
       {
-        productId: productId1,
-        isThumbnail: true,
-        extension: 'jpeg',
+        path: `/private/products/${productId1}/images/${updloadRet[0].id}.thumbnail.jpeg`,
         size: 2709,
       },
       bucket[1],

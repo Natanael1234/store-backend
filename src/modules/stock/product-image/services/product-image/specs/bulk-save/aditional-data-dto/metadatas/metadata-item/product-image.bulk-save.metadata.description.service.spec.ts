@@ -246,15 +246,11 @@ describe('ProductImageService.bulkSave (metadata.description)', () => {
       testValidateBuckedItems(
         [
           {
-            productId: productId1,
-            isThumbnail: false,
-            extension: 'jpg',
+            path: `/private/products/${productId1}/images/${ret[0].id}.jpg`,
             size: 5921,
           },
           {
-            productId: productId1,
-            isThumbnail: true,
-            extension: 'jpeg',
+            path: `/private/products/${productId1}/images/${ret[0].id}.thumbnail.jpeg`,
             size: 2709,
           },
         ],
@@ -290,15 +286,11 @@ describe('ProductImageService.bulkSave (metadata.description)', () => {
       testValidateBuckedItems(
         [
           {
-            productId: productId1,
-            isThumbnail: false,
-            extension: 'jpg',
+            path: `/private/products/${productId1}/images/${ret[0].id}.jpg`,
             size: 5921,
           },
           {
-            productId: productId1,
-            isThumbnail: true,
-            extension: 'jpeg',
+            path: `/private/products/${productId1}/images/${ret[0].id}.thumbnail.jpeg`,
             size: 2709,
           },
         ],
@@ -334,15 +326,11 @@ describe('ProductImageService.bulkSave (metadata.description)', () => {
       testValidateBuckedItems(
         [
           {
-            productId: productId1,
-            isThumbnail: false,
-            extension: 'jpg',
+            path: `/private/products/${productId1}/images/${ret[0].id}.jpg`,
             size: 5921,
           },
           {
-            productId: productId1,
-            isThumbnail: true,
-            extension: 'jpeg',
+            path: `/private/products/${productId1}/images/${ret[0].id}.thumbnail.jpeg`,
             size: 2709,
           },
         ],
@@ -377,15 +365,11 @@ describe('ProductImageService.bulkSave (metadata.description)', () => {
       testValidateBuckedItems(
         [
           {
-            productId: productId1,
-            isThumbnail: false,
-            extension: 'jpg',
+            path: `/private/products/${productId1}/images/${ret[0].id}.jpg`,
             size: 5921,
           },
           {
-            productId: productId1,
-            isThumbnail: true,
-            extension: 'jpeg',
+            path: `/private/products/${productId1}/images/${ret[0].id}.thumbnail.jpeg`,
             size: 2709,
           },
         ],

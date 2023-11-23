@@ -1,41 +1,30 @@
 import { BucketItem } from '../../__mocks__/minio';
 
+type ExpectedImageItemParams = {
+  size: number;
+  path: string;
+};
+
 export function testValidateBucketItem(
-  expectedData: {
-    productId: string;
-    isThumbnail: boolean;
-    extension: string;
-    size: number;
-  },
+  expectedData: ExpectedImageItemParams,
   bucketItem: BucketItem,
 ) {
-  const { productId, isThumbnail, extension: expectedExtension } = expectedData;
   expect(bucketItem).toBeDefined();
-
-  const thumbnailsStr = isThumbnail ? 'thumbnails/' : '';
-  const regexpStr = `^images/products/${productId}/${thumbnailsStr}[\\d]+\\-[\\d]+\\.${expectedExtension}`;
-  try {
-    expect(bucketItem.name).toMatch(new RegExp(regexpStr));
-  } catch (error) {
-    throw error;
-  }
+  expect(bucketItem.name).toEqual(expectedData.path);
   expect(bucketItem.lastModified).toBeDefined();
   expect(bucketItem.etag).toBeDefined();
   expect(bucketItem.size).toEqual(expectedData.size);
 }
 
 export function testValidateBuckedItems(
-  expectedData: {
-    productId: string;
-    isThumbnail: boolean;
-    extension: string;
-    size: number;
-  }[],
+  expectedData: ExpectedImageItemParams[],
   bucketItems: BucketItem[],
 ) {
   expect(bucketItems).toBeDefined();
   expect(bucketItems).toHaveLength(expectedData.length);
   for (let i = 0; i < bucketItems.length; i++) {
-    testValidateBucketItem(expectedData[i], bucketItems[i]);
+    const expectedItem = expectedData[i];
+    const bucketItem = bucketItems[i];
+    testValidateBucketItem(expectedItem, bucketItem);
   }
 }

@@ -373,7 +373,7 @@ export class Client {
       // map inner files to directory
       const tailTokens = item.name
         .replace(/^\//g, '')
-        .substring(prefix.length)
+        .substring(prefix.length - 1)
         .split('/');
       const isDirectory = tailTokens.length >= 2;
       if (isDirectory) {

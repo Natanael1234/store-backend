@@ -65,6 +65,9 @@ export class ImageService {
     if (!filename) {
       throw new UnprocessableEntityException(FileMessage.FILE_NAME_NOT_DEFINED);
     }
+    if (typeof filename != 'string') {
+      throw new UnprocessableEntityException(FileMessage.INVALID_FILE_NAME);
+    }
     if (!allowedImageFileTypes.includes('.' + newExtension)) {
       throw new UnprocessableEntityException(
         FileMessage.INVALID_FILE_EXTENSION,
@@ -80,5 +83,21 @@ export class ImageService {
       filename = filename + '.' + newExtension;
     }
     return filename;
+  }
+
+  extractFilenameExtension(filename: string) {
+    if (!filename) {
+      throw new UnprocessableEntityException(FileMessage.FILE_NAME_NOT_DEFINED);
+    }
+    if (typeof filename != 'string') {
+      throw new UnprocessableEntityException(FileMessage.INVALID_FILE_NAME);
+    }
+    const tokens = filename.split('.');
+    if (tokens.length > 1) {
+      const extension = tokens[tokens.length - 1];
+      return extension;
+    } else {
+      return null;
+    }
   }
 }

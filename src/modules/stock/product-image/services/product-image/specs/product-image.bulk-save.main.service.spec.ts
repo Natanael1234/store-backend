@@ -131,7 +131,8 @@ describe('ProductImageService.bulkSave (main)', () => {
     const [productId1, productId2] =
       await testBuildProductImageCreationScenario(2);
     const files = await TestImages.buildFiles(3);
-    const imagesProduct1 = await productImageService.bulkSave(
+    // create on image
+    const ret1 = await productImageService.bulkSave(
       productId1,
       files.slice(0, 1),
       {
@@ -146,7 +147,8 @@ describe('ProductImageService.bulkSave (main)', () => {
         ],
       },
     );
-    const imagesProduct2 = await productImageService.bulkSave(
+    // update one image, create on image with metadata and create other image without metadata
+    const ret2 = await productImageService.bulkSave(
       productId1,
       files.slice(1, 3), // one image with metadata and one image without metadata
       {
@@ -161,7 +163,7 @@ describe('ProductImageService.bulkSave (main)', () => {
           },
           // update
           {
-            imageId: imagesProduct1[0].id,
+            imageId: ret1[0].id,
             name: 'Image 1b',
             description: 'description 1b',
             main: false,
@@ -171,129 +173,89 @@ describe('ProductImageService.bulkSave (main)', () => {
       },
     );
 
-    expect(imagesProduct2).toBeDefined();
-    // images in the cloud storage
-    const expectedBucketData = [
-      // image 1
-      {
-        productId: productId1,
-        isThumbnail: false,
-        extension: 'jpg',
-        size: 5921,
-      },
-      // thumbnail 1
-      {
-        productId: productId1,
-        isThumbnail: true,
-        extension: 'jpeg',
-        size: 2709,
-      },
-      // image 2
-      {
-        productId: productId1,
-        isThumbnail: false,
-        extension: 'png',
-        size: 191777,
-      },
-      // thumbnail 2
-      {
-        productId: productId1,
-        isThumbnail: true,
-        extension: 'jpeg',
-        size: 5215,
-      },
-      // image 3
-      {
-        productId: productId1,
-        isThumbnail: false,
-        extension: 'jpg',
-        size: 5921,
-      },
-      // thumbnail 3
-      {
-        productId: productId1,
-        isThumbnail: true,
-        extension: 'jpeg',
-        size: 2709,
-      },
-    ];
-
-    function validateBucket(
-      expectedBucketData: {
-        productId: string;
-        isThumbnail: boolean;
-        extension: string;
-        size: number;
-      }[],
-    ) {
-      expect(Client._getBucketsSnapshot()).toBeDefined();
-      const bucket = Client._getBucketSnapshot('test-store-bucket');
-      expect(bucket).toBeDefined();
-      expect(Object.keys(bucket)).toHaveLength(expectedBucketData.length);
-
-      const savedFilenames = [...new Set(bucket.map((item) => item.name))];
-      expect(savedFilenames).toHaveLength(bucket.length);
-
-      testValidateBuckedItems(expectedBucketData, bucket);
-
-      return bucket;
-    }
-
-    const bucket = validateBucket(expectedBucketData);
+    expect(ret2).toBeDefined();
 
     // expected register data
 
-    const expectedRegisterData = [
+    const expectedImageData = [
+      // image created without metadata
       {
-        id: productId1,
-        images: [
-          {
-            name: null,
-            description: null,
-            image: bucket[4].name,
-            thumbnail: bucket[5].name,
-            main: false,
-            active: false,
-            productId: productId1,
-          },
-          {
-            name: 'Image 1b',
-            description: 'description 1b',
-            image: bucket[0].name,
-            thumbnail: bucket[1].name,
-            main: false,
-            active: false,
-            productId: productId1,
-          },
-          {
-            name: 'Image 2',
-            description: 'description 2',
-            image: bucket[2].name,
-            thumbnail: bucket[3].name,
-            main: true,
-            active: true,
-            productId: productId1,
-          },
-        ],
+        name: null,
+        description: null,
+        image: `/private/products/${productId1}/images/${ret2[2].id}.jpg`,
+        thumbnail: `/private/products/${productId1}/images/${ret2[2].id}.thumbnail.jpeg`,
+        main: false,
+        active: false,
+        productId: productId1,
       },
+      // image updated
       {
-        id: productId2,
-        images: [],
+        name: 'Image 1b',
+        description: 'description 1b',
+        image: `/private/products/${productId1}/images/${ret2[0].id}.jpg`,
+        thumbnail: `/private/products/${productId1}/images/${ret2[0].id}.thumbnail.jpeg`,
+        main: false,
+        active: false,
+        productId: productId1,
+      },
+      // image created with metadata
+      {
+        name: 'Image 2',
+        description: 'description 2',
+        image: `/public/products/${productId1}/images/${ret2[1].id}.png`,
+        thumbnail: `/public/products/${productId1}/images/${ret2[1].id}.thumbnail.jpeg`,
+        main: true,
+        active: true,
+        productId: productId1,
       },
     ];
 
     // method return
 
-    testValidateProductImages(imagesProduct2, expectedRegisterData[0].images);
+    testValidateProductImages(ret2, expectedImageData);
 
     // registers in database
 
-    const imageRegisters = await productImageRepo
+    const images = await productImageRepo
       .createQueryBuilder(ProductImageConstants.PRODUCT_IMAGE)
       .orderBy(ProductImageConstants.PRODUCT_IMAGE_NAME, SortConstants.ASC)
       .getMany();
 
-    testValidateProductImages(imageRegisters, expectedRegisterData[0].images);
+    testValidateProductImages(images, expectedImageData);
+
+    const bucket = Client._getBucketSnapshot('test-store-bucket');
+    testValidateBuckedItems(
+      [
+        // image 2
+        {
+          path: `/public/products/${productId1}/images/${ret2[2].id}.png`,
+          size: 191777,
+        },
+        {
+          path: `/public/products/${productId1}/images/${ret2[2].id}.thumbnail.jpeg`,
+          size: 5215,
+        },
+        // image 1 (updated)
+        {
+          path: `/private/products/${productId1}/images/${ret2[1].id}.jpg`,
+          size: 5921,
+        },
+        {
+          path: `/private/products/${productId1}/images/${ret2[1].id}.thumbnail.jpeg`,
+          size: 2709,
+        },
+        // image 3
+        {
+          path: `/private/products/${productId1}/images/${ret2[0].id}.jpg`,
+          size: 5921,
+        },
+        {
+          path: `/private/products/${productId1}/images/${ret2[0].id}.thumbnail.jpeg`,
+          size: 2709,
+        },
+      ],
+      bucket,
+    );
   });
 
   it('should reject when both imageFiles and metadatas are empty', async () => {
