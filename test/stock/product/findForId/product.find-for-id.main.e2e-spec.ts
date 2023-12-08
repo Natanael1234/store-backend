@@ -10,6 +10,7 @@ import { ProductMessage } from '../../../../src/modules/stock/product/messages/p
 import { Product } from '../../../../src/modules/stock/product/models/product/product.entity';
 import { ExceptionText } from '../../../../src/modules/system/messages/exception-text/exception-text.enum';
 import { UuidMessage } from '../../../../src/modules/system/messages/uuid/uuid.messages';
+import { ValidationPipe } from '../../../../src/modules/system/pipes/custom-validation.pipe';
 import {
   TestBrandInsertParams,
   testInsertBrands,
@@ -36,7 +37,7 @@ const ProductIdMessage = new UuidMessage('product id');
 
 describe('ProductController (e2e) - get /producs/:productId ', () => {
   let app: INestApplication;
-  let moduleFixture: TestingModule;
+  let module: TestingModule;
   let brandRepo: Repository<Brand>;
   let categoryRepo: CategoryRepository;
   let productRepo: Repository<Product>;
@@ -45,24 +46,27 @@ describe('ProductController (e2e) - get /producs/:productId ', () => {
   let rootToken: string;
 
   beforeEach(async () => {
-    moduleFixture = await getTestingModule();
-    app = moduleFixture.createNestApplication();
-    brandRepo = moduleFixture.get<Repository<Brand>>(getRepositoryToken(Brand));
-    categoryRepo = moduleFixture.get<CategoryRepository>(CategoryRepository);
-    productRepo = moduleFixture.get<Repository<Product>>(
-      getRepositoryToken(Product),
+    module = await getTestingModule();
+    app = module.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        stopAtFirstError: true,
+        errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      }),
     );
-    productImageRepo = moduleFixture.get<Repository<ProductImage>>(
+    brandRepo = module.get<Repository<Brand>>(getRepositoryToken(Brand));
+    categoryRepo = module.get<CategoryRepository>(CategoryRepository);
+    productRepo = module.get<Repository<Product>>(getRepositoryToken(Product));
+    productImageRepo = module.get<Repository<ProductImage>>(
       getRepositoryToken(ProductImage),
     );
     await app.init();
-    rootToken = (await testBuildAuthenticationScenario(moduleFixture))
-      .rootToken;
+    rootToken = (await testBuildAuthenticationScenario(module)).rootToken;
   });
 
   afterEach(async () => {
     await app.close();
-    await moduleFixture.close(); // TODO: é necessário?
+    await module.close(); // TODO: é necessário?
   });
 
   async function insertBrands(

@@ -4,6 +4,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { getTestingModule } from '../../../../src/.jest/test-config.module';
 import { Brand } from '../../../../src/modules/stock/brand/models/brand/brand.entity';
+import { ValidationPipe } from '../../../../src/modules/system/pipes/custom-validation.pipe';
 import {
   TestBrandInsertParams,
   testInsertBrands,
@@ -15,22 +16,28 @@ import {
 
 describe('BrandController (e2e) - get /brands:brandId (authentication)', () => {
   let app: INestApplication;
-  let moduleFixture: TestingModule;
+  let module: TestingModule;
   let rootToken: string;
   let brandRepo: Repository<Brand>;
 
   beforeEach(async () => {
-    moduleFixture = await getTestingModule();
-    app = moduleFixture.createNestApplication();
+    module = await getTestingModule();
+    app = module.createNestApplication();
+    app = module.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        stopAtFirstError: true,
+        errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      }),
+    );
     await app.init();
     brandRepo = app.get<Repository<Brand>>(getRepositoryToken(Brand));
-    rootToken = (await testBuildAuthenticationScenario(moduleFixture))
-      .rootToken;
+    rootToken = (await testBuildAuthenticationScenario(module)).rootToken;
   });
 
   afterEach(async () => {
     await app.close();
-    await moduleFixture.close(); // TODO: é necessário?
+    await module.close(); // TODO: é necessário?
   });
 
   async function insertBrands(

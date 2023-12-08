@@ -8,14 +8,14 @@ import { Product } from '../../../src/modules/stock/product/models/product/produ
 
 describe('BulkStockController (e2e)', () => {
   let app: INestApplication;
-  let moduleFixture: TestingModule;
+  let module: TestingModule;
 
   let brandRepo: Repository<Brand>;
   let productRepo: Repository<Product>;
 
   beforeEach(async () => {
-    moduleFixture = await getTestingModule();
-    app = moduleFixture.createNestApplication();
+    module = await getTestingModule();
+    app = module.createNestApplication();
 
     // app.setGlobalPrefix('api');
     app.useGlobalPipes(
@@ -33,7 +33,7 @@ describe('BulkStockController (e2e)', () => {
 
   afterEach(async () => {
     await app.close();
-    await moduleFixture.close();
+    await module.close();
   });
 
   describe('/stock/bulk (POST)', () => {

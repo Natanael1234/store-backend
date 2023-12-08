@@ -25,14 +25,13 @@ const ActiveMessage = new BoolMessage('active');
 
 describe('BrandController (e2e) - post /brands (main)', () => {
   let app: INestApplication;
-  let moduleFixture: TestingModule;
+  let module: TestingModule;
   let brandRepo: Repository<Brand>;
   let rootToken: string;
 
   beforeEach(async () => {
-    moduleFixture = await getTestingModule();
-    app = moduleFixture.createNestApplication();
-
+    module = await getTestingModule();
+    app = module.createNestApplication();
     // app.setGlobalPrefix('api');
     app.useGlobalPipes(
       new ValidationPipe({
@@ -42,13 +41,12 @@ describe('BrandController (e2e) - post /brands (main)', () => {
     );
     brandRepo = app.get<Repository<Brand>>(getRepositoryToken(Brand));
     await app.init();
-    rootToken = (await testBuildAuthenticationScenario(moduleFixture))
-      .rootToken;
+    rootToken = (await testBuildAuthenticationScenario(module)).rootToken;
   });
 
   afterEach(async () => {
     await app.close();
-    await moduleFixture.close();
+    await module.close();
   });
 
   async function getBrands() {

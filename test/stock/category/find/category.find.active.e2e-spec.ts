@@ -1,4 +1,4 @@
-import { HttpStatus, INestApplication } from '@nestjs/common';
+import { HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { getTestingModule } from '../../../../src/.jest/test-config.module';
 import { CategoryConfigs } from '../../../../src/modules/stock/category/configs/category/category.configs';
@@ -23,22 +23,27 @@ const ActiveMessage = new BoolMessage('active');
 
 describe('CategoryController (e2e) - find /categories (active)', () => {
   let app: INestApplication;
-  let moduleFixture: TestingModule;
+  let module: TestingModule;
   let categoryRepo: CategoryRepository;
   let rootToken: string;
 
   beforeEach(async () => {
-    moduleFixture = await getTestingModule();
-    app = moduleFixture.createNestApplication();
-    categoryRepo = moduleFixture.get<CategoryRepository>(CategoryRepository);
+    module = await getTestingModule();
+    app = module.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        stopAtFirstError: true,
+        errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      }),
+    );
+    categoryRepo = module.get<CategoryRepository>(CategoryRepository);
     await app.init();
-    rootToken = (await testBuildAuthenticationScenario(moduleFixture))
-      .rootToken;
+    rootToken = (await testBuildAuthenticationScenario(module)).rootToken;
   });
 
   afterEach(async () => {
     await app.close();
-    await moduleFixture.close(); // TODO: é necessário?
+    await module.close(); // TODO: é necessário?
   });
 
   async function insertCategories(...categories: TestCategoryInsertParams[]) {

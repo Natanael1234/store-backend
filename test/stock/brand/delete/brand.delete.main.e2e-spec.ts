@@ -8,6 +8,7 @@ import { BrandMessage } from '../../../../src/modules/stock/brand/messages/brand
 import { Brand } from '../../../../src/modules/stock/brand/models/brand/brand.entity';
 import { ExceptionText } from '../../../../src/modules/system/messages/exception-text/exception-text.enum';
 import { UuidMessage } from '../../../../src/modules/system/messages/uuid/uuid.messages';
+import { ValidationPipe } from '../../../../src/modules/system/pipes/custom-validation.pipe';
 import {
   TestBrandInsertParams,
   testInsertBrands,
@@ -22,27 +23,33 @@ const BrandIdMessage = new UuidMessage('brand id');
 
 describe('BrandController (e2e) - delete /brands/:bandId (main)', () => {
   let app: INestApplication;
-  let moduleFixture: TestingModule;
+  let module: TestingModule;
   let brandRepo: Repository<Brand>;
   let rootToken: string;
 
   beforeEach(async () => {
-    moduleFixture = await getTestingModule();
-    app = moduleFixture.createNestApplication();
+    module = await getTestingModule();
+    app = module.createNestApplication();
+    app = module.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        stopAtFirstError: true,
+        errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      }),
+    );
     brandRepo = app.get<Repository<Brand>>(getRepositoryToken(Brand));
     await app.init();
-    rootToken = (await testBuildAuthenticationScenario(moduleFixture))
-      .rootToken;
+    rootToken = (await testBuildAuthenticationScenario(module)).rootToken;
   });
 
   afterEach(async () => {
     await app.close();
-    await moduleFixture.close();
+    await module.close();
   });
 
   afterEach(async () => {
     await app.close();
-    await moduleFixture.close();
+    await module.close();
   });
 
   async function insertBrands(

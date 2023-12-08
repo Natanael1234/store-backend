@@ -10,16 +10,13 @@ import { User } from '../../src/modules/user/models/user/user.entity';
 import { testInsertUsers } from '../../src/test/user/test-user-utils';
 
 /** Create three users (root, user and admin) and its authentication tokens. */
-export async function testBuildAuthenticationScenario(
-  moduleFixture: TestingModule,
-) {
+export async function testBuildAuthenticationScenario(module: TestingModule) {
   let authenticationService: AuthenticationService =
-    moduleFixture.get<AuthenticationService>(AuthenticationService);
-  let userRepo: Repository<User> = moduleFixture.get<Repository<User>>(
+    module.get<AuthenticationService>(AuthenticationService);
+  let userRepo: Repository<User> = module.get<Repository<User>>(
     getRepositoryToken(User),
   );
-  let encryptionService =
-    moduleFixture.get<EncryptionService>(EncryptionService);
+  let encryptionService = module.get<EncryptionService>(EncryptionService);
 
   const userData = [
     {

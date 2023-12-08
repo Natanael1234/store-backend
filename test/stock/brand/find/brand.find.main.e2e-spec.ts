@@ -14,6 +14,7 @@ import { DeletedFilter } from '../../../../src/modules/system/enums/filter/delet
 import { BoolMessage } from '../../../../src/modules/system/messages/bool/bool.messages';
 import { ExceptionText } from '../../../../src/modules/system/messages/exception-text/exception-text.enum';
 import { TextMessageOLD } from '../../../../src/modules/system/messages/text-old/text.messages.enum';
+import { ValidationPipe } from '../../../../src/modules/system/pipes/custom-validation.pipe';
 import {
   TestBrandInsertParams,
   testInsertBrands,
@@ -37,30 +38,30 @@ function buildBrandData(quantity: number, startNumber?: number) {
 
 describe('BrandController (e2e) - find /brands (main)', () => {
   let app: INestApplication;
-  let moduleFixture: TestingModule;
+  let module: TestingModule;
   let brandRepo: Repository<Brand>;
   let rootToken: string;
 
   beforeEach(async () => {
-    moduleFixture = await getTestingModule();
-    app = moduleFixture.createNestApplication();
+    module = await getTestingModule();
+    app = module.createNestApplication();
 
     // app.setGlobalPrefix('api');
-    // app.useGlobalPipes(
-    //   new ValidationPipe({
-    //     stopAtFirstError: true,
-    //     errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-    //   }),
-    // );
+    app = module.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        stopAtFirstError: true,
+        errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      }),
+    );
     brandRepo = app.get<Repository<Brand>>(getRepositoryToken(Brand));
     await app.init();
-    rootToken = (await testBuildAuthenticationScenario(moduleFixture))
-      .rootToken;
+    rootToken = (await testBuildAuthenticationScenario(module)).rootToken;
   });
 
   afterEach(async () => {
     await app.close();
-    await moduleFixture.close(); // TODO: é necessário?
+    await module.close(); // TODO: é necessário?
   });
 
   async function insertBrands(

@@ -7,6 +7,7 @@ import { Role } from '../../../src/modules/authentication/enums/role/role.enum';
 import { SortConstants } from '../../../src/modules/system/constants/sort/sort.constants';
 import { EncryptionService } from '../../../src/modules/system/encryption/services/encryption/encryption.service';
 import { ExceptionText } from '../../../src/modules/system/messages/exception-text/exception-text.enum';
+import { ValidationPipe } from '../../../src/modules/system/pipes/custom-validation.pipe';
 import { UserConstants } from '../../../src/modules/user/constants/user/user-entity.constants';
 import { RoleMessage } from '../../../src/modules/user/enums/messages/role/role.messages.enum';
 import { User } from '../../../src/modules/user/models/user/user.entity';
@@ -21,24 +22,29 @@ import {
 
 describe('UserController (e2e) - post /users (roles)', () => {
   let app: INestApplication;
-  let moduleFixture: TestingModule;
+  let module: TestingModule;
   let encryptionService: EncryptionService;
   let userRepo: Repository<User>;
   let rootToken: string;
 
   beforeEach(async () => {
-    moduleFixture = await getTestingModule();
-    app = moduleFixture.createNestApplication();
-    userRepo = moduleFixture.get<Repository<User>>(getRepositoryToken(User));
-    encryptionService = moduleFixture.get<EncryptionService>(EncryptionService);
+    module = await getTestingModule();
+    app = module.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        stopAtFirstError: true,
+        errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      }),
+    );
+    userRepo = module.get<Repository<User>>(getRepositoryToken(User));
+    encryptionService = module.get<EncryptionService>(EncryptionService);
     await app.init();
-    rootToken = (await testBuildAuthenticationScenario(moduleFixture))
-      .rootToken;
+    rootToken = (await testBuildAuthenticationScenario(module)).rootToken;
   });
 
   afterEach(async () => {
     await app.close();
-    await moduleFixture.close(); // TODO: é necessário?
+    await module.close(); // TODO: é necessário?
   });
 
   async function getUsers() {

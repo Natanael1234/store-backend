@@ -9,6 +9,7 @@ import { PaginationConfigs } from '../../../src/modules/system/configs/paginatio
 import { SortConstants } from '../../../src/modules/system/constants/sort/sort.constants';
 import { EncryptionService } from '../../../src/modules/system/encryption/services/encryption/encryption.service';
 import { ActiveFilter } from '../../../src/modules/system/enums/filter/active-filter/active-filter.enum';
+import { ValidationPipe } from '../../../src/modules/system/pipes/custom-validation.pipe';
 import { UserConfigs } from '../../../src/modules/user/configs/user/user.configs';
 import { UserConstants } from '../../../src/modules/user/constants/user/user-entity.constants';
 import { UserOrder } from '../../../src/modules/user/enums/sort/user-order/user-order.enum';
@@ -19,7 +20,7 @@ import { testGetMin } from '../../utils/test-end-to-end.utils';
 
 describe('UserController (e2e) - get /users (orderBy)', () => {
   let app: INestApplication;
-  let moduleFixture: TestingModule;
+  let module: TestingModule;
   let authenticationService: AuthenticationService;
   let encryptionService: EncryptionService;
   let userRepo: Repository<User>;
@@ -65,11 +66,17 @@ describe('UserController (e2e) - get /users (orderBy)', () => {
   }
 
   beforeEach(async () => {
-    moduleFixture = await getTestingModule();
-    app = moduleFixture.createNestApplication();
-    userRepo = moduleFixture.get<Repository<User>>(getRepositoryToken(User));
-    encryptionService = moduleFixture.get<EncryptionService>(EncryptionService);
-    authenticationService = moduleFixture.get<AuthenticationService>(
+    module = await getTestingModule();
+    app = module.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        stopAtFirstError: true,
+        errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      }),
+    );
+    userRepo = module.get<Repository<User>>(getRepositoryToken(User));
+    encryptionService = module.get<EncryptionService>(EncryptionService);
+    authenticationService = module.get<AuthenticationService>(
       AuthenticationService,
     );
     await app.init();
@@ -78,7 +85,7 @@ describe('UserController (e2e) - get /users (orderBy)', () => {
 
   afterEach(async () => {
     await app.close();
-    await moduleFixture.close(); // TODO: é necessário?
+    await module.close(); // TODO: é necessário?
   });
 
   it('should order by ["name_asc", "active_asc"]', async () => {

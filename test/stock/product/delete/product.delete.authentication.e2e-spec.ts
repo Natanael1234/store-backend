@@ -6,6 +6,7 @@ import { getTestingModule } from '../../../../src/.jest/test-config.module';
 import { Brand } from '../../../../src/modules/stock/brand/models/brand/brand.entity';
 import { CategoryRepository } from '../../../../src/modules/stock/category/repositories/category.repository';
 import { Product } from '../../../../src/modules/stock/product/models/product/product.entity';
+import { ValidationPipe } from '../../../../src/modules/system/pipes/custom-validation.pipe';
 import { testInsertBrands } from '../../../../src/test/brand/test-brand-utils';
 import { testInsertCategories } from '../../../../src/test/category/test-category-utils';
 import { testInsertProducts } from '../../../../src/test/product/test-product-utils';
@@ -16,28 +17,31 @@ import {
 
 describe('ProductController (e2e) - delete /products/:productId (authentication)', () => {
   let app: INestApplication;
-  let moduleFixture: TestingModule;
+  let module: TestingModule;
   let rootToken: string;
   let brandRepo: Repository<Brand>;
   let categoryRepo: CategoryRepository;
   let productRepo: Repository<Product>;
 
   beforeEach(async () => {
-    moduleFixture = await getTestingModule();
-    app = moduleFixture.createNestApplication();
-    brandRepo = moduleFixture.get<Repository<Brand>>(getRepositoryToken(Brand));
-    categoryRepo = moduleFixture.get<CategoryRepository>(CategoryRepository);
-    productRepo = moduleFixture.get<Repository<Product>>(
-      getRepositoryToken(Product),
+    module = await getTestingModule();
+    app = module.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        stopAtFirstError: true,
+        errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      }),
     );
+    brandRepo = module.get<Repository<Brand>>(getRepositoryToken(Brand));
+    categoryRepo = module.get<CategoryRepository>(CategoryRepository);
+    productRepo = module.get<Repository<Product>>(getRepositoryToken(Product));
     await app.init();
-    rootToken = (await testBuildAuthenticationScenario(moduleFixture))
-      .rootToken;
+    rootToken = (await testBuildAuthenticationScenario(module)).rootToken;
   });
 
   afterEach(async () => {
     await app.close();
-    await moduleFixture.close(); // TODO: é necessário?
+    await module.close(); // TODO: é necessário?
   });
 
   async function createTestScenario() {

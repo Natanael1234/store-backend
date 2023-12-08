@@ -17,6 +17,7 @@ import { DeletedFilter } from '../../../../src/modules/system/enums/filter/delet
 import { BoolMessage } from '../../../../src/modules/system/messages/bool/bool.messages';
 import { ExceptionText } from '../../../../src/modules/system/messages/exception-text/exception-text.enum';
 import { TextMessageOLD } from '../../../../src/modules/system/messages/text-old/text.messages.enum';
+import { ValidationPipe } from '../../../../src/modules/system/pipes/custom-validation.pipe';
 import {
   TestBrandInsertParams,
   testInsertBrands,
@@ -44,7 +45,7 @@ const DeletedMessage = new BoolMessage('deleted');
 
 describe('ProductController (e2e) - get/producs (main)', () => {
   let app: INestApplication;
-  let moduleFixture: TestingModule;
+  let module: TestingModule;
   let brandRepo: Repository<Brand>;
   let categoryRepo: CategoryRepository;
   let productRepo: Repository<Product>;
@@ -53,24 +54,27 @@ describe('ProductController (e2e) - get/producs (main)', () => {
   let rootToken: string;
 
   beforeEach(async () => {
-    moduleFixture = await getTestingModule();
-    app = moduleFixture.createNestApplication();
-    brandRepo = moduleFixture.get<Repository<Brand>>(getRepositoryToken(Brand));
-    categoryRepo = moduleFixture.get<CategoryRepository>(CategoryRepository);
-    productRepo = moduleFixture.get<Repository<Product>>(
-      getRepositoryToken(Product),
+    module = await getTestingModule();
+    app = module.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        stopAtFirstError: true,
+        errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      }),
     );
-    productImageRepo = moduleFixture.get<Repository<ProductImage>>(
+    brandRepo = module.get<Repository<Brand>>(getRepositoryToken(Brand));
+    categoryRepo = module.get<CategoryRepository>(CategoryRepository);
+    productRepo = module.get<Repository<Product>>(getRepositoryToken(Product));
+    productImageRepo = module.get<Repository<ProductImage>>(
       getRepositoryToken(ProductImage),
     );
     await app.init();
-    rootToken = (await testBuildAuthenticationScenario(moduleFixture))
-      .rootToken;
+    rootToken = (await testBuildAuthenticationScenario(module)).rootToken;
   });
 
   afterEach(async () => {
     await app.close();
-    await moduleFixture.close(); // TODO: é necessário?
+    await module.close(); // TODO: é necessário?
   });
 
   async function insertBrands(

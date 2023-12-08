@@ -11,6 +11,7 @@ import { EncryptionService } from '../../../src/modules/system/encryption/servic
 import { ActiveFilter } from '../../../src/modules/system/enums/filter/active-filter/active-filter.enum';
 import { BoolMessage } from '../../../src/modules/system/messages/bool/bool.messages';
 import { ExceptionText } from '../../../src/modules/system/messages/exception-text/exception-text.enum';
+import { ValidationPipe } from '../../../src/modules/system/pipes/custom-validation.pipe';
 import { UserConfigs } from '../../../src/modules/user/configs/user/user.configs';
 import { UserConstants } from '../../../src/modules/user/constants/user/user-entity.constants';
 import { User } from '../../../src/modules/user/models/user/user.entity';
@@ -22,18 +23,24 @@ const ActiveMessage = new BoolMessage('active');
 
 describe('UserController (e2e) - get /users (active)', () => {
   let app: INestApplication;
-  let moduleFixture: TestingModule;
+  let module: TestingModule;
   let authenticationService: AuthenticationService;
   let encryptionService: EncryptionService;
   let userRepo: Repository<User>;
   let rootToken: string;
 
   beforeEach(async () => {
-    moduleFixture = await getTestingModule();
-    app = moduleFixture.createNestApplication();
-    userRepo = moduleFixture.get<Repository<User>>(getRepositoryToken(User));
-    encryptionService = moduleFixture.get<EncryptionService>(EncryptionService);
-    authenticationService = moduleFixture.get<AuthenticationService>(
+    module = await getTestingModule();
+    app = module.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        stopAtFirstError: true,
+        errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      }),
+    );
+    userRepo = module.get<Repository<User>>(getRepositoryToken(User));
+    encryptionService = module.get<EncryptionService>(EncryptionService);
+    authenticationService = module.get<AuthenticationService>(
       AuthenticationService,
     );
     await app.init();
@@ -41,7 +48,7 @@ describe('UserController (e2e) - get /users (active)', () => {
 
   afterEach(async () => {
     await app.close();
-    await moduleFixture.close(); // TODO: é necessário?
+    await module.close(); // TODO: é necessário?
   });
 
   async function createTestAcceptScenario() {

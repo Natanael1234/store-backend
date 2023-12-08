@@ -19,7 +19,7 @@ import { UserService } from '../../../src/modules/user/services/user/user.servic
 
 describe('AuthenticationController (e2e) - /authentication/logout (POST)', () => {
   let app: INestApplication;
-  let moduleFixture: TestingModule;
+  let module: TestingModule;
   let userService: UserService;
   let authenticationService: AuthenticationService;
   let jwtService: JwtService;
@@ -29,8 +29,8 @@ describe('AuthenticationController (e2e) - /authentication/logout (POST)', () =>
   let encryptionService: EncryptionService;
 
   beforeEach(async () => {
-    moduleFixture = await getTestingModule();
-    app = moduleFixture.createNestApplication();
+    module = await getTestingModule();
+    app = module.createNestApplication();
     userService = app.get<UserService>(UserService);
     authenticationService = app.get<AuthenticationService>(
       AuthenticationService,
@@ -55,7 +55,7 @@ describe('AuthenticationController (e2e) - /authentication/logout (POST)', () =>
 
   afterEach(async () => {
     await app.close();
-    await moduleFixture.close();
+    await module.close();
   });
 
   it('should logout', async () => {

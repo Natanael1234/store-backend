@@ -2,6 +2,7 @@ import { HttpStatus, INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { getTestingModule } from '../../../../src/.jest/test-config.module';
 import { CategoryRepository } from '../../../../src/modules/stock/category/repositories/category.repository';
+import { ValidationPipe } from '../../../../src/modules/system/pipes/custom-validation.pipe';
 import { testInsertCategories } from '../../../../src/test/category/test-category-utils';
 import {
   testBuildAuthenticationScenario,
@@ -10,21 +11,27 @@ import {
 
 describe('CategoryController (e2e) - delete /category/:categoryId (authentication)', () => {
   let app: INestApplication;
-  let moduleFixture: TestingModule;
+  let module: TestingModule;
   let categoryRepo: CategoryRepository;
   let tokens: { rootToken: string; adminToken: string; userToken: string };
 
   beforeEach(async () => {
-    moduleFixture = await getTestingModule();
-    app = moduleFixture.createNestApplication();
-    categoryRepo = moduleFixture.get<CategoryRepository>(CategoryRepository);
+    module = await getTestingModule();
+    app = module.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        stopAtFirstError: true,
+        errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      }),
+    );
+    categoryRepo = module.get<CategoryRepository>(CategoryRepository);
     await app.init();
-    tokens = await testBuildAuthenticationScenario(moduleFixture);
+    tokens = await testBuildAuthenticationScenario(module);
   });
 
   afterEach(async () => {
     await app.close();
-    await moduleFixture.close(); // TODO: é necessário?
+    await module.close(); // TODO: é necessário?
   });
 
   it('should not allow unauthenticaded user', async () => {

@@ -8,6 +8,7 @@ import { CategoryRepository } from '../../../../src/modules/stock/category/repos
 import { PaginationConfigs } from '../../../../src/modules/system/configs/pagination/pagination.configs';
 import { SortConstants } from '../../../../src/modules/system/constants/sort/sort.constants';
 import { ActiveFilter } from '../../../../src/modules/system/enums/filter/active-filter/active-filter.enum';
+import { ValidationPipe } from '../../../../src/modules/system/pipes/custom-validation.pipe';
 import {
   TestCategoryInsertParams,
   testInsertCategories,
@@ -20,22 +21,27 @@ import {
 
 describe('CategoryController (e2e) - find /categories (orderBy)', () => {
   let app: INestApplication;
-  let moduleFixture: TestingModule;
+  let module: TestingModule;
   let categoryRepo: CategoryRepository;
   let rootToken: string;
 
   beforeEach(async () => {
-    moduleFixture = await getTestingModule();
-    app = moduleFixture.createNestApplication();
-    categoryRepo = moduleFixture.get<CategoryRepository>(CategoryRepository);
+    module = await getTestingModule();
+    app = module.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        stopAtFirstError: true,
+        errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      }),
+    );
+    categoryRepo = module.get<CategoryRepository>(CategoryRepository);
     await app.init();
-    rootToken = (await testBuildAuthenticationScenario(moduleFixture))
-      .rootToken;
+    rootToken = (await testBuildAuthenticationScenario(module)).rootToken;
   });
 
   afterEach(async () => {
     await app.close();
-    await moduleFixture.close(); // TODO: é necessário?
+    await module.close(); // TODO: é necessário?
   });
 
   async function insertCategories(...categories: TestCategoryInsertParams[]) {

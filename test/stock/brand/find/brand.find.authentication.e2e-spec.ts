@@ -1,6 +1,7 @@
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { getTestingModule } from '../../../../src/.jest/test-config.module';
+import { ValidationPipe } from '../../../../src/modules/system/pipes/custom-validation.pipe';
 import {
   testBuildAuthenticationScenario,
   testGetMin,
@@ -8,20 +9,25 @@ import {
 
 describe('BrandController (e2e) - find /brands (authentication)', () => {
   let app: INestApplication;
-  let moduleFixture: TestingModule;
+  let moudle: TestingModule;
   let rootToken: string;
 
   beforeEach(async () => {
-    moduleFixture = await getTestingModule();
-    app = moduleFixture.createNestApplication();
+    moudle = await getTestingModule();
+    app = moudle.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        stopAtFirstError: true,
+        errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      }),
+    );
     await app.init();
-    rootToken = (await testBuildAuthenticationScenario(moduleFixture))
-      .rootToken;
+    rootToken = (await testBuildAuthenticationScenario(moudle)).rootToken;
   });
 
   afterEach(async () => {
     await app.close();
-    await moduleFixture.close(); // TODO: é necessário?
+    await moudle.close(); // TODO: é necessário?
   });
 
   it('should not allow unauthenticaded user', async () => {
