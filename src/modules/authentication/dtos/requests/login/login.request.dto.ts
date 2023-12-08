@@ -1,12 +1,8 @@
-import {
-  IsEmail,
-  IsNotEmpty,
-  IsString,
-  MaxLength,
-  MinLength,
-} from 'class-validator';
-import { EmailMessage } from '../../../../system/enums/messages/email-messages/email-messages.enum';
-import { PasswordMessage } from '../../../../system/enums/messages/password-messages/password-messages.enum';
+import { Text } from '../../../../system/decorators/text/text.decorator';
+import { UserConfigs } from '../../../../user/configs/user/user.configs';
+
+const { EMAIL_MAX_LENGTH, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } =
+  UserConfigs;
 
 export class LoginRequestDto {
   /**
@@ -14,12 +10,13 @@ export class LoginRequestDto {
    *
    * @example joaodasilva1@email.com
    */
-  @MaxLength(60, {
-    message: 'Email must have a maximum of 60 characters',
+  @Text({
+    label: 'email',
+    maxLength: EMAIL_MAX_LENGTH,
+    allowNull: false,
+    allowUndefined: false,
+    pattern: 'email',
   })
-  @IsEmail({}, { message: EmailMessage.INVALID })
-  @IsString({ message: EmailMessage.STRING })
-  @IsNotEmpty({ message: EmailMessage.REQUIRED })
   readonly email: string;
 
   /**
@@ -27,9 +24,13 @@ export class LoginRequestDto {
    *
    * @example "Abc123*"
    */
-  @MaxLength(60, { message: PasswordMessage.MAX_LEN })
-  @MinLength(6, { message: PasswordMessage.MIN_LEN })
-  @IsString({ message: PasswordMessage.STRING })
-  @IsNotEmpty({ message: PasswordMessage.REQUIRED })
+
+  @Text({
+    label: 'password',
+    minLength: PASSWORD_MIN_LENGTH,
+    maxLength: PASSWORD_MAX_LENGTH,
+    allowNull: false,
+    allowUndefined: false,
+  })
   readonly password: string;
 }

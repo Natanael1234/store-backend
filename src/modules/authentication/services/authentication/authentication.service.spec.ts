@@ -9,17 +9,18 @@ import { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { getTestingModule } from '../../../../.jest/test-config.module';
-import { TestUserData } from '../../../../test/user/test-user-data';
-import { testValidateUser } from '../../../../test/user/test-user-utils';
-import { AuthorizationMessage } from '../../../system/enums/messages/authorization-messages/authorization-messages.enum';
-import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
-import { NameMessage } from '../../../system/enums/messages/name-messages/name-messages.enum';
-import { PasswordMessage } from '../../../system/enums/messages/password-messages/password-messages.enum';
-import { UserMessage } from '../../../user/enums/messages/user/user-messages.ts/user-messages.enum';
-import { UserEntity } from '../../../user/models/user/user.entity';
+import { testValidateUsersWithPassword } from '../../../../test/user/test-user-utils';
+import { EncryptionService } from '../../../system/encryption/services/encryption/encryption.service';
+import { AuthorizationMessage } from '../../../system/messages/authorization/authorization.messages.enum';
+import { EmailMessage } from '../../../system/messages/email/email.messages.enum';
+import { NameMessage } from '../../../system/messages/name/name.messages.enum';
+import { PasswordMessage } from '../../../system/messages/password/password.messages.enum';
+import { UserConstants } from '../../../user/constants/user/user-entity.constants';
+import { UserMessage } from '../../../user/enums/messages/user/user.messages.enum';
+import { User } from '../../../user/models/user/user.entity';
 import { UserService } from '../../../user/services/user/user.service';
-import { CredentialsMessage } from '../../enums/cretentials-messages.ts/credentials-messages.enum';
 import { Role } from '../../enums/role/role.enum';
+import { CredentialsMessage } from '../../messages/cretentials/credentials.messages.enum';
 import { RefreshTokenRepository } from '../../repositories/refresh-token.repository';
 import { TokenService } from '../token/token.service';
 import {
@@ -35,8 +36,9 @@ describe('AuthenticationService', () => {
   let jwtService: JwtService;
   let userService: UserService;
   let refreshTokenRepo: RefreshTokenRepository;
-  let userRepo: Repository<UserEntity>;
+  let userRepo: Repository<User>;
   let tokenService: TokenService;
+  let encryptionService: EncryptionService;
 
   beforeEach(async () => {
     module = await getTestingModule();
@@ -52,269 +54,448 @@ describe('AuthenticationService', () => {
     refreshTokenRepo = module.get<RefreshTokenRepository>(
       RefreshTokenRepository,
     );
-    userRepo = module.get<Repository<UserEntity>>(
-      getRepositoryToken(UserEntity),
-    );
+    userRepo = module.get<Repository<User>>(getRepositoryToken(User));
+    encryptionService = module.get<EncryptionService>(EncryptionService);
   });
 
   afterEach(async () => {
     await module.close(); // TODO: é necessário?
   });
 
+  async function insertUsers(
+    ...users: {
+      name: string;
+      email: string;
+      password: string;
+      active?: boolean;
+      roles: Role[];
+    }[]
+  ) {
+    const ids = [];
+    for (const user of users) {
+      const ret = await userRepo
+        .createQueryBuilder()
+        .insert()
+        .into(User)
+        .values({
+          name: user.name,
+          email: user.email,
+          hash: await encryptionService.encrypt(user.password),
+          roles: user.roles,
+          active: user.active,
+        })
+        .execute();
+      ids.push(ret.identifiers[0].id);
+    }
+    return ids;
+  }
+
   describe('register', () => {
-    it.skip('should fail when user is inactive', async () => {});
+    it('should fail when user is inactive', async () => {});
 
     it('should register users', async () => {
-      const registerData = TestUserData.registerData;
-      const response1 = await authenticationService.register(registerData[0]);
-      const response2 = await authenticationService.register(registerData[1]);
-      const createData = {
-        name: 'Another user',
-        email: 'anotheruser@email.com',
-        password: 'A123df*',
+      const registerResponseUser1 = await authenticationService.register({
+        name: 'User 1',
+        email: 'user1@email.com',
+        password: 'Abcd1*',
+        acceptTerms: true,
+      });
+      const registerResponseUser2 = await authenticationService.register({
+        name: 'User 2',
+        email: 'user2@email.com',
+        password: 'Abcd2*',
+        acceptTerms: true,
+      });
+      await userService.create({
+        name: 'User 3',
+        email: 'user3@email.com',
+        password: 'Abcd3*',
         roles: [Role.ADMIN],
         active: false,
-      };
-      await userService.create(createData);
-      const response3 = await authenticationService.register(registerData[2]);
-
-      const expectedUserData = [
-        {
-          id: 1,
-          name: registerData[0].name,
-          email: registerData[0].email,
-          password: registerData[0].password,
-          roles: [Role.ROOT],
-          active: true,
-        },
-        {
-          id: 2,
-          name: registerData[1].name,
-          email: registerData[1].email,
-          password: registerData[1].password,
-          roles: [Role.USER],
-          active: true,
-        },
-        {
-          id: 3,
-          name: createData.name,
-          email: createData.email,
-          password: createData.password,
-          roles: createData.roles,
-          active: false,
-        },
-        {
-          id: 4,
-          name: registerData[2].name,
-          email: registerData[2].email,
-          password: registerData[2].password,
-          roles: [Role.USER],
-          active: true,
-        },
-      ];
+      });
+      const registerResponseUser4 = await authenticationService.register({
+        name: 'User 4',
+        email: 'user4@email.com',
+        password: 'Abcd4*',
+        acceptTerms: true,
+      });
 
       const repositoryRefreshTokens = await refreshTokenRepo.find();
       expect(repositoryRefreshTokens).toHaveLength(3);
-      expect(repositoryRefreshTokens[0].userId).toEqual(1);
-      expect(repositoryRefreshTokens[1].userId).toEqual(2);
-      expect(repositoryRefreshTokens[2].userId).toEqual(4);
+      expect(repositoryRefreshTokens[0].userId).toEqual(
+        registerResponseUser1.data.user.id,
+      );
+      expect(repositoryRefreshTokens[1].userId).toEqual(
+        registerResponseUser2.data.user.id,
+      );
+      expect(repositoryRefreshTokens[2].userId).toEqual(
+        registerResponseUser4.data.user.id,
+      );
 
-      const repositoryUsers = await userRepo.find();
-      expect(repositoryUsers).toHaveLength(4);
-      testValidateUser(repositoryUsers[0], expectedUserData[0]);
-      testValidateUser(repositoryUsers[1], expectedUserData[1]);
-      testValidateUser(repositoryUsers[2], expectedUserData[2]);
-      testValidateUser(repositoryUsers[3], expectedUserData[3]);
+      const repositoryUsers = await userRepo
+        .createQueryBuilder(UserConstants.USER)
+        .addSelect(UserConstants.USER_HASH)
+        .getMany();
 
-      testAuthenticationResponse(jwtService, response1, expectedUserData[0]);
-      testAuthenticationResponse(jwtService, response2, expectedUserData[1]);
-      testAuthenticationResponse(jwtService, response3, expectedUserData[3]);
+      await testValidateUsersWithPassword(
+        repositoryUsers,
+        [
+          {
+            name: 'User 1',
+            email: 'user1@email.com',
+            password: 'Abcd1*',
+            roles: [Role.ROOT],
+            active: true,
+          },
+          {
+            name: 'User 2',
+            email: 'user2@email.com',
+            password: 'Abcd2*',
+            roles: [Role.USER],
+            active: true,
+          },
+          {
+            name: 'User 3',
+            email: 'user3@email.com',
+            password: 'Abcd3*',
+            roles: [Role.ADMIN],
+            active: false,
+          },
+          {
+            name: 'User 4',
+            email: 'user4@email.com',
+            password: 'Abcd4*',
+            roles: [Role.USER],
+            active: true,
+          },
+        ],
+        encryptionService,
+      );
+
+      const user = await userRepo
+        .createQueryBuilder(UserConstants.USERS)
+        .getMany();
+
+      // TODO: verificar se pode usar o user id dos registerResponseUser
+      testAuthenticationResponse(jwtService, registerResponseUser1, {
+        id: user[0].id,
+        name: 'User 1',
+        email: 'user1@email.com',
+        active: true,
+      });
+      testAuthenticationResponse(jwtService, registerResponseUser2, {
+        id: user[1].id,
+        name: 'User 2',
+        email: 'user2@email.com',
+        active: true,
+      });
+      testAuthenticationResponse(jwtService, registerResponseUser4, {
+        id: user[3].id,
+        name: 'User 4',
+        email: 'user4@email.com',
+        active: true,
+      });
 
       // check if payloads are different
-      testDistinctTokens(response1.data.payload, response2.data.payload);
-      testDistinctTokens(response1.data.payload, response3.data.payload);
-      testDistinctTokens(response2.data.payload, response3.data.payload);
+      testDistinctTokens(
+        registerResponseUser1.data.payload,
+        registerResponseUser2.data.payload,
+      );
+      testDistinctTokens(
+        registerResponseUser1.data.payload,
+        registerResponseUser4.data.payload,
+      );
+      testDistinctTokens(
+        registerResponseUser2.data.payload,
+        registerResponseUser4.data.payload,
+      );
     });
 
-    it.each([{ data: null }, { data: undefined }])(
-      'should fail when data is $data',
-      async ({ data }) => {
-        const fn = async () => await authenticationService.register(data);
-        await expect(fn()).rejects.toThrow(UserMessage.DATA_REQUIRED);
-        await expect(fn()).rejects.toThrow(BadRequestException);
-      },
-    );
+    it('should fail when data is null', async () => {
+      const fn = async () => await authenticationService.register(null);
+      await expect(fn()).rejects.toThrow(UserMessage.DATA_REQUIRED);
+      await expect(fn()).rejects.toThrow(BadRequestException);
+    });
+
+    it('should fail when data is undefined', async () => {
+      const fn = async () => await authenticationService.register(undefined);
+      await expect(fn()).rejects.toThrow(UserMessage.DATA_REQUIRED);
+      await expect(fn()).rejects.toThrow(BadRequestException);
+    });
 
     describe('name', () => {
-      it.each([{ name: null }, { name: undefined }])(
-        'should fail when name is $name',
-        async ({ name }) => {
-          const registerData = TestUserData.registerData;
-          const fn = async () =>
-            await authenticationService.register({ ...registerData[1], name });
-          await expect(fn()).rejects.toThrow(NameMessage.REQUIRED);
-          await expect(fn()).rejects.toThrow(UnprocessableEntityException);
-        },
-      );
+      it('should fail when name is null', async () => {
+        const fn = async () =>
+          await authenticationService.register({
+            name: null,
+            email: 'user@email.com',
+            password: 'Ab123*',
+            acceptTerms: true,
+          });
+
+        await expect(fn()).rejects.toThrow(NameMessage.REQUIRED);
+        await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+      });
+
+      it('should fail when name is undefined', async () => {
+        const fn = async () =>
+          await authenticationService.register({
+            name: undefined,
+            email: 'user@email.com',
+            password: 'Ab123*',
+            acceptTerms: true,
+          });
+        await expect(fn()).rejects.toThrow(NameMessage.REQUIRED);
+        await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+      });
     });
 
     describe('email', () => {
       it('should fail when email is already registered', async () => {
-        const registerData = TestUserData.registerData;
+        const registerData = [
+          {
+            name: 'User 1',
+            email: 'user1@email.com',
+            password: 'Abc12*',
+            acceptTerms: true,
+          },
+        ];
+
         const response1 = await authenticationService.register(registerData[0]);
         const fn = async () =>
           await authenticationService.register({
-            ...registerData[1],
-            email: registerData[0].email,
+            name: 'User Name',
+            email: 'user1@email.com',
+            password: 'Ab123*',
+            acceptTerms: true,
           });
+
         await expect(fn()).rejects.toThrow(EmailMessage.INVALID);
         await expect(fn()).rejects.toThrow(ConflictException);
       });
 
       it('should fail when email is already registered for user is soft-deleted', async () => {
-        const registerData = TestUserData.registerData;
-        await authenticationService.register(registerData[0]);
+        const registerData = [
+          {
+            name: 'User 1',
+            email: 'user1@email.com',
+            password: 'Abc12*',
+            acceptTerms: true,
+          },
+          {
+            name: 'User 2',
+            email: 'user2@email.com',
+            password: 'Abc13*',
+            acceptTerms: true,
+          },
+        ];
+
+        await authenticationService.register({
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Abc12*',
+          acceptTerms: true,
+        });
         await authenticationService.register(registerData[1]);
-        await userRepo.softDelete(2);
+
+        await userRepo
+          .createQueryBuilder(UserConstants.USERS)
+          .softDelete()
+          .from(User)
+          .where(UserConstants.EMAIL_EQUALS_TO, { email: 'user2@email.com' })
+          .execute();
+
         const fn = () => authenticationService.register(registerData[1]);
         await expect(fn()).rejects.toThrow(EmailMessage.INVALID);
         await expect(fn()).rejects.toThrow(ConflictException);
       });
 
-      it.each([{ email: null }, { email: undefined }])(
-        'should fail when email is $email',
-        async ({ email }) => {
-          const registerData = TestUserData.registerData;
-          const fn = async () =>
-            await authenticationService.register({ ...registerData[1], email });
-          await expect(fn()).rejects.toThrow(EmailMessage.REQUIRED);
-          await expect(fn()).rejects.toThrow(UnprocessableEntityException);
-        },
-      );
+      it('should fail when email is null', async () => {
+        const fn = async () =>
+          await authenticationService.register({
+            name: 'User Name',
+            email: null,
+            password: 'Ab123*',
+            acceptTerms: true,
+          });
+        await expect(fn()).rejects.toThrow(EmailMessage.REQUIRED);
+        await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+      });
+
+      it('should fail when email is undefined', async () => {
+        const fn = async () =>
+          await authenticationService.register({
+            name: 'User Name',
+            email: undefined,
+            password: 'Ab123*',
+            acceptTerms: true,
+          });
+        await expect(fn()).rejects.toThrow(EmailMessage.REQUIRED);
+        await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+      });
     });
 
     describe('password', () => {
-      it.each([{ password: null }, { password: undefined }])(
-        'should fail when password is $password',
-        async ({ password }) => {
-          const registerData = TestUserData.registerData;
-          const fn = async () =>
-            await authenticationService.register({
-              ...registerData[1],
-              password,
-            });
-          await expect(fn()).rejects.toThrow(PasswordMessage.REQUIRED);
-          await expect(fn()).rejects.toThrow(UnprocessableEntityException);
-        },
-      );
+      it('should fail when password is null', async () => {
+        const fn = async () =>
+          await authenticationService.register({
+            name: 'User Name',
+            email: 'user@email.com',
+            password: null,
+            acceptTerms: true,
+          });
+        await expect(fn()).rejects.toThrow(PasswordMessage.REQUIRED);
+        await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+      });
+
+      it('should fail when password is undfined', async () => {
+        const fn = async () =>
+          await authenticationService.register({
+            name: 'User Name',
+            email: 'user@email.com',
+            password: undefined,
+            acceptTerms: true,
+          });
+        await expect(fn()).rejects.toThrow(PasswordMessage.REQUIRED);
+        await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+      });
     });
 
     describe('acceptTerms', () => {
-      it.each([{ acceptTerms: null }, { acceptTerms: undefined }])(
-        'should not fail when acceptTerms is $acceptTerms',
-        async ({ acceptTerms }) => {
-          const registerData = TestUserData.registerData;
-          const ret = await authenticationService.register({
-            ...registerData[1],
-            acceptTerms,
-          });
-          expect(ret).toBeDefined();
-        },
-      );
+      it('should not fail when acceptTerms is null', async () => {
+        // TODO: errado?
+        const ret = await authenticationService.register({
+          name: 'User Name',
+          email: 'user@email.com',
+          password: 'Abc12*',
+          acceptTerms: null,
+        });
+        expect(ret).toBeDefined();
+      });
+
+      it('should not fail when acceptTerms is undefined', async () => {
+        // TODO: errado?
+        const ret = await authenticationService.register({
+          name: 'User Name',
+          email: 'user@email.com',
+          password: 'Abc12*',
+          acceptTerms: undefined,
+        });
+        expect(ret).toBeDefined();
+      });
     });
   });
 
   describe('login', () => {
     it('should login', async () => {
-      const registerData = TestUserData.registerData;
-      await authenticationService.register(registerData[0]);
-      await authenticationService.register(registerData[1]);
-
-      const createUserData = {
-        name: 'Another user',
-        email: 'anotheruser@email.com',
-        password: '123Acb*',
-        roles: [Role.ADMIN],
-        active: true,
-      };
-      await userService.create(createUserData);
-      await authenticationService.register(registerData[2]);
-
-      const expectedUserData = [
+      const [userId1, userId2, userId3, userId4, userId5] = await insertUsers(
         {
-          id: 1,
-          name: registerData[0].name,
-          email: registerData[0].email,
-          password: registerData[0].password,
-          roles: [Role.USER],
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Abcd*1',
+          roles: [Role.ROOT],
           active: true,
         },
         {
-          id: 2,
-          name: registerData[1].name,
-          email: registerData[1].email,
-          password: registerData[1].password,
-          roles: [Role.USER],
-          active: true,
-        },
-        {
-          id: 3,
-          name: createUserData.name,
-          email: createUserData.email,
-          password: createUserData.password,
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Abcd*2',
           roles: [Role.ADMIN],
           active: true,
         },
         {
-          id: 4,
-          name: registerData[2].name,
-          email: registerData[2].email,
-          password: registerData[2].password,
+          name: 'User 3',
+          email: 'user3@email.com',
+          password: 'Abcd*3',
           roles: [Role.USER],
           active: true,
         },
-      ];
+        {
+          name: 'User 4',
+          email: 'user4@email.com',
+          password: 'Abcd*4',
+          roles: [Role.USER],
+          active: true,
+        },
+      );
 
       const loginRet1 = await authenticationService.login({
-        email: registerData[1].email,
-        password: registerData[1].password,
+        email: 'user2@email.com',
+        password: 'Abcd*2',
       });
 
       const loginRet2 = await authenticationService.login({
-        email: createUserData.email,
-        password: createUserData.password,
+        email: 'user3@email.com',
+        password: 'Abcd*3',
       });
 
       // prevents tokens for the same user to be equal due to be generated at the same time
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const loginRet3 = await authenticationService.login({
-        email: createUserData.email,
-        password: createUserData.password,
+        email: 'user3@email.com',
+        password: 'Abcd*3',
       });
 
-      testAuthenticationResponse(jwtService, loginRet1, expectedUserData[1]);
-      testAuthenticationResponse(jwtService, loginRet2, expectedUserData[2]);
-      testAuthenticationResponse(jwtService, loginRet3, expectedUserData[2]);
+      testAuthenticationResponse(jwtService, loginRet1, {
+        id: userId2,
+        name: 'User 2',
+        email: 'user2@email.com',
+        active: true,
+      });
+      testAuthenticationResponse(jwtService, loginRet2, {
+        id: userId3,
+        name: 'User 3',
+        email: 'user3@email.com',
+        active: true,
+      });
+      testAuthenticationResponse(jwtService, loginRet2, {
+        id: userId3,
+        name: 'User 3',
+        email: 'user3@email.com',
+        active: true,
+      });
 
       testDistinctTokens(loginRet1.data.payload, loginRet2.data.payload);
       testDistinctTokens(loginRet1.data.payload, loginRet3.data.payload);
       testDistinctTokens(loginRet2.data.payload, loginRet3.data.payload);
     });
 
-    it.each([{ loginData: null }, { loginData: undefined }])(
-      'should fail when login data is $loginData',
-      async ({ loginData }) => {
-        const fn = () => authenticationService.login(loginData);
-        await expect(fn()).rejects.toThrow(CredentialsMessage.REQUIRED);
-        await expect(fn()).rejects.toThrow(BadRequestException);
-      },
-    );
+    it('should fail when login data is null', async () => {
+      const loginData = null;
+      const fn = () => authenticationService.login(loginData);
+      await expect(fn()).rejects.toThrow(CredentialsMessage.REQUIRED);
+      await expect(fn()).rejects.toThrow(BadRequestException);
+    });
+
+    it('should fail when login data is undefined', async () => {
+      const loginData = undefined;
+      const fn = () => authenticationService.login(loginData);
+      await expect(fn()).rejects.toThrow(CredentialsMessage.REQUIRED);
+      await expect(fn()).rejects.toThrow(BadRequestException);
+    });
 
     it('should fail when user is inactive', async () => {
-      const registerData = TestUserData.registerData;
+      const registerData = [
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Abc12*',
+          acceptTerms: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Abc13*',
+          acceptTerms: true,
+        },
+      ];
       await authenticationService.register(registerData[0]);
-      await userRepo.update(1, { active: false });
+      const user = await userRepo
+        .createQueryBuilder(UserConstants.USERS)
+        .where(UserConstants.EMAIL_EQUALS_TO, { email: 'user1@email.com' })
+        .getOne();
+      await userRepo.update(user.id, { active: false });
 
       const fn = () =>
         authenticationService.login({
@@ -326,10 +507,27 @@ describe('AuthenticationService', () => {
     });
 
     it('should fail when user is soft-deleted', async () => {
-      const registerData = TestUserData.registerData;
+      const registerData = [
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Abc12*',
+          acceptTerms: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Abc13*',
+          acceptTerms: true,
+        },
+      ];
       await authenticationService.register(registerData[0]);
       await authenticationService.register(registerData[1]);
-      await userRepo.softDelete(2);
+      const user = await userRepo
+        .createQueryBuilder(UserConstants.USERS)
+        .where(UserConstants.EMAIL_EQUALS_TO, { email: 'user2@email.com' })
+        .getOne();
+      await userRepo.softDelete(user.id);
       const fn = () =>
         authenticationService.login({
           email: registerData[1].email,
@@ -340,11 +538,24 @@ describe('AuthenticationService', () => {
     });
 
     describe('email', () => {
-      it.each([
-        { emailDescription: null, email: null },
-        { emailDescription: undefined, email: undefined },
-        { emailDescription: 'empty', email: '' },
-      ])('should fail when email is $emailDescription', async ({ email }) => {
+      it('should fail when email is null', async () => {
+        const email = null;
+        const fn = () =>
+          authenticationService.login({ email, password: '123' });
+        await expect(fn()).rejects.toThrow(EmailMessage.REQUIRED);
+        await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+      });
+
+      it('should fail when email is undefined', async () => {
+        const email = undefined;
+        const fn = () =>
+          authenticationService.login({ email, password: '123' });
+        await expect(fn()).rejects.toThrow(EmailMessage.REQUIRED);
+        await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+      });
+
+      it('should fail when email is empty string', async () => {
+        const email = '';
         const fn = () =>
           authenticationService.login({ email, password: '123' });
         await expect(fn()).rejects.toThrow(EmailMessage.REQUIRED);
@@ -352,7 +563,20 @@ describe('AuthenticationService', () => {
       });
 
       it('should fail when email is not found', async () => {
-        const registerData = TestUserData.registerData;
+        const registerData = [
+          {
+            name: 'User 1',
+            email: 'user1@email.com',
+            password: 'Abc12*',
+            acceptTerms: true,
+          },
+          {
+            name: 'User 2',
+            email: 'user2@email.com',
+            password: 'Abc13*',
+            acceptTerms: true,
+          },
+        ];
         await authenticationService.register(registerData[0]);
         await authenticationService.register(registerData[1]);
         const fn = () =>
@@ -366,27 +590,97 @@ describe('AuthenticationService', () => {
     });
 
     describe('password', () => {
-      it.each([
-        { passwordDescription: null, password: null },
-        { passwordDescription: undefined, password: undefined },
-        { passwordDescription: 'empty', password: '' },
-      ])(
-        'should fail when email is $passwordDescription',
-        async ({ password }) => {
-          const registerData = TestUserData.registerData;
-          const fn = () =>
-            authenticationService.login({
-              email: registerData[1].email,
-              password,
-            });
-          await expect(fn()).rejects.toThrow(PasswordMessage.REQUIRED);
-          await expect(fn()).rejects.toThrow(UnprocessableEntityException);
-        },
-      );
+      it('should fail when email is null', async () => {
+        const registerData = [
+          {
+            name: 'User 1',
+            email: 'user1@email.com',
+            password: 'Abc12*',
+            acceptTerms: true,
+          },
+          {
+            name: 'User 2',
+            email: 'user2@email.com',
+            password: 'Abc13*',
+            acceptTerms: true,
+          },
+        ];
+
+        const fn = () =>
+          authenticationService.login({
+            email: registerData[1].email,
+            password: null,
+          });
+        await expect(fn()).rejects.toThrow(PasswordMessage.REQUIRED);
+        await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+      });
+
+      it('should fail when email is undefined', async () => {
+        const registerData = [
+          {
+            name: 'User 1',
+            email: 'user1@email.com',
+            password: 'Abc12*',
+            acceptTerms: true,
+          },
+          {
+            name: 'User 2',
+            email: 'user2@email.com',
+            password: 'Abc13*',
+            acceptTerms: true,
+          },
+        ];
+
+        const fn = () =>
+          authenticationService.login({
+            email: registerData[1].email,
+            password: undefined,
+          });
+        await expect(fn()).rejects.toThrow(PasswordMessage.REQUIRED);
+        await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+      });
+
+      it('should fail when email is empty string', async () => {
+        const registerData = [
+          {
+            name: 'User 1',
+            email: 'user1@email.com',
+            password: 'Abc12*',
+            acceptTerms: true,
+          },
+          {
+            name: 'User 2',
+            email: 'user2@email.com',
+            password: 'Abc13*',
+            acceptTerms: true,
+          },
+        ];
+
+        const fn = () =>
+          authenticationService.login({
+            email: registerData[1].email,
+            password: '',
+          });
+        await expect(fn()).rejects.toThrow(PasswordMessage.REQUIRED);
+        await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+      });
     });
 
     it('should fail when password is wrong', async () => {
-      const registerData = TestUserData.registerData;
+      const registerData = [
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Abc12*',
+          acceptTerms: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Abc13*',
+          acceptTerms: true,
+        },
+      ];
       await authenticationService.register(registerData[0]);
       await authenticationService.register(registerData[1]);
       const fn = () =>
@@ -401,12 +695,35 @@ describe('AuthenticationService', () => {
 
   describe('refresh', () => {
     it('should refresh login', async () => {
-      const registerData = TestUserData.registerData;
+      const registerData = [
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Abc12*',
+          acceptTerms: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Abc13*',
+          acceptTerms: true,
+        },
+        {
+          name: 'User 3',
+          email: 'user3@email.com',
+          password: 'Abc13*',
+          acceptTerms: true,
+        },
+      ];
+
       const registerResponses = [
         await authenticationService.register(registerData[0]),
         await authenticationService.register(registerData[1]),
         await authenticationService.register(registerData[2]),
       ];
+      const users = await userRepo
+        .createQueryBuilder(UserConstants.USERS)
+        .getMany();
 
       const refreshResponses = [
         await authenticationService.refresh(
@@ -426,29 +743,99 @@ describe('AuthenticationService', () => {
         await jwtService.decode(refreshResponses[2].data.payload.token),
       ];
 
-      testDecodedAccessToken(decodedAccessTokens[0], 1);
-      testDecodedAccessToken(decodedAccessTokens[1], 2);
-      testDecodedAccessToken(decodedAccessTokens[2], 2);
+      testDecodedAccessToken(decodedAccessTokens[0], users[0].id);
+      testDecodedAccessToken(decodedAccessTokens[1], users[1].id);
+      testDecodedAccessToken(decodedAccessTokens[2], users[1].id);
     });
 
-    it.each([
-      { refreshTokenDescription: null, refreshToken: null },
-      { refreshTokenDescription: undefined, refreshToken: undefined },
-      { refreshTokenDescription: 'empty', refreshToken: '' },
-    ])(
-      'should fail when refresh token is $refreshTokenDescription',
-      async ({ refreshToken }) => {
-        const registerData = TestUserData.registerData;
-        await authenticationService.register(registerData[0]);
-        const fn = async () =>
-          await authenticationService.refresh(refreshToken);
-        await expect(fn()).rejects.toThrow(AuthorizationMessage.NOT_AUTORIZED);
-        await expect(fn()).rejects.toThrow(UnauthorizedException);
-      },
-    );
+    it('should fail when refresh token is null', async () => {
+      const registerData = [
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Abc12*',
+          acceptTerms: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Abc13*',
+          acceptTerms: true,
+        },
+      ];
+
+      const refreshToken = null;
+
+      await authenticationService.register(registerData[0]);
+      const fn = async () => await authenticationService.refresh(refreshToken);
+      await expect(fn()).rejects.toThrow(AuthorizationMessage.NOT_AUTORIZED);
+      await expect(fn()).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should fail when refresh token is undefined', async () => {
+      const registerData = [
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Abc12*',
+          acceptTerms: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Abc13*',
+          acceptTerms: true,
+        },
+      ];
+
+      const refreshToken = undefined;
+
+      await authenticationService.register(registerData[0]);
+      const fn = async () => await authenticationService.refresh(refreshToken);
+      await expect(fn()).rejects.toThrow(AuthorizationMessage.NOT_AUTORIZED);
+      await expect(fn()).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should fail when refresh token is empty string', async () => {
+      const registerData = [
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Abc12*',
+          acceptTerms: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Abc13*',
+          acceptTerms: true,
+        },
+      ];
+
+      const refreshToken = '';
+
+      await authenticationService.register(registerData[0]);
+      const fn = async () => await authenticationService.refresh(refreshToken);
+      await expect(fn()).rejects.toThrow(AuthorizationMessage.NOT_AUTORIZED);
+      await expect(fn()).rejects.toThrow(UnauthorizedException);
+    });
 
     it('should fail when refresh token is invalid', async () => {
-      const registerData = TestUserData.registerData;
+      const registerData = [
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Abc12*',
+          acceptTerms: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Abc13*',
+          acceptTerms: true,
+        },
+      ];
+
       await authenticationService.register(registerData[0]);
       const fn = async () =>
         await authenticationService.refresh('invalid_refresh_token');
@@ -457,7 +844,21 @@ describe('AuthenticationService', () => {
     });
 
     it('should fail when refresh token is blacklisted', async () => {
-      const registerData = TestUserData.registerData;
+      const registerData = [
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Abc12*',
+          acceptTerms: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Abc13*',
+          acceptTerms: true,
+        },
+      ];
+
       const registered = [
         await authenticationService.register(registerData[0]),
         await authenticationService.register(registerData[1]),
@@ -484,9 +885,28 @@ describe('AuthenticationService', () => {
     });
 
     it('should fail when user is inactive', async () => {
-      const registerData = TestUserData.registerData;
+      const registerData = [
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Abc12*',
+          acceptTerms: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Abc13*',
+          acceptTerms: true,
+        },
+      ];
+
       const registered = await authenticationService.register(registerData[0]);
-      await userRepo.update(1, { active: false });
+      const user = await userRepo
+        .createQueryBuilder(UserConstants.USERS)
+        .where(UserConstants.EMAIL_EQUALS_TO, { email: 'user1@email.com' })
+        .getOne();
+
+      await userRepo.update(user.id, { active: false });
       const fn = () =>
         authenticationService.refresh(registered.data.payload.refreshToken);
       expect(fn()).rejects.toThrow(AuthorizationMessage.NOT_AUTORIZED);
@@ -494,12 +914,33 @@ describe('AuthenticationService', () => {
     });
 
     it('should fail when refresh token is user is soft-deleted', async () => {
-      const registerData = TestUserData.registerData;
+      const registerData = [
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Abc12*',
+          acceptTerms: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Abc13*',
+          acceptTerms: true,
+        },
+      ];
+
       const registered = [
         await authenticationService.register(registerData[0]),
         await authenticationService.register(registerData[1]),
       ];
-      await userRepo.softDelete(2);
+
+      await userRepo
+        .createQueryBuilder(UserConstants.USERS)
+        .softDelete()
+        .from(User)
+        .where(UserConstants.EMAIL_EQUALS_TO, { email: 'user2@email.com' })
+        .execute();
+
       const fn = () =>
         authenticationService.refresh(registered[1].data.payload.refreshToken);
       expect(fn()).rejects.toThrow(AuthorizationMessage.NOT_AUTORIZED);
@@ -509,7 +950,27 @@ describe('AuthenticationService', () => {
 
   describe('logout', () => {
     it('should logout', async () => {
-      const registerData = TestUserData.registerData;
+      const registerData = [
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Abc12*',
+          acceptTerms: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Abc13*',
+          acceptTerms: true,
+        },
+        {
+          name: 'User 3',
+          email: 'user3@email.com',
+          password: 'Abc14*',
+          acceptTerms: true,
+        },
+      ];
+
       const registered = [
         await authenticationService.register(registerData[0]),
         await authenticationService.register(registerData[1]),
@@ -531,29 +992,110 @@ describe('AuthenticationService', () => {
       expect(refreshTokens[2].revoked).toEqual(false);
     });
 
-    it.each([
-      { refreshTokenDescription: null, refreshToken: null },
-      { refreshTokenDescription: undefined, refreshToken: undefined },
-      { refreshTokenDescription: 'empty', refreshToken: '' },
-    ])(
-      'should fail when refresh token is $refreshTokenDescription',
-      async ({ refreshToken }) => {
-        const registerData = TestUserData.registerData;
-        await authenticationService.register(registerData[0]);
-        const fn = async () => authenticationService.logout(refreshToken);
-        await expect(fn).rejects.toThrow(AuthorizationMessage.NOT_AUTORIZED);
-        await expect(fn).rejects.toThrow(UnauthorizedException);
-      },
-    );
+    it('should fail when refresh token is null', async () => {
+      const registerData = [
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Abc12*',
+          acceptTerms: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Abc13*',
+          acceptTerms: true,
+        },
+      ];
+
+      const refreshToken = null;
+
+      await authenticationService.register(registerData[0]);
+      const fn = async () => authenticationService.logout(refreshToken);
+      await expect(fn).rejects.toThrow(AuthorizationMessage.NOT_AUTORIZED);
+      await expect(fn).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should fail when refresh token is undefined', async () => {
+      const registerData = [
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Abc12*',
+          acceptTerms: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Abc13*',
+          acceptTerms: true,
+        },
+      ];
+
+      const refreshToken = undefined;
+
+      await authenticationService.register(registerData[0]);
+      const fn = async () => authenticationService.logout(refreshToken);
+      await expect(fn).rejects.toThrow(AuthorizationMessage.NOT_AUTORIZED);
+      await expect(fn).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should fail when refresh token is empty string', async () => {
+      const registerData = [
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Abc12*',
+          acceptTerms: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Abc13*',
+          acceptTerms: true,
+        },
+      ];
+
+      const refreshToken = '';
+
+      await authenticationService.register(registerData[0]);
+      const fn = async () => authenticationService.logout(refreshToken);
+      await expect(fn).rejects.toThrow(AuthorizationMessage.NOT_AUTORIZED);
+      await expect(fn).rejects.toThrow(UnauthorizedException);
+    });
 
     it('should fail when user is inactive', async () => {
-      const registerData = TestUserData.registerData;
+      const registerData = [
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Abc12*',
+          acceptTerms: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Abc13*',
+          acceptTerms: true,
+        },
+        {
+          name: 'User 3',
+          email: 'user3@email.com',
+          password: 'Abc14*',
+          acceptTerms: true,
+        },
+      ];
+
       const registerResponses = [
         await authenticationService.register(registerData[0]),
         await authenticationService.register(registerData[1]),
         await authenticationService.register(registerData[2]),
       ];
-      await userRepo.update(2, { active: false });
+      const user = await userRepo
+        .createQueryBuilder(UserConstants.USERS)
+        .where(UserConstants.EMAIL_EQUALS_TO, { email: 'user2@email.com' })
+        .getOne();
+      await userRepo.update(user.id, { active: false });
 
       const fn = async () =>
         authenticationService.logout(
@@ -564,7 +1106,27 @@ describe('AuthenticationService', () => {
     });
 
     it('should fail when refresh token is blacklisted', async () => {
-      const registerData = TestUserData.registerData;
+      const registerData = [
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Abc12*',
+          acceptTerms: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Abc13*',
+          acceptTerms: true,
+        },
+        {
+          name: 'User 3',
+          email: 'user3@email.com',
+          password: 'Abc14*',
+          acceptTerms: true,
+        },
+      ];
+
       const registerResponses = [
         await authenticationService.register(registerData[0]),
         await authenticationService.register(registerData[1]),
@@ -584,13 +1146,36 @@ describe('AuthenticationService', () => {
     });
 
     it('should fail when refresh token is user is soft-deleted', async () => {
-      const registerData = TestUserData.registerData;
+      const registerData = [
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Abc12*',
+          acceptTerms: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Abc13*',
+          acceptTerms: true,
+        },
+        {
+          name: 'User 4',
+          email: 'user3@email.com',
+          password: 'Abc14*',
+          acceptTerms: true,
+        },
+      ];
       const registerResponses = [
         await authenticationService.register(registerData[0]),
         await authenticationService.register(registerData[1]),
         await authenticationService.register(registerData[2]),
       ];
-      await userRepo.softDelete(2);
+      await userRepo
+        .createQueryBuilder(UserConstants.USERS)
+        .softDelete()
+        .where(UserConstants.EMAIL_EQUALS_TO, { email: 'user2@email.com' })
+        .execute();
       const fn = async () =>
         authenticationService.logout(
           registerResponses[1].data.payload.refreshToken,
@@ -603,9 +1188,18 @@ describe('AuthenticationService', () => {
 
   describe('buildResponsePayload', () => {
     it('should build response payload', async () => {
-      const user = new UserEntity();
-      user.id = 100;
-      user.hash = undefined;
+      const [userId1] = await insertUsers({
+        name: 'User 1',
+        email: 'user1#email.com',
+        password: 'Abcd*1',
+        roles: [Role.ADMIN],
+        active: true,
+      });
+      const user = await userRepo
+        .createQueryBuilder(UserConstants.USER)
+        .where(UserConstants.USER_ID_EQUALS_TO, { userId: userId1 })
+        .getOne();
+
       const token = 'accessToken';
       const refreshToken = 'refreshToken';
       const responsePayload = await authenticationService[
@@ -613,34 +1207,41 @@ describe('AuthenticationService', () => {
       ](user, token, refreshToken);
       expect(responsePayload).toMatchObject({
         user,
-        payload: {
-          type: 'bearer',
-          token,
-          refreshToken,
-        },
+        payload: { type: 'bearer', token, refreshToken },
       });
     });
 
-    describe('user', () => {
-      it.each([{ user: null }, { user: undefined }])(
-        'should fail when user is $user',
-        async ({ user }) => {
-          const fn = async () => {
-            await authenticationService['buildResponsePayload'](
-              user,
-              'accessToken',
-              'refreshToken',
-            );
-          };
-          await expect(fn()).rejects.toThrow(UserMessage.REQUIRED);
-          await expect(fn()).rejects.toThrow(UnprocessableEntityException);
-        },
-      );
+    describe(UserConstants.USERS, () => {
+      it('should fail when user is null', async () => {
+        const fn = async () => {
+          const user = null;
+          await authenticationService['buildResponsePayload'](
+            user,
+            'accessToken',
+            'refreshToken',
+          );
+        };
+        await expect(fn()).rejects.toThrow(UserMessage.REQUIRED);
+        await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+      });
+
+      it('should fail when user is undefined', async () => {
+        const fn = async () => {
+          const user = undefined;
+          await authenticationService['buildResponsePayload'](
+            user,
+            'accessToken',
+            'refreshToken',
+          );
+        };
+        await expect(fn()).rejects.toThrow(UserMessage.REQUIRED);
+        await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+      });
 
       it('should fail when user id is not defined', async () => {
         const fn = async () => {
           await authenticationService['buildResponsePayload'](
-            new UserEntity(),
+            new User(),
             'accessToken',
             'refreshToken',
           );
@@ -651,51 +1252,116 @@ describe('AuthenticationService', () => {
     });
 
     describe('access token', () => {
-      it.each([
-        { accessTokenDescription: null, accessToken: null },
-        { accessTokenDescription: undefined, accessToken: undefined },
-        { accessTokenDescription: 'empty', accessToken: '' },
-      ])(
-        'should fail when access token is $accessTokenDescription',
-        async ({ accessToken }) => {
-          const fn = async () => {
-            await authenticationService['buildResponsePayload'](
-              new UserEntity(),
-              accessToken,
-              'refreshToken',
-            );
-          };
-          await expect(fn()).rejects.toThrow(UserMessage.ID_REQUIRED);
-          await expect(fn()).rejects.toThrow(UnprocessableEntityException);
-        },
-      );
+      it('should fail when access token is null', async () => {
+        const accessToken = null;
+        const fn = async () => {
+          await authenticationService['buildResponsePayload'](
+            new User(),
+            accessToken,
+            'refreshToken',
+          );
+        };
+        await expect(fn()).rejects.toThrow(UserMessage.ID_REQUIRED);
+        await expect(fn()).rejects.toThrow(UnprocessableEntityException); // TODO: verificar se está correto. Deveria ser erro do access token e não do id de usuário.
+      });
+
+      it('should fail when access token is undefined', async () => {
+        const accessToken = undefined;
+        const fn = async () => {
+          await authenticationService['buildResponsePayload'](
+            new User(),
+            accessToken,
+            'refreshToken',
+          );
+        };
+        await expect(fn()).rejects.toThrow(UserMessage.ID_REQUIRED); // TODO: verificar se está correto. Deveria ser erro do access token e não do id de usuário.
+        await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+      });
+
+      it('should fail when access token is empty string', async () => {
+        const accessToken = '';
+        const fn = async () => {
+          await authenticationService['buildResponsePayload'](
+            new User(),
+            accessToken,
+            'refreshToken',
+          );
+        };
+        await expect(fn()).rejects.toThrow(UserMessage.ID_REQUIRED);
+        await expect(fn()).rejects.toThrow(UnprocessableEntityException); // TODO: verificar se está correto. Deveria ser erro do access token e não do id de usuário.
+      });
     });
 
     describe('refresh token', () => {
-      it.each([
-        { refreshTokenDescription: null, refreshToken: null },
-        { refreshTokenDescription: undefined, refreshToken: undefined },
-        { refreshTokenDescription: 'empty', refreshToken: '' },
-      ])(
-        'should build response payload when refresh token is $refreshTokenDescription',
-        async ({ refreshToken }) => {
-          const user = new UserEntity();
-          user.id = 100;
-          user.hash = undefined;
-          const token = 'accessToken';
-          const responsePayload = await authenticationService[
-            'buildResponsePayload'
-          ](user, token, refreshToken);
-          expect(responsePayload).toMatchObject({
-            user,
-            payload: {
-              type: 'bearer',
-              token,
-              ...(refreshToken ? { refreshToken: refreshToken } : {}),
-            },
-          });
-        },
-      );
+      it('should build response payload when refresh token is null', async () => {
+        const [userId1] = await insertUsers({
+          name: 'User 1',
+          email: 'user1#email.com',
+          password: 'Abcd*1',
+          roles: [Role.ADMIN],
+          active: true,
+        });
+        const user = await userRepo
+          .createQueryBuilder(UserConstants.USER)
+          .where(UserConstants.USER_ID_EQUALS_TO, { userId: userId1 })
+          .getOne();
+        const token = 'accessToken';
+        const refreshToken = null;
+        const responsePayload = await authenticationService[
+          'buildResponsePayload'
+        ](user, token, refreshToken);
+        expect(responsePayload).toMatchObject({
+          user,
+          payload: { type: 'bearer', token },
+        });
+      });
+
+      it('should build response payload when refresh token is undefined', async () => {
+        const [userId1] = await insertUsers({
+          name: 'User 1',
+          email: 'user1#email.com',
+          password: 'Abcd*1',
+          roles: [Role.ADMIN],
+          active: true,
+        });
+        const user = await userRepo
+          .createQueryBuilder(UserConstants.USER)
+          .where(UserConstants.USER_ID_EQUALS_TO, { userId: userId1 })
+          .getOne();
+        const refreshToken = undefined;
+        const token = 'accessToken';
+        const responsePayload = await authenticationService[
+          'buildResponsePayload'
+        ](user, token, refreshToken);
+        expect(responsePayload).toMatchObject({
+          user,
+          payload: { type: 'bearer', token },
+        });
+      });
+
+      it('should build response payload when refresh token is empty string', async () => {
+        const [userId1] = await insertUsers({
+          name: 'User 1',
+          email: 'user1#email.com',
+          password: 'Abcd*1',
+          roles: [Role.ADMIN],
+          active: true,
+        });
+
+        const user = await userRepo
+          .createQueryBuilder(UserConstants.USER)
+          .where(UserConstants.USER_ID_EQUALS_TO, { userId: userId1 })
+          .getOne();
+        const refreshToken = '';
+        const token = 'accessToken';
+        const responsePayload = await authenticationService[
+          'buildResponsePayload'
+        ](user, token, refreshToken);
+        expect(responsePayload).toMatchObject({
+          user,
+          payload: { type: 'bearer', token },
+        });
+      });
     });
   });
 });

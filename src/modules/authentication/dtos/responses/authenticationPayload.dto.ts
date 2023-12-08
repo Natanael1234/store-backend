@@ -1,10 +1,10 @@
-import { UserEntity } from '../../../user/models/user/user.entity';
+import { User } from '../../../user/models/user/user.entity';
 
 export interface AuthenticationPayloadDto {
   /**
    * User entity.
    */
-  user: UserEntity;
+  user: User;
 
   /**
    * Authentication payload.

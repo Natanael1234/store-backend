@@ -8,13 +8,13 @@ import { UserService } from '../src/modules/user/services/user/user.service';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
-  let moduleFixture: TestingModule;
+  let module: TestingModule;
   let userService: UserService;
   let authenticationService: AuthenticationService;
 
   beforeEach(async () => {
-    moduleFixture = await getTestingModule();
-    app = moduleFixture.createNestApplication();
+    module = await getTestingModule();
+    app = module.createNestApplication();
     userService = app.get<UserService>(UserService);
     authenticationService = app.get<AuthenticationService>(
       AuthenticationService,
@@ -53,7 +53,7 @@ describe('AppController (e2e)', () => {
 
   afterEach(async () => {
     await app.close();
-    await moduleFixture.close();
+    await module.close();
   });
 
   describe('/hello (GET)', () => {

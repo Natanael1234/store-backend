@@ -3,21 +3,21 @@ import { NotFoundException } from '@nestjs/common/exceptions/not-found.exception
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { Repository } from 'typeorm';
-import { UserMessage } from '../../user/enums/messages/user/user-messages.ts/user-messages.enum';
-import { UserEntity } from '../../user/models/user/user.entity';
-import { RefreshTokenMessage } from '../enums/refresh-token-messages.ts/refresh-token-messages.enum';
-import { RefreshTokenEntity } from '../models/refresh-token.entity';
+import { UserMessage } from '../../user/enums/messages/user/user.messages.enum';
+import { User } from '../../user/models/user/user.entity';
+import { RefreshTokenMessage } from '../messages/refresh-token/refresh-token.messages.enum';
+import { RefreshToken } from '../models/refresh-token.entity';
 
 @Injectable()
-export class RefreshTokenRepository extends Repository<RefreshTokenEntity> {
+export class RefreshTokenRepository extends Repository<RefreshToken> {
   constructor(
-    @InjectRepository(RefreshTokenEntity)
-    repository: Repository<RefreshTokenEntity>,
+    @InjectRepository(RefreshToken)
+    repository: Repository<RefreshToken>,
   ) {
     super(repository.target, repository.manager, repository.queryRunner);
   }
 
-  public async createRefreshToken(user: UserEntity, ttl: number) {
+  public async createRefreshToken(user: User, ttl: number) {
     if (!user) {
       throw new Error(UserMessage.REQUIRED);
     }
@@ -27,7 +27,7 @@ export class RefreshTokenRepository extends Repository<RefreshTokenEntity> {
     if (ttl == null) {
       throw new Error('ttl is required');
     }
-    const token = new RefreshTokenEntity();
+    const token = new RefreshToken();
     // TODO: está sempre sobrescrevendo o token
     token.revoked = false;
     token.userId = user.id;
@@ -38,7 +38,7 @@ export class RefreshTokenRepository extends Repository<RefreshTokenEntity> {
     return this.save(token);
   }
 
-  public async findTokenById(id: number): Promise<RefreshTokenEntity | null> {
+  public async findTokenById(id: number): Promise<RefreshToken | null> {
     if (id == null) throw new Error(UserMessage.ID_REQUIRED);
     const refreshToken = await this.findOne({ where: { id } });
     if (!refreshToken)

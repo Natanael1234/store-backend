@@ -1,7 +1,7 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity({ name: 'refresh_tokens' })
-export class RefreshTokenEntity {
+export class RefreshToken {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -13,5 +13,5 @@ export class RefreshTokenEntity {
   expiresAt: Date;
 
   @Column({})
-  userId: number;
+  userId: string;
 }

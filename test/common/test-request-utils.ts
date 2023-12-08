@@ -15,13 +15,13 @@ export function getHTTPGetMethod(app: INestApplication) {
     expectedStatus: number,
     accessToken?: string,
   ) {
-    let test = request(app.getHttpServer()).get(endpoint);
+    let req = request(app.getHttpServer()).get(endpoint);
     if (accessToken) {
-      test = test.set('Authorization', 'bearer ' + accessToken);
+      req = req.set('Authorization', 'bearer ' + accessToken);
     }
-    const result = await test.query(params || {});
-    expect(result.statusCode).toEqual(expectedStatus);
-    return result.body;
+    const response = await req.query(params || {});
+    expect(response.statusCode).toEqual(expectedStatus);
+    return response.body;
   };
 }
 
@@ -32,13 +32,13 @@ export function getHTTPPostMethod(app: INestApplication) {
     expectedStatus: number,
     accessToken?: string,
   ) {
-    let test = request(app.getHttpServer()).post(endpoint);
+    let req = request(app.getHttpServer()).post(endpoint);
     if (accessToken) {
-      test = test.set('Authorization', 'bearer ' + accessToken);
+      req = req.set('Authorization', 'bearer ' + accessToken);
     }
-    const result = await test.send(body);
-    expect(result.statusCode).toEqual(expectedStatus);
-    return result.body;
+    const response = await req.send(body);
+    expect(response.statusCode).toEqual(expectedStatus);
+    return response.body;
   };
 }
 
@@ -49,13 +49,13 @@ export function getHTTPPatchMethod(app: INestApplication) {
     expectedStatus: number,
     accessToken?: string,
   ) {
-    let test = request(app.getHttpServer()).patch(endpoint);
+    let req = request(app.getHttpServer()).patch(endpoint);
     if (accessToken) {
-      test = test.set('Authorization', 'bearer ' + accessToken);
+      req = req.set('Authorization', 'bearer ' + accessToken);
     }
-    const result = await test.send(body);
-    expect(result.statusCode).toEqual(expectedStatus);
-    return result.body;
+    const response = await req.send(body);
+    expect(response.statusCode).toEqual(expectedStatus);
+    return response.body;
   };
 }
 export function getHTTPDeleteMethod(app: INestApplication) {
@@ -65,12 +65,12 @@ export function getHTTPDeleteMethod(app: INestApplication) {
     expectedStatus: number,
     accessToken?: string,
   ) {
-    let test = request(app.getHttpServer()).delete(endpoint);
+    let req = request(app.getHttpServer()).delete(endpoint);
     if (accessToken) {
-      test = test.set('Authorization', 'bearer ' + accessToken);
+      req = req.set('Authorization', 'bearer ' + accessToken);
     }
-    const result = await test.send(body);
-    expect(result.statusCode).toEqual(expectedStatus);
-    return result.body;
+    const response = await req.send(body);
+    expect(response.statusCode).toEqual(expectedStatus);
+    return response.body;
   };
 }

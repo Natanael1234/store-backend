@@ -1,0 +1,1356 @@
+import { v4 as uuidv4 } from 'uuid';
+import { BoolMessage } from '../../../../system/messages/bool/bool.messages';
+import { NumberMessage } from '../../../../system/messages/number/number.messages';
+import { TextMessage } from '../../../../system/messages/text/text.messages';
+import { UuidMessage } from '../../../../system/messages/uuid/uuid.messages';
+import { validateFirstError } from '../../../../system/utils/validation/validation';
+import { ProductConfigs } from '../../configs/product/product.configs';
+import { CreateProductRequestDTO } from './create-product.request.dto';
+
+const CodeMessage = new TextMessage('code', {
+  minLength: ProductConfigs.CODE_MIN_LENGTH,
+  maxLength: ProductConfigs.CODE_MAX_LENGTH,
+});
+const NameMessage = new TextMessage('name', {
+  minLength: ProductConfigs.NAME_MIN_LENGTH,
+  maxLength: ProductConfigs.NAME_MAX_LENGTH,
+});
+const ModelMessage = new TextMessage('model', {
+  minLength: ProductConfigs.MODEL_MIN_LENGTH,
+  maxLength: ProductConfigs.MODEL_MAX_LENGTH,
+});
+const PriceMessage = new NumberMessage('price', {
+  min: ProductConfigs.MIN_PRICE,
+  max: ProductConfigs.MAX_PRICE,
+});
+const QuantityInStockMessage = new NumberMessage('quantity in stock', {
+  min: ProductConfigs.MIN_QUANTITY_IN_STOCK,
+  max: ProductConfigs.MAX_QUANTITY_IN_STOCK,
+});
+const ActiveMessage = new BoolMessage('active');
+const BrandIdMessage = new UuidMessage('brand id');
+const CategoryIdMessage = new UuidMessage('category id');
+
+async function testAccept(data: {
+  code: string;
+  name: string;
+  model: string;
+  price: number;
+  quantityInStock: number;
+  active: boolean;
+  brandId: string;
+  categoryId: string;
+}) {
+  const errors = await validateFirstError(data, CreateProductRequestDTO);
+  expect(errors).toHaveLength(0);
+}
+
+async function testReject(
+  property: string,
+  data: {
+    code: string;
+    name: string;
+    model: string;
+    price: number;
+    quantityInStock: number;
+    active: boolean;
+    brandId: string;
+    categoryId: string;
+  },
+  expectedErrors,
+) {
+  const errors = await validateFirstError(data, CreateProductRequestDTO);
+  expect(errors).toHaveLength(1);
+  expect(errors[0].property).toEqual(property);
+  expect(errors[0].value).toEqual(data[property]);
+  expect(errors[0].constraints).toEqual(expectedErrors);
+}
+
+describe('CreateProductRequestDTO', () => {
+  it('should pass validation', async () => {
+    const errors = await validateFirstError(
+      {
+        code: '00000002',
+        name: 'Product 2',
+        model: 'Model 2',
+        price: 100,
+        quantityInStock: 4,
+        active: false,
+        brandId: uuidv4(),
+        categoryId: uuidv4(),
+      },
+      CreateProductRequestDTO,
+    );
+    expect(errors).toHaveLength(0);
+  });
+
+  describe('code', () => {
+    it('Should accept when code has min length', async () => {
+      await testAccept({
+        code: 'x'.repeat(ProductConfigs.CODE_MIN_LENGTH),
+        name: 'Product 1',
+        model: 'Model A',
+        price: 1.99,
+        quantityInStock: 5,
+        active: true,
+        brandId: uuidv4(),
+        categoryId: uuidv4(),
+      });
+    });
+
+    it('Should accept when code has max length', async () => {
+      await testAccept({
+        code: 'x'.repeat(ProductConfigs.CODE_MAX_LENGTH),
+        name: 'Product 1',
+        model: 'Model A',
+        price: 1.99,
+        quantityInStock: 5,
+        active: true,
+        brandId: uuidv4(),
+        categoryId: uuidv4(),
+      });
+    });
+
+    it('should reject when code is number', async () => {
+      await testReject(
+        'code',
+        {
+          code: 2323232 as unknown as string,
+          name: 'Product 1',
+          model: 'Model A',
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: CodeMessage.INVALID },
+      );
+    });
+
+    it('should reject when code is boolean', async () => {
+      await testReject(
+        'code',
+        {
+          code: true as unknown as string,
+          name: 'Product 1',
+          model: 'Model A',
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: CodeMessage.INVALID },
+      );
+    });
+
+    it('should reject when code is array', async () => {
+      await testReject(
+        'code',
+        {
+          code: [] as unknown as string,
+          name: 'Product 1',
+          model: 'Model A',
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: CodeMessage.INVALID },
+      );
+    });
+
+    it('should reject when code is object', async () => {
+      await testReject(
+        'code',
+        {
+          code: {} as unknown as string,
+          name: 'Product 1',
+          model: 'Model A',
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: CodeMessage.INVALID },
+      );
+    });
+
+    it('should reject when code is empty', async () => {
+      await testReject(
+        'code',
+        {
+          code: '',
+          name: 'Product 1',
+          model: 'Model A',
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: CodeMessage.MIN_LEN },
+      );
+    });
+
+    it('should reject when code is too short', async () => {
+      await testReject(
+        'code',
+        {
+          code: 'x'.repeat(ProductConfigs.CODE_MIN_LENGTH - 1),
+          name: 'Product 1',
+          model: 'Model A',
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: CodeMessage.MIN_LEN },
+      );
+    });
+
+    it('should reject when code is too long', async () => {
+      await testReject(
+        'code',
+        {
+          code: 'x'.repeat(ProductConfigs.CODE_MAX_LENGTH + 1),
+          name: 'Product 1',
+          model: 'Model A',
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: CodeMessage.MAX_LEN },
+      );
+    });
+
+    it('should reject when code is null', async () => {
+      await testReject(
+        'code',
+        {
+          code: null,
+          name: 'Product 1',
+          model: 'Model A',
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: CodeMessage.NULL },
+      );
+    });
+
+    it('should reject when code is undefined', async () => {
+      await testReject(
+        'code',
+        {
+          code: undefined,
+          name: 'Product 1',
+          model: 'Model A',
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: CodeMessage.REQUIRED },
+      );
+    });
+  });
+
+  describe('name', () => {
+    it('Should accept when name has min length', async () => {
+      await testAccept({
+        code: '001',
+        name: 'x'.repeat(ProductConfigs.NAME_MIN_LENGTH),
+        model: 'Model A',
+        price: 1.99,
+        quantityInStock: 5,
+        active: true,
+        brandId: uuidv4(),
+        categoryId: uuidv4(),
+      });
+    });
+
+    it('Should accept when name has max length', async () => {
+      await testAccept({
+        code: 'x'.repeat(ProductConfigs.NAME_MAX_LENGTH),
+        name: 'Product 1',
+        model: 'Model A',
+        price: 1.99,
+        quantityInStock: 5,
+        active: true,
+        brandId: uuidv4(),
+        categoryId: uuidv4(),
+      });
+    });
+
+    it('should reject when name is number', async () => {
+      await testReject(
+        'name',
+        {
+          code: '001',
+          name: 2323232 as unknown as string,
+          model: 'Model A',
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: NameMessage.INVALID },
+      );
+    });
+
+    it('should reject when name is boolean', async () => {
+      await testReject(
+        'name',
+        {
+          code: '001',
+          name: true as unknown as string,
+          model: 'Model A',
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: NameMessage.INVALID },
+      );
+    });
+
+    it('should reject when name is array', async () => {
+      await testReject(
+        'name',
+        {
+          code: '001',
+          name: [] as unknown as string,
+          model: 'Model A',
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: NameMessage.INVALID },
+      );
+    });
+
+    it('should reject when name is object', async () => {
+      await testReject(
+        'name',
+        {
+          code: '001',
+          name: {} as unknown as string,
+          model: 'Model A',
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: NameMessage.INVALID },
+      );
+    });
+
+    it('should reject when name is empty', async () => {
+      await testReject(
+        'name',
+        {
+          code: '001',
+          name: '',
+          model: 'Model A',
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: NameMessage.MIN_LEN },
+      );
+    });
+
+    it('should reject when name is too short', async () => {
+      await testReject(
+        'name',
+        {
+          code: '001',
+          name: 'x'.repeat(ProductConfigs.NAME_MIN_LENGTH - 1),
+          model: 'Model A',
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: NameMessage.MIN_LEN },
+      );
+    });
+
+    it('should reject when name is too long', async () => {
+      await testReject(
+        'name',
+        {
+          code: '001',
+          name: 'x'.repeat(ProductConfigs.NAME_MAX_LENGTH + 1),
+          model: 'Model A',
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: NameMessage.MAX_LEN },
+      );
+    });
+
+    it('should reject when name is null', async () => {
+      await testReject(
+        'name',
+        {
+          code: '001',
+          name: null,
+          model: 'Model A',
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: NameMessage.NULL },
+      );
+    });
+
+    it('should reject when name is undefined', async () => {
+      await testReject(
+        'name',
+        {
+          code: '001',
+          name: undefined,
+          model: 'Model A',
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: NameMessage.REQUIRED },
+      );
+    });
+  });
+
+  describe('model', () => {
+    it('Should accept when name has min length', async () => {
+      await testAccept({
+        code: '001',
+        name: 'Product 1',
+        model: 'x'.repeat(ProductConfigs.MODEL_MIN_LENGTH),
+        price: 1.99,
+        quantityInStock: 5,
+        active: true,
+        brandId: uuidv4(),
+        categoryId: uuidv4(),
+      });
+    });
+
+    it('Should accept when model has max length', async () => {
+      await testAccept({
+        code: '001',
+        name: 'Product 1',
+        model: 'x'.repeat(ProductConfigs.MODEL_MAX_LENGTH),
+        price: 1.99,
+        quantityInStock: 5,
+        active: true,
+        brandId: uuidv4(),
+        categoryId: uuidv4(),
+      });
+    });
+
+    it('should reject when model is number', async () => {
+      await testReject(
+        'model',
+        {
+          code: '001',
+          name: 'Product 1',
+          model: 2323232 as unknown as string,
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: ModelMessage.INVALID },
+      );
+    });
+
+    it('should reject when model is boolean', async () => {
+      await testReject(
+        'model',
+        {
+          code: '001',
+          name: 'Product 1',
+          model: true as unknown as string,
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: ModelMessage.INVALID },
+      );
+    });
+
+    it('should reject when model is array', async () => {
+      await testReject(
+        'model',
+        {
+          code: '001',
+          name: 'Product 1',
+          model: [] as unknown as string,
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: ModelMessage.INVALID },
+      );
+    });
+
+    it('should reject when model is object', async () => {
+      await testReject(
+        'model',
+        {
+          code: '001',
+          name: 'Product 1',
+          model: {} as unknown as string,
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: ModelMessage.INVALID },
+      );
+    });
+
+    it('should reject when model is empty', async () => {
+      await testReject(
+        'model',
+        {
+          code: '001',
+          name: 'Product 1',
+          model: '',
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: ModelMessage.MIN_LEN },
+      );
+    });
+
+    it('should reject when model is too short', async () => {
+      await testReject(
+        'model',
+        {
+          code: '001',
+          name: 'Product 1',
+          model: 'x'.repeat(ProductConfigs.MODEL_MIN_LENGTH - 1),
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: ModelMessage.MIN_LEN },
+      );
+    });
+
+    it('should reject when model is too long', async () => {
+      await testReject(
+        'model',
+        {
+          code: '001',
+          name: 'Product 1',
+          model: 'x'.repeat(ProductConfigs.MODEL_MAX_LENGTH + 1),
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: ModelMessage.MAX_LEN },
+      );
+    });
+
+    it('should reject when model is null', async () => {
+      await testReject(
+        'model',
+        {
+          code: '001',
+          name: 'Product 1',
+          model: null,
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: ModelMessage.NULL },
+      );
+    });
+
+    it('should reject when model is undefined', async () => {
+      await testReject(
+        'model',
+        {
+          code: '001',
+          name: 'Product 1',
+          model: undefined,
+          price: 1.99,
+          quantityInStock: 5,
+          active: true,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isText: ModelMessage.REQUIRED },
+      );
+    });
+  });
+
+  describe('price', () => {
+    it('should validate when price is int', async () => {
+      await testAccept({
+        code: '00000002',
+        name: 'Product 2',
+        model: 'Model 2',
+        price: 100,
+        quantityInStock: 4,
+        active: false,
+        brandId: uuidv4(),
+        categoryId: uuidv4(),
+      });
+    });
+
+    it('should validate when price is float', async () => {
+      await testAccept({
+        code: '00000002',
+        name: 'Product 2',
+        model: 'Model 2',
+        price: 10.51,
+        quantityInStock: 4,
+        active: false,
+        brandId: uuidv4(),
+        categoryId: uuidv4(),
+      });
+    });
+
+    it('should validate when price has minimum allowed value', async () => {
+      await testAccept({
+        code: '00000002',
+        name: 'Product 2',
+        model: 'Model 2',
+        price: ProductConfigs.MIN_PRICE,
+        quantityInStock: 4,
+        active: false,
+        brandId: uuidv4(),
+        categoryId: uuidv4(),
+      });
+    });
+
+    it('should validate when price has a high value', async () => {
+      await testAccept({
+        code: '00000002',
+        name: 'Product 2',
+        model: 'Model 2',
+        price: ProductConfigs.MIN_PRICE + 1000000,
+        quantityInStock: 4,
+        active: false,
+        brandId: uuidv4(),
+        categoryId: uuidv4(),
+      });
+    });
+
+    it('should reject when price is lower than allowed', async () => {
+      await testReject(
+        'price',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: ProductConfigs.MIN_PRICE - 0.01,
+          quantityInStock: 4,
+          active: false,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isNum: PriceMessage.MIN },
+      );
+    });
+
+    it('should reject when price is null', async () => {
+      await testReject(
+        'price',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: null,
+          quantityInStock: 4,
+          active: false,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isNum: PriceMessage.NULL },
+      );
+    });
+
+    it('should reject when price is undefined', async () => {
+      await testReject(
+        'price',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: undefined,
+          quantityInStock: 4,
+          active: false,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isNum: PriceMessage.REQUIRED },
+      );
+    });
+
+    it('should reject when price is boolean', async () => {
+      await testReject(
+        'price',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: true as unknown as number,
+          quantityInStock: 4,
+          active: false,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isNum: PriceMessage.INVALID },
+      );
+    });
+
+    it('should reject when price is string', async () => {
+      await testReject(
+        'price',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: '200' as unknown as number,
+          quantityInStock: 4,
+          active: false,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isNum: PriceMessage.INVALID },
+      );
+    });
+
+    it('should reject when price is array', async () => {
+      await testReject(
+        'price',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: [] as unknown as number,
+          quantityInStock: 4,
+          active: false,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isNum: PriceMessage.INVALID },
+      );
+    });
+
+    it('should reject when price is object', async () => {
+      await testReject(
+        'price',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: {} as unknown as number,
+          quantityInStock: 4,
+          active: false,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isNum: PriceMessage.INVALID },
+      );
+    });
+  });
+
+  describe('quantityInStock', () => {
+    it('should validate when quantityInStock is int', async () => {
+      await testAccept({
+        code: '00000002',
+        name: 'Product 2',
+        model: 'Model 2',
+        price: 100,
+        quantityInStock: 4,
+        active: false,
+        brandId: uuidv4(),
+        categoryId: uuidv4(),
+      });
+    });
+
+    it('should validate when quantityInStock has minimum allowed value', async () => {
+      await testAccept({
+        code: '00000002',
+        name: 'Product 2',
+        model: 'Model 2',
+        price: 100,
+        quantityInStock: ProductConfigs.MIN_QUANTITY_IN_STOCK,
+        active: false,
+        brandId: uuidv4(),
+        categoryId: uuidv4(),
+      });
+    });
+
+    it('should validate when quantityInStock has a high value', async () => {
+      await testAccept({
+        code: '00000002',
+        name: 'Product 2',
+        model: 'Model 2',
+        price: 100,
+        quantityInStock: ProductConfigs.MIN_QUANTITY_IN_STOCK + 1000000,
+        active: false,
+        brandId: uuidv4(),
+        categoryId: uuidv4(),
+      });
+    });
+
+    it('should reject when quantityInStock is lower than allowed', async () => {
+      await testReject(
+        'quantityInStock',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: 100,
+          quantityInStock: ProductConfigs.MIN_QUANTITY_IN_STOCK - 1,
+          active: false,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isNum: QuantityInStockMessage.MIN },
+      );
+    });
+
+    it('should reject when quantityInStock is null', async () => {
+      await testReject(
+        'quantityInStock',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: 100,
+          quantityInStock: null,
+          active: false,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isNum: QuantityInStockMessage.NULL },
+      );
+    });
+
+    it('should reject when quantityInStock is undefined', async () => {
+      await testReject(
+        'quantityInStock',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: 100,
+          quantityInStock: undefined,
+          active: false,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isNum: QuantityInStockMessage.REQUIRED },
+      );
+    });
+
+    it('should reject when quantityInStock is boolean', async () => {
+      await testReject(
+        'quantityInStock',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: 100,
+          quantityInStock: true as unknown as number,
+          active: false,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isNum: QuantityInStockMessage.INVALID },
+      );
+    });
+
+    it('should reject when quantityInStock is string', async () => {
+      await testReject(
+        'quantityInStock',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: 100,
+          quantityInStock: '4' as unknown as number,
+          active: false,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isNum: QuantityInStockMessage.INVALID },
+      );
+    });
+
+    it('should reject when quantityInStock is array', async () => {
+      await testReject(
+        'quantityInStock',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: 100,
+          quantityInStock: [] as unknown as number,
+          active: false,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isNum: QuantityInStockMessage.INVALID },
+      );
+    });
+
+    it('should reject when quantityInStock is object', async () => {
+      await testReject(
+        'quantityInStock',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: 100,
+          quantityInStock: {} as unknown as number,
+          active: false,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isNum: QuantityInStockMessage.INVALID },
+      );
+    });
+  });
+
+  describe('active', () => {
+    it('should accept when active is true', async () => {
+      await testAccept({
+        code: '001',
+        name: 'Product 1',
+        model: 'Model A',
+        price: 1.99,
+        quantityInStock: 5,
+        active: true,
+        brandId: uuidv4(),
+        categoryId: uuidv4(),
+      });
+    });
+
+    it('should accept when active is false', async () => {
+      await testAccept({
+        code: '001',
+        name: 'Product 1',
+        model: 'Model A',
+        price: 1.99,
+        quantityInStock: 5,
+        active: false,
+        brandId: uuidv4(),
+        categoryId: uuidv4(),
+      });
+    });
+
+    it('should accept when active is undefined', async () => {
+      await testAccept({
+        code: '001',
+        name: 'Product 1',
+        model: 'Model A',
+        price: 1.99,
+        quantityInStock: 5,
+        active: undefined,
+        brandId: uuidv4(),
+        categoryId: uuidv4(),
+      });
+    });
+
+    it('should reject when active is null', async () => {
+      await testReject(
+        'active',
+        {
+          code: '001',
+          name: 'Product 1',
+          model: 'Model A',
+          price: 1.99,
+          quantityInStock: 5,
+          active: null,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isBool: ActiveMessage.NULL },
+      );
+    });
+
+    it('should reject when active is number', async () => {
+      await testReject(
+        'active',
+        {
+          code: '001',
+          name: 'Product 1',
+          model: 'Model A',
+          price: 1.99,
+          quantityInStock: 5,
+          active: 1 as unknown as boolean,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isBool: ActiveMessage.INVALID },
+      );
+    });
+
+    it('should reject when active is string', async () => {
+      await testReject(
+        'active',
+        {
+          code: '001',
+          name: 'Product 1',
+          model: 'Model A',
+          price: 1.99,
+          quantityInStock: 5,
+          active: 'true' as unknown as boolean,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isBool: ActiveMessage.INVALID },
+      );
+    });
+
+    it('should reject when active is array', async () => {
+      await testReject(
+        'active',
+        {
+          code: '001',
+          name: 'Product 1',
+          model: 'Model A',
+          price: 1.99,
+          quantityInStock: 5,
+          active: [] as unknown as boolean,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isBool: ActiveMessage.INVALID },
+      );
+    });
+
+    it('should reject when active is object', async () => {
+      await testReject(
+        'active',
+        {
+          code: '001',
+          name: 'Product 1',
+          model: 'Model A',
+          price: 1.99,
+          quantityInStock: 5,
+          active: {} as unknown as boolean,
+          brandId: uuidv4(),
+          categoryId: uuidv4(),
+        },
+        { isBool: ActiveMessage.INVALID },
+      );
+    });
+  });
+
+  describe('brandId', () => {
+    it('should validate when brandId is valid', async () => {
+      await testAccept({
+        code: '00000002',
+        name: 'Product 2',
+        model: 'Model 2',
+        price: 100,
+        quantityInStock: 4,
+        active: false,
+        brandId: uuidv4(),
+        categoryId: uuidv4(),
+      });
+    });
+
+    it('should reject when brandId is null', async () => {
+      await testReject(
+        'brandId',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: 100,
+          quantityInStock: 4,
+          active: false,
+          brandId: null,
+          categoryId: uuidv4(),
+        },
+        { isUuid: BrandIdMessage.NULL },
+      );
+    });
+
+    it('should reject when brandId is undefined', async () => {
+      await testReject(
+        'brandId',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: 100,
+          quantityInStock: 4,
+          active: false,
+          brandId: undefined,
+          categoryId: uuidv4(),
+        },
+        { isUuid: BrandIdMessage.REQUIRED },
+      );
+    });
+
+    it('should reject when brandId is number', async () => {
+      await testReject(
+        'brandId',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: 100,
+          quantityInStock: 4,
+          active: false,
+          brandId: 1 as unknown as string,
+          categoryId: uuidv4(),
+        },
+        { isUuid: BrandIdMessage.STRING },
+      );
+    });
+
+    it('should reject when brandId is boolean', async () => {
+      await testReject(
+        'brandId',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: 100,
+          quantityInStock: 4,
+          active: false,
+          brandId: true as unknown as string,
+          categoryId: uuidv4(),
+        },
+        { isUuid: BrandIdMessage.STRING },
+      );
+    });
+
+    it('should validate when brandId is invalid string', async () => {
+      await testReject(
+        'brandId',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: 100,
+          quantityInStock: 4,
+          active: false,
+          brandId: 'not-a-valid-uuid',
+          categoryId: uuidv4(),
+        },
+        { isUuid: BrandIdMessage.INVALID },
+      );
+    });
+
+    it('should reject when brandId is array', async () => {
+      await testReject(
+        'brandId',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: 100,
+          quantityInStock: 4,
+          active: false,
+          brandId: [] as unknown as string,
+          categoryId: uuidv4(),
+        },
+        { isUuid: BrandIdMessage.STRING },
+      );
+    });
+
+    it('should reject when brandId is object', async () => {
+      await testReject(
+        'brandId',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: 100,
+          quantityInStock: 4,
+          active: false,
+          brandId: {} as unknown as string,
+          categoryId: uuidv4(),
+        },
+        { isUuid: BrandIdMessage.STRING },
+      );
+    });
+  });
+
+  describe('categoryId', () => {
+    it('should validate when categoryId is valid', async () => {
+      await testAccept({
+        code: '00000002',
+        name: 'Product 2',
+        model: 'Model 2',
+        price: 100,
+        quantityInStock: 4,
+        active: false,
+        brandId: uuidv4(),
+        categoryId: uuidv4(),
+      });
+    });
+
+    it('should reject when categoryId is null', async () => {
+      await testReject(
+        'categoryId',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: 100,
+          quantityInStock: 4,
+          active: false,
+          brandId: uuidv4(),
+          categoryId: null,
+        },
+        { isUuid: CategoryIdMessage.NULL },
+      );
+    });
+
+    it('should reject when categoryId is undefined', async () => {
+      await testReject(
+        'categoryId',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: 100,
+          quantityInStock: 4,
+          active: false,
+          brandId: uuidv4(),
+          categoryId: undefined,
+        },
+        { isUuid: CategoryIdMessage.REQUIRED },
+      );
+    });
+
+    it('should reject when categoryId is number', async () => {
+      await testReject(
+        'categoryId',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: 100,
+          quantityInStock: 4,
+          active: false,
+          brandId: uuidv4(),
+          categoryId: 1 as unknown as string,
+        },
+        { isUuid: CategoryIdMessage.STRING },
+      );
+    });
+
+    it('should reject when categoryId is boolean', async () => {
+      await testReject(
+        'categoryId',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: 100,
+          quantityInStock: 4,
+          active: false,
+          brandId: uuidv4(),
+          categoryId: true as unknown as string,
+        },
+        { isUuid: CategoryIdMessage.STRING },
+      );
+    });
+
+    it('should reject when categoryId is invalid string', async () => {
+      await testReject(
+        'categoryId',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: 100,
+          quantityInStock: 4,
+          active: false,
+          brandId: uuidv4(),
+          categoryId: 'not-a-valid-uuid',
+        },
+        { isUuid: CategoryIdMessage.INVALID },
+      );
+    });
+
+    it('should reject when categoryId is array', async () => {
+      await testReject(
+        'categoryId',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: 100,
+          quantityInStock: 4,
+          active: false,
+          brandId: uuidv4(),
+          categoryId: [] as unknown as string,
+        },
+        { isUuid: CategoryIdMessage.STRING },
+      );
+    });
+
+    it('should reject when categoryId is object', async () => {
+      await testReject(
+        'categoryId',
+        {
+          code: '00000002',
+          name: 'Product 2',
+          model: 'Model 2',
+          price: 100,
+          quantityInStock: 4,
+          active: false,
+          brandId: uuidv4(),
+          categoryId: {} as unknown as string,
+        },
+        { isUuid: CategoryIdMessage.STRING },
+      );
+    });
+  });
+});

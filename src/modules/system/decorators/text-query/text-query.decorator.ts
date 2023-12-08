@@ -1,14 +1,14 @@
 import { applyDecorators } from '@nestjs/common';
 import { Expose, Transform } from 'class-transformer';
 import { IsOptional, IsString } from 'class-validator';
-import { TextMessage } from '../../enums/messages/text-messages/text-messages.enum';
-import { textSearchTransformer } from '../../utils/text-seach/text-search-transformer';
+import { TextMessageOLD } from '../../messages/text-old/text.messages.enum';
+import { textQueryTransformer } from './transformer/text-query/text-query-transformer';
 
 export function TextQuery() {
   const decorators = applyDecorators(
-    IsString({ message: TextMessage.STRING }),
+    IsString({ message: TextMessageOLD.INVALID }),
     IsOptional(),
-    Transform(({ value }) => textSearchTransformer(value)),
+    Transform(({ value }) => textQueryTransformer(value)),
     Expose,
   );
   return decorators;

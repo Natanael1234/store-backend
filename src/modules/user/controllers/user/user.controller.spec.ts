@@ -15,7 +15,7 @@ describe('UserController', () => {
     await module.close(); // TODO: é necessário?
   });
 
-  it('sould be defined', async () => {
+  it('should be defined', async () => {
     expect(userController).toBeDefined();
   });
 });

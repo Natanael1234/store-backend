@@ -1,46 +1,51 @@
-import { Transform } from 'class-transformer';
-import {
-  Equals,
-  IsEmail,
-  IsNotEmpty,
-  IsString,
-  IsStrongPassword,
-  MaxLength,
-  MinLength,
-} from 'class-validator';
-import { EmailMessage } from '../../../../system/enums/messages/email-messages/email-messages.enum';
-import { NameMessage } from '../../../../system/enums/messages/name-messages/name-messages.enum';
-import { PasswordMessage } from '../../../../system/enums/messages/password-messages/password-messages.enum';
-import { AcceptTermsMessage } from '../../../enums/accept-terms-messages.ts/accept-terms-messages.enum';
+import { Equals, IsStrongPassword } from 'class-validator';
+import { Text } from '../../../../system/decorators/text/text.decorator';
+import { PasswordMessage } from '../../../../system/messages/password/password.messages.enum';
+import { UserConfigs } from '../../../../user/configs/user/user.configs';
+import { AcceptTermsMessage } from '../../../messages/accept-terms/accept-terms.messages.enum';
+
+const {
+  EMAIL_MAX_LENGTH,
+  NAME_MAX_LENGTH,
+  NAME_MIN_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+} = UserConfigs;
 
 export class RegisterRequestDto {
   /**
    * User name.
-   * Must have from 6 up to 60 characters.
    *
    * @example 'Jhon Silverman'
    */
-  @MaxLength(60, { message: NameMessage.MAX_LEN })
-  @MinLength(6, { message: NameMessage.MIN_LEN })
-  @IsString({ message: NameMessage.STRING })
-  @IsNotEmpty({ message: NameMessage.REQUIRED })
+  @Text({
+    label: 'name',
+    minLength: NAME_MIN_LENGTH,
+    maxLength: NAME_MAX_LENGTH,
+    allowNull: false,
+    allowUndefined: false,
+  })
   name: string;
 
   /**
    * User email.
-   * Must be a valid non repeated email.
+   * Must be a valid unique email.
    *
    * @example "joaodasilva1@email.com"
    */
-  @MaxLength(60, { message: EmailMessage.MAX_LEN })
-  @IsEmail({}, { message: EmailMessage.INVALID })
-  @IsString({ message: EmailMessage.STRING })
-  @IsNotEmpty({ message: EmailMessage.REQUIRED })
+
+  @Text({
+    label: 'email',
+    maxLength: EMAIL_MAX_LENGTH,
+    allowNull: false,
+    allowUndefined: false,
+    pattern: 'email',
+  })
   email: string;
 
   /**
    * User password.
-   * Should have from 6 up to 60 characters, one uppercase, one lowercase, one symbol and one number.
+   * Should have from 6 up to 12 characters, one uppercase, one lowercase, one symbol and one number.
    *
    * @example Abc123*
    */
@@ -54,10 +59,14 @@ export class RegisterRequestDto {
     },
     { message: PasswordMessage.INVALID },
   )
-  @MaxLength(12, { message: PasswordMessage.MAX_LEN })
-  @MinLength(6, { message: PasswordMessage.MIN_LEN })
-  @IsString({ message: PasswordMessage.STRING })
-  @IsNotEmpty({ message: PasswordMessage.REQUIRED })
+  @Text({
+    label: 'password',
+    minLength: PASSWORD_MIN_LENGTH,
+    maxLength: PASSWORD_MAX_LENGTH,
+    allowNull: false,
+    allowUndefined: false,
+    // TODO: strong password
+  })
   password: string;
 
   /**
@@ -66,13 +75,5 @@ export class RegisterRequestDto {
    * @example true
    */
   @Equals(true, { message: AcceptTermsMessage.REQUIRED })
-  @Transform(({ value }) => {
-    if (typeof value == 'string') {
-      return value.toLowerCase() === 'true';
-    } else if (value === true) {
-      return true;
-    }
-    return false;
-  })
   acceptTerms: boolean;
 }

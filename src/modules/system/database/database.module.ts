@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { DatabaseConfigs } from './configs/database.config';
+import { DatabaseConfigs } from './configs/database.configs';
 
 const options = {
   type: DatabaseConfigs.DB_TYPE,

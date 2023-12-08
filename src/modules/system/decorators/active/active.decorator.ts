@@ -2,8 +2,10 @@ import { applyDecorators } from '@nestjs/common';
 import { Expose, Transform } from 'class-transformer';
 import { IsEnum } from 'class-validator';
 import { ActiveFilter } from '../../enums/filter/active-filter/active-filter.enum';
-import { ActiveMessage } from '../../enums/messages/active-messages/active-messages.enum';
-import { getEnumTransformer } from '../../utils/enum/enum-transformer';
+import { BoolMessage } from '../../messages/bool/bool.messages';
+import { getEnumTransformer } from '../transformers/enum/enum-transformer';
+
+const ActiveMessage = new BoolMessage('active');
 
 const activeEnumTransformer = getEnumTransformer(ActiveFilter, {
   defaultValue: ActiveFilter.ACTIVE,

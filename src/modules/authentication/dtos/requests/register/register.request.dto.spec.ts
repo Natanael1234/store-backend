@@ -1,18 +1,33 @@
 import { plainToInstance } from 'class-transformer';
-import { TestPurpose } from '../../../../../test/test-data';
-import { getEmailErrorDataList } from '../../../../../test/test-data/test-email-data';
-import { getNameErrorDataList } from '../../../../../test/test-data/test-name-data';
-import { getPasswordErrorDataList } from '../../../../../test/test-data/test.password-data';
-import { TestUserData } from '../../../../../test/user/test-user-data';
-import { EmailMessage } from '../../../../system/enums/messages/email-messages/email-messages.enum';
-import { NameMessage } from '../../../../system/enums/messages/name-messages/name-messages.enum';
-import { PasswordMessage } from '../../../../system/enums/messages/password-messages/password-messages.enum';
-import { validateFirstError } from '../../../../system/utils/validation';
-import { AcceptTermsMessage } from '../../../enums/accept-terms-messages.ts/accept-terms-messages.enum';
+import { PasswordMessage } from '../../../../system/messages/password/password.messages.enum';
+import { TextMessage } from '../../../../system/messages/text/text.messages';
+import { validateFirstError } from '../../../../system/utils/validation/validation';
+import { UserConfigs } from '../../../../user/configs/user/user.configs';
+import { AcceptTermsMessage } from '../../../messages/accept-terms/accept-terms.messages.enum';
 import { RegisterRequestDto } from './register.request.dto';
 
-const validate = async (data) =>
-  await validateFirstError(data, RegisterRequestDto);
+const {
+  EMAIL_MAX_LENGTH,
+  NAME_MAX_LENGTH,
+  NAME_MIN_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+} = UserConfigs;
+
+async function testAccept(property, data) {
+  const transformedData = plainToInstance(RegisterRequestDto, data);
+  const errors = await validateFirstError(data, RegisterRequestDto);
+  expect(transformedData[property]).toEqual(data[property]);
+  expect(errors).toHaveLength(0);
+}
+
+async function testReject(property, data, expectedErrors) {
+  const errors = await await validateFirstError(data, RegisterRequestDto);
+  expect(errors).toHaveLength(1);
+  expect(errors[0].property).toEqual(property);
+  expect(errors[0].value).toEqual(data[property]);
+  expect(errors[0].constraints).toEqual(expectedErrors);
+}
 
 describe('RegisterRequestDto', () => {
   it('should pass validation', async () => {
@@ -22,128 +37,497 @@ describe('RegisterRequestDto', () => {
       password: 'Abc12*',
       acceptTerms: true,
     };
-    const errors = await validate(data);
+    const errors = await validateFirstError(data, RegisterRequestDto);
     expect(errors).toHaveLength(0);
   });
 
   describe('name', () => {
-    it.each(
-      getNameErrorDataList({
-        dtoData: TestUserData.registerData[2],
-        purpose: TestPurpose.register,
-      }),
-    )(
-      'should fail validation when name is $description',
-      async ({ data, expectedErrors }) => {
-        const errors = await validate(data);
+    const Message = new TextMessage('name', {
+      minLength: NAME_MIN_LENGTH,
+      maxLength: NAME_MAX_LENGTH,
+    });
 
-        expect(errors).toHaveLength(1);
-        expect(errors[0].property).toEqual('name');
-        expect(errors[0].value).toEqual(data.name);
-        expect(errors[0].constraints).toEqual(expectedErrors);
-      },
-    );
+    it('Should accept when name has min length', async () => {
+      await testAccept('name', {
+        name: 'x'.repeat(NAME_MIN_LENGTH),
+        email: 'user@email.com',
+        password: 'Ab123*',
+        acceptTerms: true,
+      });
+    });
 
-    it('Should validate name from 6 to 60 characters', async () => {
-      const data = [
+    it('Should accept when name has max length', async () => {
+      await testAccept('name', {
+        name: 'x'.repeat(NAME_MAX_LENGTH),
+        email: 'user@email.com',
+        password: 'Ab123*',
+        acceptTerms: true,
+      });
+    });
+
+    it('should reject when name is number', async () => {
+      await testReject(
+        'name',
         {
-          name: 'x'.repeat(6),
+          name: 2323232,
           email: 'user@email.com',
-          password: 'Password123*',
+          password: 'Ab123*',
           acceptTerms: true,
         },
+        { isText: Message.INVALID },
+      );
+    });
+
+    it('should reject when name is boolean', async () => {
+      await testReject(
+        'name',
         {
-          name: 'x'.repeat(60),
+          name: true,
           email: 'user@email.com',
-          password: 'Password123*',
+          password: 'Ab123*',
           acceptTerms: true,
         },
-      ];
-      const errors = [
-        await validateFirstError(data[0], RegisterRequestDto),
-        await validateFirstError(data[1], RegisterRequestDto),
-      ];
+        { isText: Message.INVALID },
+      );
+    });
 
-      expect(errors[0]).toHaveLength(0);
-      expect(errors[1]).toHaveLength(0);
+    it('should reject when name is array', async () => {
+      await testReject(
+        'name',
+        {
+          name: [],
+          email: 'user@email.com',
+          password: 'Ab123*',
+          acceptTerms: true,
+        },
+        { isText: Message.INVALID },
+      );
+    });
+
+    it('should reject when name is object', async () => {
+      await testReject(
+        'name',
+        {
+          name: {},
+          email: 'user@email.com',
+          password: 'Ab123*',
+          acceptTerms: true,
+        },
+        { isText: Message.INVALID },
+      );
+    });
+
+    it('should reject when name is empty', async () => {
+      await testReject(
+        'name',
+        {
+          name: '',
+          email: 'user@email.com',
+          password: 'Ab123*',
+          acceptTerms: true,
+        },
+        { isText: Message.MIN_LEN },
+      );
+    });
+
+    it('should reject when name is too short', async () => {
+      await testReject(
+        'name',
+        {
+          name: 'x'.repeat(NAME_MIN_LENGTH - 1),
+          email: 'user@email.com',
+          password: 'Ab123*',
+          acceptTerms: true,
+        },
+        { isText: Message.MIN_LEN },
+      );
+    });
+
+    it('should reject when name is too long', async () => {
+      await testReject(
+        'name',
+        {
+          name: 'x'.repeat(NAME_MAX_LENGTH + 1),
+          email: 'user@email.com',
+          password: 'Ab123*',
+          acceptTerms: true,
+        },
+        { isText: Message.MAX_LEN },
+      );
+    });
+
+    it('should reject when name is null', async () => {
+      await testReject(
+        'name',
+        {
+          name: null,
+          email: 'user@email.com',
+          password: 'Ab123*',
+          acceptTerms: true,
+        },
+        { isText: Message.NULL },
+      );
+    });
+
+    it('should reject when name is undefined', async () => {
+      await testReject(
+        'name',
+        {
+          name: undefined,
+          email: 'user@email.com',
+          password: 'Ab123*',
+          acceptTerms: true,
+        },
+        { isText: Message.REQUIRED },
+      );
     });
   });
 
   describe('email', () => {
-    it.each(
-      getEmailErrorDataList({
-        dtoData: TestUserData.registerData[2],
-        purpose: TestPurpose.register,
-      }),
-    )(
-      'should fail validation when email is $emailDescription',
-      async ({ data, expectedErrors }) => {
-        const errors = await validate(data);
+    const Message = new TextMessage('email', {
+      maxLength: EMAIL_MAX_LENGTH,
+    });
 
-        expect(errors).toHaveLength(1);
-        expect(errors[0].property).toEqual('email');
-        expect(errors[0].value).toEqual(data.email);
-        expect(errors[0].constraints).toEqual(expectedErrors);
-      },
-    );
-
-    it('should only validate emails up to max length.', async () => {
-      const data = {
-        name: 'User 1',
-        email: 'u'.repeat(51) + '@email.com',
-        password: 'Password123*',
+    it('Should accept when email has min length', async () => {
+      await testAccept('email', {
+        name: 'User Name',
+        email: 'u@e.co',
+        password: 'Ab123*',
         acceptTerms: true,
-      };
-      const errors = await validate(data);
-
-      expect(errors).toHaveLength(1);
-      expect(errors[0].property).toEqual('email');
-      expect(errors[0].value).toEqual(data.email);
-      expect(errors[0].constraints).toEqual({
-        maxLength: EmailMessage.MAX_LEN,
       });
+    });
+
+    it('Should accept when email has max length', async () => {
+      await testAccept('email', {
+        name: 'User Name',
+        email: 'x'.repeat(EMAIL_MAX_LENGTH - 10) + '@email.com',
+        password: 'Ab123*',
+        acceptTerms: true,
+      });
+    });
+
+    it('should reject when email is number', async () => {
+      await testReject(
+        'email',
+        {
+          name: 'User Name',
+          email: 2323232,
+          password: 'Ab123*',
+          acceptTerms: true,
+        },
+        { isText: Message.INVALID },
+      );
+    });
+
+    it('should reject when email is boolean', async () => {
+      await testReject(
+        'email',
+        {
+          name: 'User Name',
+          email: true,
+          password: 'Ab123*',
+          acceptTerms: true,
+        },
+        { isText: Message.INVALID },
+      );
+    });
+
+    it('should reject when email is array', async () => {
+      await testReject(
+        'email',
+        {
+          name: 'User Name',
+          email: [],
+          password: 'Ab123*',
+          acceptTerms: true,
+        },
+        { isText: Message.INVALID },
+      );
+    });
+
+    it('should reject when email is object', async () => {
+      await testReject(
+        'email',
+        {
+          name: 'User Name',
+          email: {},
+          password: 'Ab123*',
+          acceptTerms: true,
+        },
+        { isText: Message.INVALID },
+      );
+    });
+
+    it('should reject when email is empty', async () => {
+      await testReject(
+        'email',
+        {
+          name: 'User Name',
+          email: '',
+          password: 'Ab123*',
+          acceptTerms: true,
+        },
+        { isText: Message.INVALID },
+      );
+    });
+
+    it('should reject when email is too long', async () => {
+      await testReject(
+        'email',
+        {
+          name: 'User Name',
+          email: 'x'.repeat(EMAIL_MAX_LENGTH - 10 + 1) + '@email.com',
+          password: 'Ab123*',
+          acceptTerms: true,
+        },
+        { isText: Message.MAX_LEN },
+      );
+    });
+
+    it('should reject when email is null', async () => {
+      await testReject(
+        'email',
+        {
+          name: 'User Name',
+          email: null,
+          password: 'Ab123*',
+          acceptTerms: true,
+        },
+        { isText: Message.NULL },
+      );
+    });
+
+    it('should reject when email is undefined', async () => {
+      await testReject(
+        'email',
+        {
+          name: 'User Name',
+          email: undefined,
+          password: 'Ab123*',
+          acceptTerms: true,
+        },
+        { isText: Message.REQUIRED },
+      );
+    });
+
+    it('should reject when invalid email format', async () => {
+      await testReject(
+        'email',
+        {
+          name: 'User Name',
+          email: '@invalid_email',
+          password: 'Ab123*',
+          acceptTerms: true,
+        },
+        { isText: Message.INVALID },
+      );
     });
   });
 
   describe('password', () => {
-    it.each(
-      getPasswordErrorDataList({
-        dtoData: TestUserData.registerData[2],
-        purpose: TestPurpose.register,
-      }),
-    )(
-      'should fail validation when password is $passwordDescription',
-      async ({ data, expectedErrors }) => {
-        const errors = await validate(data);
-        expect(errors).toHaveLength(1);
-        expect(errors[0].property).toEqual('password');
-        expect(errors[0].value).toEqual(data.password);
-        expect(errors[0].constraints).toEqual(expectedErrors);
-      },
-    );
+    const Message = new TextMessage('password', {
+      minLength: PASSWORD_MIN_LENGTH,
+      maxLength: PASSWORD_MAX_LENGTH,
+    });
 
-    it('Should validate passwords with valid length', async () => {
-      const data = [
+    it('Should accept when password has min length', async () => {
+      await testAccept('password', {
+        name: 'User Name',
+        email: 'user@email.com',
+        password: 'Ab123*',
+        acceptTerms: true,
+      });
+    });
+
+    it('Should accept when password has max length', async () => {
+      await testAccept('password', {
+        name: 'User Name',
+        email: 'user@email.com',
+        password: 'Ab123*' + 'x'.repeat(PASSWORD_MAX_LENGTH - 6),
+        acceptTerms: true,
+      });
+    });
+
+    it('should reject when password is number', async () => {
+      await testReject(
+        'password',
         {
-          name: 'User 1',
+          name: 'User Name',
           email: 'user@email.com',
-          password: 'Abc12*',
+          password: 2323232,
           acceptTerms: true,
         },
+        { isText: Message.INVALID },
+      );
+    });
+
+    it('should reject when password is boolean', async () => {
+      await testReject(
+        'password',
         {
-          name: 'User 1',
+          name: 'User Name',
           email: 'user@email.com',
-          password: 'Abc12*' + 'x'.repeat(6),
+          password: true,
           acceptTerms: true,
         },
-      ];
-      const errors = [
-        await validateFirstError(data[0], RegisterRequestDto),
-        await validateFirstError(data[1], RegisterRequestDto),
-      ];
+        { isText: Message.INVALID },
+      );
+    });
 
-      expect(errors[0]).toHaveLength(0);
-      expect(errors[1]).toHaveLength(0);
+    it('should reject when password is array', async () => {
+      await testReject(
+        'password',
+        {
+          name: 'User Name',
+          email: 'user@email.com',
+          password: [],
+          acceptTerms: true,
+        },
+        { isText: Message.INVALID },
+      );
+    });
+
+    it('should reject when password is object', async () => {
+      await testReject(
+        'password',
+        {
+          name: 'User Name',
+          email: 'user@email.com',
+          password: {},
+          acceptTerms: true,
+        },
+        { isText: Message.INVALID },
+      );
+    });
+
+    it('should reject when password is empty', async () => {
+      await testReject(
+        'password',
+        {
+          name: 'User Name',
+          email: 'user@email.com',
+          password: '',
+          acceptTerms: true,
+        },
+        { isText: Message.MIN_LEN },
+      );
+    });
+
+    it('should reject when password too short', async () => {
+      await testReject(
+        'password',
+        {
+          name: 'User Name',
+          email: 'user@email.com',
+          password: 'Ab1*' + 'x'.repeat(PASSWORD_MIN_LENGTH - 4 - 1),
+          acceptTerms: true,
+        },
+        { isText: Message.MIN_LEN },
+      );
+    });
+
+    it('should reject when password is too long', async () => {
+      await testReject(
+        'password',
+        {
+          name: 'User Name',
+          email: 'user@email.com',
+          password: 'Ab1*' + 'x'.repeat(PASSWORD_MAX_LENGTH - 4 + 1),
+          acceptTerms: true,
+        },
+        { isText: Message.MAX_LEN },
+      );
+    });
+
+    it('should reject when password is null', async () => {
+      await testReject(
+        'password',
+        {
+          name: 'User Name',
+          email: 'user@email.com',
+          password: null,
+          acceptTerms: true,
+        },
+        { isText: Message.NULL },
+      );
+    });
+
+    it('should reject when password is undefined', async () => {
+      await testReject(
+        'password',
+        {
+          name: 'User Name',
+          email: 'user@email.com',
+          password: undefined,
+          acceptTerms: true,
+        },
+        { isText: Message.REQUIRED },
+      );
+    });
+
+    it('should reject when password is missing uppercase letter', async () => {
+      await testReject(
+        'password',
+        {
+          name: 'User Name',
+          email: 'user@email.com',
+          password: 'ab123*',
+          acceptTerms: true,
+        },
+        { isStrongPassword: PasswordMessage.INVALID },
+      );
+    });
+
+    it('should reject when password is missing lowercase letter', async () => {
+      await testReject(
+        'password',
+        {
+          name: 'User Name',
+          email: 'user@email.com',
+          password: 'AB123*',
+          acceptTerms: true,
+        },
+        { isStrongPassword: PasswordMessage.INVALID },
+      );
+    });
+
+    it('should reject when password is missing lowercase letter', async () => {
+      await testReject(
+        'password',
+        {
+          name: 'User Name',
+          email: 'user@email.com',
+          password: 'AB123*',
+          acceptTerms: true,
+        },
+        { isStrongPassword: PasswordMessage.INVALID },
+      );
+    });
+
+    it('should reject when password is missing number', async () => {
+      await testReject(
+        'password',
+        {
+          name: 'User Name',
+          email: 'user@email.com',
+          password: 'ABcde*',
+          acceptTerms: true,
+        },
+        { isStrongPassword: PasswordMessage.INVALID },
+      );
+    });
+
+    it('should reject when password is missing special character', async () => {
+      await testReject(
+        'password',
+        {
+          name: 'User Name',
+          email: 'user@email.com',
+          password: 'AB1234',
+          acceptTerms: true,
+        },
+        { isStrongPassword: PasswordMessage.INVALID },
+      );
     });
   });
 
@@ -153,134 +537,180 @@ describe('RegisterRequestDto', () => {
         name: 'User 1',
         email: 'user@email.com',
         password: 'Abc12*',
-        acceptTerms: 'true',
+        acceptTerms: true,
       };
-      const transformedValue = plainToInstance(
-        RegisterRequestDto,
-        data,
-      ).acceptTerms;
-      const errors = await validate(data);
-
-      expect(transformedValue).toEqual(true);
+      const errors = await validateFirstError(data, RegisterRequestDto);
       expect(errors).toHaveLength(0);
-    });
-
-    it('should transform transform transform string true into boolean true and validate', async () => {
-      const data = {
+      const transformedValue = plainToInstance(RegisterRequestDto, data);
+      expect(transformedValue).toEqual({
         name: 'User 1',
         email: 'user@email.com',
         password: 'Abc12*',
-        acceptTerms: 'true',
-      };
-      const transformedValue = plainToInstance(
-        RegisterRequestDto,
-        data,
-      ).acceptTerms;
-      const errors = await validate(data);
-
-      expect(transformedValue).toEqual(true);
-      expect(errors).toHaveLength(0);
+        acceptTerms: true,
+      });
     });
 
-    it('should transform accept terms when string into boolean true', async () => {
-      const data = {
-        name: 'User 1',
-        email: 'user@email.com',
-        password: 'Abc12*',
-        acceptTerms: 'true',
-      };
+    async function testRejectRegister(data, expectedErrors) {
+      const errors = await validateFirstError(data, RegisterRequestDto);
+      expect(errors).toHaveLength(1);
+      expect(errors[0].constraints).toEqual(expectedErrors);
+    }
 
-      const transformedValue = plainToInstance(
-        RegisterRequestDto,
-        data,
-      ).acceptTerms;
-      const errors = await validate(data);
-
-      expect(errors).toHaveLength(0);
-      expect(transformedValue).toEqual(true);
-    });
-
-    it.each([
-      {
-        acceptTermsDescription: 'string false',
-        acceptTerms: 'false',
-        expectedErrors: { equals: AcceptTermsMessage.REQUIRED },
-      },
-      {
-        acceptTermsDescription: 'boolean false',
-        acceptTerms: false,
-        expectedErrors: { equals: AcceptTermsMessage.REQUIRED },
-      },
-      {
-        acceptTermsDescription: 'number 0',
-        acceptTerms: 0,
-        expectedErrors: { equals: AcceptTermsMessage.REQUIRED },
-      },
-      {
-        acceptTermsDescription: 'number 1',
-        acceptTerms: 1,
-        expectedErrors: { equals: AcceptTermsMessage.REQUIRED },
-      },
-      {
-        acceptTermsDescription: 'array',
-        acceptTerms: [],
-        expectedErrors: { equals: AcceptTermsMessage.REQUIRED },
-      },
-      {
-        acceptTermsDescription: 'object',
-        acceptTerms: {},
-        expectedErrors: { equals: AcceptTermsMessage.REQUIRED },
-      },
-      {
-        acceptTermsDescription: 'null',
-        acceptTerms: null,
-        expectedErrors: { equals: AcceptTermsMessage.REQUIRED },
-      },
-      {
-        acceptTermsDescription: 'undefined',
-        acceptTerms: undefined,
-        expectedErrors: { equals: AcceptTermsMessage.REQUIRED },
-      },
-      {
-        acceptTermsDescription: 'empty',
-        acceptTerms: '',
-        expectedErrors: { equals: AcceptTermsMessage.REQUIRED },
-      },
-      {
-        acceptTermsDescription: 'invalid',
-        acceptTerms: 'invalid_boolean_string',
-        expectedErrors: { equals: AcceptTermsMessage.REQUIRED },
-      },
-    ])(
-      'should fail when accept terms is $acceptTermsDescription',
-      async ({ acceptTerms, expectedErrors }) => {
-        const data = {
-          name: 'User 1',
+    it('should reject when acceptTemes is string false', async () => {
+      await testRejectRegister(
+        {
+          name: 'User name',
           email: 'user@email.com',
           password: 'Abc12*',
-          acceptTerms,
-        };
-        const errors = await validate(data);
-        expect(errors).toHaveLength(1);
-        expect(errors[0].constraints).toEqual(expectedErrors);
-      },
-    );
+          acceptTerms: 'false',
+        },
+        { equals: AcceptTermsMessage.REQUIRED },
+      );
+    });
+
+    it('should reject when acceptTemes is boolean false', async () => {
+      await testRejectRegister(
+        {
+          name: 'User name',
+          email: 'user@email.com',
+          password: 'Abc12*',
+          acceptTerms: false,
+        },
+        { equals: AcceptTermsMessage.REQUIRED },
+      );
+    });
+
+    it('should reject when acceptTemes is number 0', async () => {
+      await testRejectRegister(
+        {
+          name: 'User name',
+          email: 'user@email.com',
+          password: 'Abc12*',
+          acceptTerms: 0,
+        },
+        { equals: AcceptTermsMessage.REQUIRED },
+      );
+    });
+
+    it('should reject when acceptTemes is number 1', async () => {
+      await testRejectRegister(
+        {
+          name: 'User name',
+          email: 'user@email.com',
+          password: 'Abc12*',
+          acceptTerms: 1,
+        },
+        { equals: AcceptTermsMessage.REQUIRED },
+      );
+    });
+
+    it('should reject when acceptTemes string', async () => {
+      await testRejectRegister(
+        {
+          name: 'User name',
+          email: 'user@email.com',
+          password: 'Abc12*',
+          acceptTerms: 'true',
+        },
+        { equals: AcceptTermsMessage.REQUIRED },
+      );
+    });
+
+    it('should reject when acceptTemes is array', async () => {
+      await testRejectRegister(
+        {
+          name: 'User name',
+          email: 'user@email.com',
+          password: 'Abc12*',
+          acceptTerms: [],
+        },
+        { equals: AcceptTermsMessage.REQUIRED },
+      );
+    });
+
+    it('should reject when acceptTemes is object', async () => {
+      await testRejectRegister(
+        {
+          name: 'User name',
+          email: 'user@email.com',
+          password: 'Abc12*',
+          acceptTerms: {},
+        },
+        { equals: AcceptTermsMessage.REQUIRED },
+      );
+    });
+
+    it('should reject when acceptTemes is null', async () => {
+      await testRejectRegister(
+        {
+          name: 'User name',
+          email: 'user@email.com',
+          password: 'Abc12*',
+          acceptTerms: null,
+        },
+        { equals: AcceptTermsMessage.REQUIRED },
+      );
+    });
+
+    it('should reject when acceptTemes is undefined', async () => {
+      await testRejectRegister(
+        {
+          name: 'User name',
+          email: 'user@email.com',
+          password: 'Abc12*',
+          acceptTerms: undefined,
+        },
+        { equals: AcceptTermsMessage.REQUIRED },
+      );
+    });
+
+    it('should reject when acceptTemes is empty', async () => {
+      await testRejectRegister(
+        {
+          name: 'User name',
+          email: 'user@email.com',
+          password: 'Abc12*',
+          acceptTerms: '',
+        },
+        { equals: AcceptTermsMessage.REQUIRED },
+      );
+    });
+
+    it('should reject when acceptTemes is invalid', async () => {
+      await testRejectRegister(
+        {
+          name: 'User name',
+          email: 'user@email.com',
+          password: 'Abc12*',
+          acceptTerms: 'invalid_boolean_string',
+        },
+        { equals: AcceptTermsMessage.REQUIRED },
+      );
+    });
   });
 
   describe('multiple errors', () => {
     it('should fail in multiple fields', async () => {
+      const NameMessages = new TextMessage('name', {
+        minLength: NAME_MIN_LENGTH,
+        maxLength: NAME_MAX_LENGTH,
+      });
+      const EmailMessages = new TextMessage('email', {
+        maxLength: EMAIL_MAX_LENGTH,
+      });
+
       const data = {
         name: 'User',
         email: 'email.com',
         password: 'Abc123',
         acceptTerms: false,
       };
-      const errors = await validate(data);
+      const errors = await validateFirstError(data, RegisterRequestDto);
       expect(errors).toHaveLength(4);
       expect(errors[0].constraints).toEqual({
-        minLength: NameMessage.MIN_LEN,
+        isText: NameMessages.MIN_LEN,
       });
-      expect(errors[1].constraints).toEqual({ isEmail: EmailMessage.INVALID });
+      expect(errors[1].constraints).toEqual({ isText: EmailMessages.INVALID });
       expect(errors[2].constraints).toEqual({
         isStrongPassword: PasswordMessage.INVALID,
       });

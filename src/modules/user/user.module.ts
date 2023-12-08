@@ -4,11 +4,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EncryptionModule } from '../system/encryption/encryption.module';
 import { UserController } from './controllers/user/user.controller';
 import { RolesGuard } from './guards/roles/roles.guard';
-import { UserEntity } from './models/user/user.entity';
+import { User } from './models/user/user.entity';
 import { UserService } from './services/user/user.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UserEntity]), EncryptionModule],
+  imports: [TypeOrmModule.forFeature([User]), EncryptionModule],
   controllers: [UserController],
   providers: [
     UserService,

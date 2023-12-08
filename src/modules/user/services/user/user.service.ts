@@ -8,55 +8,67 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
 import { Validator } from 'class-validator';
-import { FindManyOptions, ILike, IsNull, Not, Repository } from 'typeorm';
-import { PaginationConfig } from '../../../system/dtos/request/pagination/configs/pagination.config';
+import { Repository } from 'typeorm';
+import { PaginationConfigs } from '../../../system/configs/pagination/pagination.configs';
 import { PaginatedResponseDTO } from '../../../system/dtos/response/pagination/pagination.response.dto';
 import { EncryptionService } from '../../../system/encryption/services/encryption/encryption.service';
 import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
-import { EmailMessage } from '../../../system/enums/messages/email-messages/email-messages.enum';
-import { validateOrThrowError } from '../../../system/utils/validation';
-import { CreateUserRequestDTO } from '../../controllers/user/dtos/request/create-user/create-user.request.dto';
-import { FindUserRequestDTO } from '../../controllers/user/dtos/request/find-users/find-users.request.dto';
-import { UpdatePasswordRequestDTO } from '../../controllers/user/dtos/request/update-password/update-password.request.dto';
-import { UpdateUserRequestDTO } from '../../controllers/user/dtos/request/update-user/update-user.request.dto';
-import { UpdatePasswordResponseDTO } from '../../controllers/user/dtos/response/update-password/update-password.response.dto';
-import { UserMessage } from '../../enums/messages/user/user-messages.ts/user-messages.enum';
+import { EmailMessage } from '../../../system/messages/email/email.messages.enum';
+import { isValidUUID } from '../../../system/utils/validation/uuid/is-valid-uuid-fn';
+import { validateOrThrowError } from '../../../system/utils/validation/validation';
+import { UserConstants } from '../../constants/user/user-entity.constants';
+import { CreateUserRequestDTO } from '../../dtos/create-user/create-user.request.dto';
+import { FindUserRequestDTO } from '../../dtos/find-users/find-users.request.dto';
+import { UpdatePasswordResponseDTO } from '../../dtos/update-password-response/update-password.response.dto';
+import { UpdatePasswordRequestDTO } from '../../dtos/update-password/update-password.request.dto';
+import { UpdateUserRequestDTO } from '../../dtos/update-user/update-user.request.dto';
+import { UserMessage } from '../../enums/messages/user/user.messages.enum';
 import { UserOrder } from '../../enums/sort/user-order/user-order.enum';
-import { UserEntity } from '../../models/user/user.entity';
+import { User } from '../../models/user/user.entity';
 
 @Injectable()
 export class UserService {
   readonly validator = new Validator();
   constructor(
-    @InjectRepository(UserEntity)
-    private userRepository: Repository<UserEntity>,
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
     private encryptionService: EncryptionService,
   ) {}
 
-  public async create(userDto: CreateUserRequestDTO): Promise<UserEntity> {
+  public async create(userDto: CreateUserRequestDTO): Promise<User> {
     if (!userDto) throw new BadRequestException(UserMessage.DATA_REQUIRED);
     userDto = plainToInstance(CreateUserRequestDTO, userDto);
     await validateOrThrowError(userDto, CreateUserRequestDTO);
-    if (await this.checkIfEmailAlreadyInUse(userDto.email))
+    if (await this.checkIfEmailAlreadyInUse(userDto.email)) {
       throw new ConflictException(EmailMessage.INVALID);
-    const user = new UserEntity();
+    }
+    const user = new User();
     user.email = userDto.email;
     user.name = userDto.name;
     user.roles = userDto.roles;
     user.active = userDto.active;
     user.hash = await this.encryptionService.encrypt(userDto.password);
-    await this.userRepository.save(user);
-    return this.findForId(user.id);
+    await this.userRepo.save(user);
+    const ret = await this.userRepo
+      .createQueryBuilder(UserConstants.USER)
+      .where(UserConstants.USER_ID_EQUALS_TO, { userId: user.id })
+      .getOne();
+    return ret;
   }
 
   public async update(
-    userId: number,
+    userId: string,
     userDto: UpdateUserRequestDTO,
-  ): Promise<UserEntity> {
+  ): Promise<User> {
+    if (userId == null)
+      throw new UnprocessableEntityException(UserMessage.REQUIRED_USER_ID);
+    if (!isValidUUID(userId)) {
+      throw new UnprocessableEntityException(UserMessage.INVALID_USER_ID);
+    }
+
     if (!userDto) throw new BadRequestException(UserMessage.DATA_REQUIRED);
-    if (!userId)
-      throw new UnprocessableEntityException(UserMessage.ID_REQUIRED);
+
     userDto = plainToInstance(UpdateUserRequestDTO, userDto);
     await validateOrThrowError(userDto, UpdateUserRequestDTO);
     const existentUser = await this.findForId(userId);
@@ -72,114 +84,166 @@ export class UserService {
     if (userDto.active != null) existentUser.active = userDto.active;
     // if (userDto.roles) existentUser.roles = userDto.roles;
 
-    await this.userRepository.save(existentUser);
+    await this.userRepo.save(existentUser);
     return this.findForId(userId);
   }
 
-  public async findForId(userId: number): Promise<UserEntity> {
-    if (!userId) throw new BadRequestException(UserMessage.ID_REQUIRED);
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+  public async findForId(userId: string): Promise<User> {
+    if (!userId) {
+      throw new BadRequestException(UserMessage.ID_REQUIRED);
+    }
+    if (userId && !isValidUUID(userId)) {
+      throw new UnprocessableEntityException(UserMessage.INVALID_USER_ID);
+    }
+
+    const user = await this.userRepo
+      .createQueryBuilder(UserConstants.USER)
+      .where(UserConstants.USER_ID_EQUALS_TO, { userId })
+      .getOne();
+
     if (!user) throw new NotFoundException(UserMessage.NOT_FOUND);
     return user;
   }
 
-  public async findForName(userName: string): Promise<UserEntity> {
-    return this.userRepository.findOne({ where: { name: userName } });
+  public async findForName(userName: string): Promise<User> {
+    return this.userRepo
+      .createQueryBuilder(UserConstants.USER)
+      .where(UserConstants.USER_NAME_EQUALS_TO, { userName })
+      .getOne();
   }
 
-  public async findForEmail(email: string): Promise<UserEntity> {
+  public async findForEmail(email: string): Promise<User> {
     // TODO: testar se deletado
-    return await this.userRepository.findOne({
-      where: { email },
-      withDeleted: true,
-    });
+
+    return this.userRepo
+      .createQueryBuilder(UserConstants.USER)
+      .where(UserConstants.USER_EMAIL_EQUALS_TO, { email })
+      .getOne();
   }
 
   public async find(
     findDTO?: FindUserRequestDTO,
-  ): Promise<PaginatedResponseDTO<UserEntity>> {
+  ): Promise<PaginatedResponseDTO<User, UserOrder>> {
     findDTO = plainToInstance(FindUserRequestDTO, findDTO || {});
     await validateOrThrowError(findDTO || {}, FindUserRequestDTO);
 
-    let { query, active, deleted, page, pageSize, orderBy } = findDTO;
-    const findManyOptions: FindManyOptions = {};
+    let { textQuery, active, deleted, page, pageSize, orderBy } = findDTO;
 
-    findManyOptions.where = {};
+    let select = this.userRepo.createQueryBuilder(UserConstants.USER);
 
-    // text query
-    if (query != null) {
-      if (query) {
-        findManyOptions.where.name = ILike(`%${query.replace(' ', '%')}%`);
-      }
+    // textQuery by name
+
+    if (textQuery) {
+      select = select.andWhere(UserConstants.USER_NAME_LIKE_TEXT_QUERY, {
+        textQuery,
+      });
     }
 
     // active
+
     if (active == ActiveFilter.ACTIVE) {
-      findManyOptions.where.active = true;
+      select = select.andWhere(UserConstants.USER_ACTIVE_EQUALS_TO, {
+        active: true,
+      });
     } else if (active == ActiveFilter.INACTIVE) {
-      findManyOptions.where.active = false;
+      select = select.andWhere(UserConstants.USER_ACTIVE_EQUALS_TO, {
+        active: false,
+      });
     }
 
-    // deleted
+    // deletedAt
+
     if (deleted == DeletedFilter.DELETED) {
-      findManyOptions.where.deletedAt = Not(IsNull());
-      findManyOptions.withDeleted = true;
+      select = select
+        .withDeleted()
+        .andWhere(UserConstants.USER_DELETED_AT_IS_NOT_NULL);
     } else if (deleted == DeletedFilter.ALL) {
-      findManyOptions.withDeleted = true;
+      select = select.withDeleted();
     }
 
     // pagination
-    page = page || PaginationConfig.DEFAULT_PAGE;
-    pageSize = pageSize || PaginationConfig.DEFAULT_PAGE_SIZE;
-    findManyOptions.take = pageSize;
-    findManyOptions.skip = (page - 1) * pageSize;
+
+    pageSize = pageSize || PaginationConfigs.DEFAULT_PAGE_SIZE;
+    select = select.take(pageSize).skip((page - 1) * pageSize);
 
     // sort
-    orderBy = orderBy || [UserOrder.NAME_ASC];
-    findManyOptions.order = {};
-    for (let orderItem of orderBy) {
-      const [column, direction] = orderItem.split('_');
-      findManyOptions.order[column] = direction;
+
+    for (let i = 0; i < orderBy.length; i++) {
+      const [column, direction] = orderBy[i].split('_'); // TODO: move to DTO
+      if (i == 0) {
+        select = select.orderBy(
+          `user.${column}`,
+          direction.toUpperCase() as 'ASC' | 'DESC',
+        );
+      } else {
+        select = select.addOrderBy(
+          `user.${column}`,
+          direction.toUpperCase() as 'ASC' | 'DESC',
+        );
+      }
     }
 
     // results
-    const [results, count] = await this.userRepository.findAndCount(
-      findManyOptions,
+
+    const [results, count] = await select.getManyAndCount();
+
+    textQuery = textQuery?.replace(/(^%|%$)/g, '').replace(/%/g, ' ');
+    return new PaginatedResponseDTO(
+      textQuery,
+      count,
+      page,
+      pageSize,
+      orderBy,
+      results,
     );
-    return new PaginatedResponseDTO(results, count, page, pageSize);
   }
 
   public async count(): Promise<number> {
-    return await this.userRepository.count();
+    return await this.userRepo.count();
   }
 
   public async updatePassword(
-    userId: number,
+    userId: string,
     updatePasswordDto: UpdatePasswordRequestDTO,
   ): Promise<UpdatePasswordResponseDTO> {
-    if (!userId) throw new BadRequestException(UserMessage.ID_REQUIRED);
-    if (!updatePasswordDto) throw new BadRequestException('Data is required'); // TODO: move message to a enum
+    if (!userId) {
+      throw new BadRequestException(UserMessage.ID_REQUIRED);
+    }
+    if (!isValidUUID(userId)) {
+      throw new UnprocessableEntityException(UserMessage.INVALID_USER_ID);
+    }
+    if (!updatePasswordDto) {
+      throw new BadRequestException('Data is required'); // TODO: move message to a enum
+    }
     await validateOrThrowError(updatePasswordDto, UpdatePasswordRequestDTO);
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+    const user = await this.userRepo
+      .createQueryBuilder(UserConstants.USER)
+      .where(UserConstants.USER_ID_EQUALS_TO, { userId })
+      .getOne();
     if (!user) throw new NotFoundException(UserMessage.NOT_FOUND);
     user.hash = await this.encryptionService.encrypt(
       updatePasswordDto.password,
     );
-    await this.userRepository.save(user);
+    await this.userRepo.save(user);
     return { status: 'success' };
   }
 
   async checkIfEmailAlreadyInUse(email: string): Promise<boolean> {
-    return !!(await this.findForEmail(email));
+    const user = await this.userRepo
+      .createQueryBuilder(UserConstants.USER)
+      .where(UserConstants.USER_EMAIL_EQUALS_TO, { email })
+      .withDeleted()
+      .getOne();
+    return !!user;
   }
 
   public async validateCredentials(
     email: string,
     password: string,
-  ): Promise<UserEntity | null> {
-    const user = await this.userRepository
-      .createQueryBuilder('user')
-      .addSelect('user.hash') // add hash/password
+  ): Promise<User | null> {
+    const user = await this.userRepo
+      .createQueryBuilder(UserConstants.USER)
+      .addSelect(UserConstants.USER_HASH) // add hash/password
       .where({ email })
       .getOne();
 

@@ -6,16 +6,16 @@ import {
 import { UnauthorizedException } from '@nestjs/common/exceptions';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { SignOptions, TokenExpiredError } from 'jsonwebtoken';
-import { AuthorizationMessage } from '../../../system/enums/messages/authorization-messages/authorization-messages.enum';
+import { AuthorizationMessage } from '../../../system/messages/authorization/authorization.messages.enum';
 import ms, { StringValue } from '../../../system/utils/time/ms/ms';
-import { UserMessage } from '../../../user/enums/messages/user/user-messages.ts/user-messages.enum';
-import { UserEntity } from '../../../user/models/user/user.entity';
+import { UserMessage } from '../../../user/enums/messages/user/user.messages.enum';
+import { User } from '../../../user/models/user/user.entity';
 import { UserService } from '../../../user/services/user/user.service';
-import { JWTConfigs } from '../../configs/jwt.config';
-import { RefreshTokenMessage } from '../../enums/refresh-token-messages.ts/refresh-token-messages.enum';
-import { RefreshTokenEntity } from '../../models/refresh-token.entity';
+import { JWTConfigs } from '../../configs/jwt.configs';
+import { RefreshTokenMessage } from '../../messages/refresh-token/refresh-token.messages.enum';
+import { RefreshToken } from '../../models/refresh-token.entity';
 import { RefreshTokenRepository } from '../../repositories/refresh-token.repository';
-import { BASE_OPTIONS } from './dtos/jwt-signin-base-options.';
+import { BASE_OPTIONS } from './dtos/jwt-signin-base-options';
 import { RefreshTokenPayload } from './dtos/refresh-token-payload';
 
 @Injectable()
@@ -26,19 +26,20 @@ export class TokenService {
     private readonly jwtService: JwtService,
   ) {}
 
-  public async generateAccessToken(user: UserEntity): Promise<string> {
+  public async generateAccessToken(user: User): Promise<string> {
     if (!user) throw new UnprocessableEntityException(UserMessage.REQUIRED);
     if (!user.id)
       throw new UnprocessableEntityException(UserMessage.ID_REQUIRED);
     const opts: SignOptions = {
       ...BASE_OPTIONS,
-      subject: String(user.id),
+      // subject: String(user.id), // TODO: remover
+      subject: user.id,
     };
 
     return await this.jwtService.signAsync({}, opts);
   }
 
-  public async generateRefreshToken(user: UserEntity): Promise<string> {
+  public async generateRefreshToken(user: User): Promise<string> {
     const exp = JWTConfigs.REFRESH_TOKEN_EXPIRATION as StringValue;
     const ttl = ms(exp);
     const token = await this.refreshTokenRepository.createRefreshToken(
@@ -48,7 +49,8 @@ export class TokenService {
     const opts: JwtSignOptions = {
       expiresIn: ttl,
       ...BASE_OPTIONS,
-      subject: String(user.id),
+      // subject: String(user.id), // TODO: remover
+      subject: user.id,
       jwtid: String(token.id),
     };
     return this.jwtService.signAsync({}, opts);
@@ -76,7 +78,7 @@ export class TokenService {
 
   public async createAccessTokenFromRefreshToken(
     refreshToken: string,
-  ): Promise<{ token: string; user: UserEntity }> {
+  ): Promise<{ token: string; user: User }> {
     if (!refreshToken)
       throw new UnprocessableEntityException(RefreshTokenMessage.REQUIRED);
     const { user } = await this.resolveRefreshToken(refreshToken);
@@ -86,7 +88,7 @@ export class TokenService {
 
   public async resolveRefreshToken(
     encodedRefreshToken: string,
-  ): Promise<{ user: UserEntity; refreshToken: RefreshTokenEntity }> {
+  ): Promise<{ user: User; refreshToken: RefreshToken }> {
     const payload = await this.decodeRefreshToken(encodedRefreshToken);
     const refreshToken =
       await this.getStoredTRefreshTokenFromRefreshTokenPayload(payload);
@@ -126,7 +128,7 @@ export class TokenService {
 
   private async getUserFromRefreshTokenPayload(
     refreshTokenPayload: RefreshTokenPayload,
-  ): Promise<UserEntity> {
+  ): Promise<User> {
     if (!refreshTokenPayload)
       throw new UnprocessableEntityException(
         RefreshTokenMessage.PAYLOAD_REQUIRED,
@@ -137,12 +139,12 @@ export class TokenService {
       throw new UnprocessableEntityException(RefreshTokenMessage.MALFORMED);
     }
 
-    return await this.usersService.findForId(+subId);
+    return await this.usersService.findForId(subId);
   }
 
   private async getStoredTRefreshTokenFromRefreshTokenPayload(
     payload: RefreshTokenPayload,
-  ): Promise<RefreshTokenEntity | null> {
+  ): Promise<RefreshToken | null> {
     const tokenId = payload.jti;
 
     if (!tokenId) {

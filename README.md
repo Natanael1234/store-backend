@@ -108,4 +108,10 @@ Execute:
 docker-compose up --build -V
 ```
 
-Acesse: http://localhost:3000/api.
+Goto: http://localhost:3000/api.
+
+# Minio (s3 like file storage)
+
+Got to: http://localhost:9001.
+
+TODO: After create container manually setup acess key

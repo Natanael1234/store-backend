@@ -1,79 +1,90 @@
 import {
   NotFoundException,
+  UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { UnauthorizedException } from '@nestjs/common/exceptions/unauthorized.exception';
 import { JwtService } from '@nestjs/jwt';
 import { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { JsonWebTokenError } from 'jsonwebtoken';
 import { Repository } from 'typeorm';
 import { getTestingModule } from '../../../../.jest/test-config.module';
-import { UserMessage } from '../../../user/enums/messages/user/user-messages.ts/user-messages.enum';
-import { UserEntity } from '../../../user/models/user/user.entity';
-import { RefreshTokenMessage } from '../../enums/refresh-token-messages.ts/refresh-token-messages.enum';
+import { EncryptionService } from '../../../system/encryption/services/encryption/encryption.service';
+import { UserConstants } from '../../../user/constants/user/user-entity.constants';
+import { UserMessage } from '../../../user/enums/messages/user/user.messages.enum';
+import { User } from '../../../user/models/user/user.entity';
 import { Role } from '../../enums/role/role.enum';
-import { RefreshTokenEntity } from '../../models/refresh-token.entity';
+import { RefreshTokenMessage } from '../../messages/refresh-token/refresh-token.messages.enum';
+import { RefreshToken } from '../../models/refresh-token.entity';
 import { RefreshTokenRepository } from '../../repositories/refresh-token.repository';
 import { TokenService } from './token.service';
 
-const userData1 = {
-  name: 'User 1',
-  email: 'user1@email.com',
-  roles: [Role.ROOT],
-  hash: {
-    iv: 'iv1',
-    encryptedData: 'ed1',
-  },
-};
-const userData2 = {
-  name: 'User 2',
-  email: 'user2@email.com',
-  roles: [Role.ADMIN],
-  hash: {
-    iv: 'iv2',
-    encryptedData: 'ed2',
-  },
-};
-const userData3 = {
-  name: 'User 3',
-  email: 'user3@email.com',
-  roles: [Role.USER],
-  hash: {
-    iv: 'iv3',
-    encryptedData: 'ed3',
-  },
-};
-
 describe('TokenServiceService', () => {
+  let module: TestingModule;
+  let userRepo: Repository<User>;
+  let refreshTokenRepo: RefreshTokenRepository;
   let tokenService: TokenService;
   let jwtService: JwtService;
-  let userRepo: Repository<UserEntity>;
-  let refreshTokenRepo: RefreshTokenRepository;
-  let module: TestingModule;
+  let encryptionService: EncryptionService;
 
   beforeEach(async () => {
     module = await getTestingModule();
     tokenService = module.get<TokenService>(TokenService);
     jwtService = module.get<JwtService>(JwtService);
-    userRepo = module.get<Repository<UserEntity>>(
-      getRepositoryToken(UserEntity),
-    );
+    userRepo = module.get<Repository<User>>(getRepositoryToken(User));
     refreshTokenRepo = module.get<RefreshTokenRepository>(
       RefreshTokenRepository,
     );
+    encryptionService = module.get<EncryptionService>(EncryptionService);
   });
 
   afterEach(async () => {
     await module.close(); // TODO: é necessário?
   });
 
+  async function insertUsers(
+    ...users: {
+      name: string;
+      email: string;
+      password: string;
+      active?: boolean;
+      roles: Role[];
+    }[]
+  ) {
+    const ids = [];
+    for (const user of users) {
+      const ret = await userRepo
+        .createQueryBuilder()
+        .insert()
+        .into(User)
+        .values({
+          name: user.name,
+          email: user.email,
+          hash: await encryptionService.encrypt(user.password),
+          roles: user.roles,
+          active: user.active,
+        })
+        .execute();
+      ids.push(ret.identifiers[0].id);
+    }
+    return ids;
+  }
+
   describe('generateAccessToken', () => {
     it('should generate an access token', async () => {
-      const userId = 2;
-      const user = new UserEntity();
-      user.id = userId;
-      const accessToken = await tokenService.generateAccessToken(user);
+      await insertUsers({
+        name: 'User 1',
+        email: 'user1@email.com',
+        password: 'Acbd*1',
+        roles: [Role.ROOT],
+        active: true,
+      });
+
+      const users = await userRepo
+        .createQueryBuilder(UserConstants.USER)
+        .getMany();
+
+      const accessToken = await tokenService.generateAccessToken(users[0]);
       expect(accessToken).toBeDefined();
       expect(accessToken.length).toBeGreaterThanOrEqual(20); // TODO: size unknown
 
@@ -81,7 +92,7 @@ describe('TokenServiceService', () => {
       expect(decodedAccessToken['sub']).toBeDefined();
       expect(decodedAccessToken['exp']).toBeDefined();
       expect(decodedAccessToken['iat']).toBeDefined();
-      expect(decodedAccessToken['sub']).toEqual(`${userId}`);
+      expect(decodedAccessToken['sub']).toEqual(`${users[0].id}`);
       expect(decodedAccessToken['exp']).toBeGreaterThan(
         decodedAccessToken['iat'],
       );
@@ -100,7 +111,7 @@ describe('TokenServiceService', () => {
     });
 
     it('should fail when user id is not defined', async () => {
-      const fn = async () => tokenService.generateAccessToken(new UserEntity());
+      const fn = async () => tokenService.generateAccessToken(new User());
       await expect(fn()).rejects.toThrow(UserMessage.ID_REQUIRED);
       await expect(fn()).rejects.toThrow(UnprocessableEntityException);
     });
@@ -108,9 +119,19 @@ describe('TokenServiceService', () => {
 
   describe('generateRefreshToken', () => {
     it('should generate an refresh token', async () => {
-      const user = new UserEntity();
-      user.id = 2;
-      const refreshToken = await tokenService.generateRefreshToken(user);
+      await insertUsers({
+        name: 'User 1',
+        email: 'user1@email.com',
+        password: 'Acbd*1',
+        roles: [Role.ROOT],
+        active: true,
+      });
+
+      const users = await userRepo
+        .createQueryBuilder(UserConstants.USER)
+        .getMany();
+
+      const refreshToken = await tokenService.generateRefreshToken(users[0]);
       expect(refreshToken).toBeDefined();
       expect(refreshToken.length).toBeGreaterThanOrEqual(20); // TODO: size unknown
     });
@@ -126,8 +147,7 @@ describe('TokenServiceService', () => {
     });
 
     it('should fail when user id is not defined', async () => {
-      const fn = async () =>
-        tokenService.generateRefreshToken(new UserEntity());
+      const fn = async () => tokenService.generateRefreshToken(new User());
       await expect(fn()).rejects.toThrow(UserMessage.ID_REQUIRED);
     });
   });
@@ -135,60 +155,95 @@ describe('TokenServiceService', () => {
   describe('resolveRefreshToken', () => {
     function validateResolvedRefreshToken(
       resolved: { refreshToken: any; user: any },
-      userId: number,
+      userId: string,
       refreshTokenId: number,
     ) {
       expect(resolved).toBeDefined();
-
       expect(resolved.refreshToken).toBeDefined();
-      expect(resolved.refreshToken).toBeInstanceOf(RefreshTokenEntity);
+      expect(resolved.refreshToken).toBeInstanceOf(RefreshToken);
       expect(resolved.refreshToken.id).toEqual(refreshTokenId);
       expect(resolved.refreshToken.userId).toEqual(userId);
-
       expect(resolved.user).toBeDefined();
-      expect(resolved.user).toBeInstanceOf(UserEntity);
+      expect(resolved.user).toBeInstanceOf(User);
       expect(resolved.user.id).toEqual(userId);
     }
 
     it('should resolve refresh token', async () => {
-      await userRepo.insert(userRepo.create(userData1));
-      await userRepo.insert(userRepo.create(userData2));
-      await userRepo.insert(userRepo.create(userData3));
+      const [userId1, userId2, userId3] = await insertUsers(
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Acbd*1',
+          roles: [Role.ROOT],
+          active: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Acbd*2',
+          roles: [Role.ADMIN],
+          active: true,
+        },
+        {
+          name: 'User 3',
+          email: 'user3@email.com',
+          password: 'Acbd*2',
+          roles: [Role.USER],
+          active: true,
+        },
+      );
 
-      const users = await userRepo.find();
-
+      const users = await userRepo
+        .createQueryBuilder(UserConstants.USER)
+        .getMany();
       const generatedRefreshTokens = [
         await tokenService.generateRefreshToken(users[1]),
         await tokenService.generateRefreshToken(users[2]),
         await tokenService.generateRefreshToken(users[2]),
       ];
-
       const resolvedRefreshTokens = [
         await tokenService.resolveRefreshToken(generatedRefreshTokens[0]),
         await tokenService.resolveRefreshToken(generatedRefreshTokens[1]),
         await tokenService.resolveRefreshToken(generatedRefreshTokens[2]),
       ];
-
-      validateResolvedRefreshToken(resolvedRefreshTokens[0], 2, 1);
-      validateResolvedRefreshToken(resolvedRefreshTokens[1], 3, 2);
-      validateResolvedRefreshToken(resolvedRefreshTokens[2], 3, 3);
+      validateResolvedRefreshToken(resolvedRefreshTokens[0], userId2, 1);
+      validateResolvedRefreshToken(resolvedRefreshTokens[1], userId3, 2);
+      validateResolvedRefreshToken(resolvedRefreshTokens[2], userId3, 3);
     });
 
     it('should fail when refresh token is inexistent', async () => {
-      await userRepo.insert(userRepo.create(userData1));
-      await userRepo.insert(userRepo.create(userData2));
-      await userRepo.insert(userRepo.create(userData3));
-
-      const users = await userRepo.find();
-
+      await insertUsers(
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Acbd*1',
+          roles: [Role.ROOT],
+          active: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Acbd*2',
+          roles: [Role.ADMIN],
+          active: true,
+        },
+        {
+          name: 'User 3',
+          email: 'user3@email.com',
+          password: 'Acbd*2',
+          roles: [Role.USER],
+          active: true,
+        },
+      );
+      const users = await userRepo
+        .createQueryBuilder(UserConstants.USER)
+        .getMany();
       const generatedRefreshTokens = [
+        await tokenService.generateRefreshToken(users[0]),
         await tokenService.generateRefreshToken(users[1]),
         await tokenService.generateRefreshToken(users[2]),
-        await tokenService.generateRefreshToken(users[2]),
       ];
-
       await refreshTokenRepo.delete(2);
-
       const fn = async () =>
         tokenService.resolveRefreshToken(generatedRefreshTokens[1]);
       await expect(fn()).rejects.toThrow(RefreshTokenMessage.NOT_FOUND);
@@ -196,20 +251,39 @@ describe('TokenServiceService', () => {
     });
 
     it('should fail when user is inexistent', async () => {
-      await userRepo.insert(userRepo.create(userData1));
-      await userRepo.insert(userRepo.create(userData2));
-      await userRepo.insert(userRepo.create(userData3));
+      const [userId1, userId2, userId3] = await insertUsers(
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Acbd*1',
+          roles: [Role.ROOT],
+          active: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Acbd*2',
+          roles: [Role.ADMIN],
+          active: true,
+        },
+        {
+          name: 'User 3',
+          email: 'user3@email.com',
+          password: 'Acbd*2',
+          roles: [Role.USER],
+          active: true,
+        },
+      );
 
-      const users = await userRepo.find();
-
+      const users = await userRepo
+        .createQueryBuilder(UserConstants.USER)
+        .getMany();
       const generatedRefreshTokens = [
         await tokenService.generateRefreshToken(users[1]),
         await tokenService.generateRefreshToken(users[2]),
         await tokenService.generateRefreshToken(users[2]),
       ];
-
-      await userRepo.delete(3);
-
+      await userRepo.delete(userId3);
       const fn = async () =>
         tokenService.resolveRefreshToken(generatedRefreshTokens[1]);
       await expect(fn()).rejects.toThrow(UserMessage.NOT_FOUND);
@@ -245,7 +319,7 @@ describe('TokenServiceService', () => {
   describe('decodeRefreshToken', () => {
     function validateDecodedRefreshToken(
       decodeRefreshToken: any, // TODO: DTO
-      userId: number,
+      userId: string,
       refreshTokenId: number,
     ) {
       expect(decodeRefreshToken).toBeDefined();
@@ -259,29 +333,47 @@ describe('TokenServiceService', () => {
     }
 
     it('should decode refresh token', async () => {
-      const users = [new UserEntity(), new UserEntity(), new UserEntity()];
-      users[0].id = 1;
-      users[1].id = 2;
-      users[2].id = 3;
+      const [userId1, userId2, userId3] = await insertUsers(
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Acbd*1',
+          roles: [Role.ROOT],
+          active: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Acbd*2',
+          roles: [Role.ADMIN],
+          active: true,
+        },
+        {
+          name: 'User 3',
+          email: 'user3@email.com',
+          password: 'Acbd*2',
+          roles: [Role.USER],
+          active: true,
+        },
+      );
 
+      const users = await userRepo
+        .createQueryBuilder(UserConstants.USER)
+        .getMany();
       const generatedRefreshTokens = [
-        await tokenService.generateRefreshToken(users[1]),
+        await tokenService.generateRefreshToken(users[0]),
         await tokenService.generateRefreshToken(users[2]),
         await tokenService.generateRefreshToken(users[2]),
       ];
-
       const refreshTokens = await refreshTokenRepo.find();
-
       const decodedRefreshTokens = [
         await tokenService['decodeRefreshToken'](generatedRefreshTokens[0]),
         await tokenService['decodeRefreshToken'](generatedRefreshTokens[1]),
         await tokenService['decodeRefreshToken'](generatedRefreshTokens[2]),
       ];
-
-      validateDecodedRefreshToken(decodedRefreshTokens[0], 2, 1);
-      validateDecodedRefreshToken(decodedRefreshTokens[1], 3, 2);
-      validateDecodedRefreshToken(decodedRefreshTokens[2], 3, 3);
-
+      validateDecodedRefreshToken(decodedRefreshTokens[0], userId1, 1);
+      validateDecodedRefreshToken(decodedRefreshTokens[1], userId3, 2);
+      validateDecodedRefreshToken(decodedRefreshTokens[2], userId3, 3);
       expect(refreshTokens).toHaveLength(3);
     });
 
@@ -314,25 +406,38 @@ describe('TokenServiceService', () => {
 
   describe('revokeRefreshToken', () => {
     it('should revoke refresh token', async () => {
-      const userData = [
-        { ...userData1, active: true },
-        { ...userData2, active: true },
-        { ...userData3, active: true },
-      ];
-      await userRepo.insert(userRepo.create(userData[0]));
-      await userRepo.insert(userRepo.create(userData[1]));
-      await userRepo.insert(userRepo.create(userData[2]));
-
-      const users = await userRepo.find();
-
+      await insertUsers(
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Acbd*1',
+          roles: [Role.ROOT],
+          active: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Acbd*2',
+          roles: [Role.ADMIN],
+          active: true,
+        },
+        {
+          name: 'User 3',
+          email: 'user3@email.com',
+          password: 'Acbd*2',
+          roles: [Role.USER],
+          active: true,
+        },
+      );
+      const users = await userRepo
+        .createQueryBuilder(UserConstants.USER)
+        .getMany();
       const generatedRefreshTokens = [
         await tokenService.generateRefreshToken(users[1]),
         await tokenService.generateRefreshToken(users[2]),
         await tokenService.generateRefreshToken(users[2]),
       ];
-
       await tokenService.revokeRefreshToken(generatedRefreshTokens[1]);
-
       const refreshTokens = await refreshTokenRepo.find();
       expect(refreshTokens[0].revoked).toEqual(false);
       expect(refreshTokens[1].revoked).toEqual(true);
@@ -340,11 +445,32 @@ describe('TokenServiceService', () => {
     });
 
     it('should fail when refresh token is inexistent', async () => {
-      await userRepo.insert(userRepo.create(userData1));
-      await userRepo.insert(userRepo.create(userData2));
-      await userRepo.insert(userRepo.create(userData3));
-
-      const users = await userRepo.find();
+      await insertUsers(
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Acbd*1',
+          roles: [Role.ROOT],
+          active: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Acbd*2',
+          roles: [Role.ADMIN],
+          active: true,
+        },
+        {
+          name: 'User 3',
+          email: 'user3@email.com',
+          password: 'Acbd*2',
+          roles: [Role.USER],
+          active: true,
+        },
+      );
+      const users = await userRepo
+        .createQueryBuilder(UserConstants.USER)
+        .getMany();
 
       const generatedRefreshTokens = [
         await tokenService.generateRefreshToken(users[1]),
@@ -401,12 +527,35 @@ describe('TokenServiceService', () => {
 
   describe('createAccessTokenFromRefreshToken', () => {
     it('should create access token from refresh token', async () => {
-      const userId = 3;
-      await userRepo.insert(userRepo.create(userData1));
-      await userRepo.insert(userRepo.create(userData2));
-      await userRepo.insert(userRepo.create(userData3));
+      const [userId1, userId2, userId3] = await insertUsers(
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Acbd*1',
+          roles: [Role.ROOT],
+          active: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Acbd*2',
+          roles: [Role.ADMIN],
+          active: true,
+        },
+        {
+          name: 'User 3',
+          email: 'user3@email.com',
+          password: 'Acbd*2',
+          roles: [Role.USER],
+          active: true,
+        },
+      );
 
-      const users = await userRepo.find();
+      const userId = userId3;
+
+      const users = await userRepo
+        .createQueryBuilder(UserConstants.USER)
+        .getMany();
 
       const generatedRefreshTokens = [
         await tokenService.generateRefreshToken(users[1]),
@@ -420,7 +569,7 @@ describe('TokenServiceService', () => {
 
       expect(accessToken).toBeDefined();
       expect(accessToken.user).toBeDefined();
-      expect(accessToken.user).toBeInstanceOf(UserEntity);
+      expect(accessToken.user).toBeInstanceOf(User);
       expect(accessToken.user.id).toEqual(userId);
       expect(accessToken.token).toBeDefined();
       expect(typeof accessToken.token).toEqual('string');
@@ -436,17 +585,38 @@ describe('TokenServiceService', () => {
     });
 
     it('should fail when refresh token is revoked', async () => {
-      const usersData = [
-        { ...userData1, active: true },
-        { ...userData2, active: true },
-        { ...userData3, active: true },
-      ];
-      const refreshTokendId = 2;
-      await userRepo.insert(userRepo.create(usersData[0]));
-      await userRepo.insert(userRepo.create(usersData[1]));
-      await userRepo.insert(userRepo.create(usersData[2]));
+      const { identifiers: userIdentifiers } = await userRepo
+        .createQueryBuilder()
+        .insert()
+        .into(User)
+        .values([
+          {
+            name: 'User 1',
+            email: 'user1@email.com',
+            hash: await encryptionService.encrypt('Acbd*1'),
+            roles: [Role.ROOT],
+            active: true,
+          },
+          {
+            name: 'User 2',
+            email: 'user2@email.com',
+            hash: await encryptionService.encrypt('Acbd*2'),
+            roles: [Role.ADMIN],
+            active: true,
+          },
+          {
+            name: 'User 3',
+            email: 'user3@email.com',
+            hash: await encryptionService.encrypt('Acbd*2'),
+            roles: [Role.USER],
+            active: true,
+          },
+        ])
+        .execute();
 
-      const users = await userRepo.find();
+      const users = await userRepo
+        .createQueryBuilder(UserConstants.USER)
+        .getMany();
 
       const generatedRefreshTokens = [
         await tokenService.generateRefreshToken(users[1]),
@@ -468,12 +638,39 @@ describe('TokenServiceService', () => {
     });
 
     it('should fail when refresh token is inexistent', async () => {
-      const refreshTokendId = 2;
-      await userRepo.insert(userRepo.create(userData1));
-      await userRepo.insert(userRepo.create(userData2));
-      await userRepo.insert(userRepo.create(userData3));
+      const refreshTokendId = 2; // inexistent refresh token id
+      const { identifiers: userIdentifiers } = await userRepo
+        .createQueryBuilder()
+        .insert()
+        .into(User)
+        .values([
+          {
+            name: 'User 1',
+            email: 'user1@email.com',
+            hash: await encryptionService.encrypt('Acbd*1'),
+            roles: [Role.ROOT],
+            active: true,
+          },
+          {
+            name: 'User 2',
+            email: 'user2@email.com',
+            hash: await encryptionService.encrypt('Acbd*2'),
+            roles: [Role.ADMIN],
+            active: true,
+          },
+          {
+            name: 'User 3',
+            email: 'user3@email.com',
+            hash: await encryptionService.encrypt('Acbd*2'),
+            roles: [Role.USER],
+            active: true,
+          },
+        ])
+        .execute();
 
-      const users = await userRepo.find();
+      const users = await userRepo
+        .createQueryBuilder(UserConstants.USER)
+        .getMany();
 
       const generatedRefreshTokens = [
         await tokenService.generateRefreshToken(users[1]),
@@ -495,11 +692,33 @@ describe('TokenServiceService', () => {
     });
 
     it('should fail when user is inexistent', async () => {
-      await userRepo.insert(userRepo.create(userData1));
-      await userRepo.insert(userRepo.create(userData2));
-      await userRepo.insert(userRepo.create(userData3));
+      const [userId1, userId2, userId3] = await insertUsers(
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Acbd*1',
+          roles: [Role.ROOT],
+          active: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Acbd*2',
+          roles: [Role.ADMIN],
+          active: true,
+        },
+        {
+          name: 'User 3',
+          email: 'user3@email.com',
+          password: 'Acbd*2',
+          roles: [Role.USER],
+          active: true,
+        },
+      );
 
-      const users = await userRepo.find();
+      const users = await userRepo
+        .createQueryBuilder(UserConstants.USER)
+        .getMany();
 
       const generatedRefreshTokens = [
         await tokenService.generateRefreshToken(users[1]),
@@ -507,9 +726,9 @@ describe('TokenServiceService', () => {
         await tokenService.generateRefreshToken(users[2]),
       ];
 
-      await userRepo.delete(1);
-      await userRepo.delete(2);
-      await userRepo.delete(3);
+      await userRepo.delete(userId1);
+      await userRepo.delete(userId2);
+      await userRepo.delete(userId3);
 
       const fn = async (refreshToken) =>
         await tokenService.createAccessTokenFromRefreshToken(refreshToken);
@@ -552,11 +771,33 @@ describe('TokenServiceService', () => {
 
   describe('getUserFromRefreshTokenPayload', () => {
     it('should get user from refresh token payload', async () => {
-      await userRepo.insert(userRepo.create(userData1));
-      await userRepo.insert(userRepo.create(userData2));
-      await userRepo.insert(userRepo.create(userData3));
+      const [userId1, userId2, userId3] = await insertUsers(
+        {
+          name: 'User 1',
+          email: 'user1@email.com',
+          password: 'Acbd*1',
+          roles: [Role.ROOT],
+          active: true,
+        },
+        {
+          name: 'User 2',
+          email: 'user2@email.com',
+          password: 'Acbd*2',
+          roles: [Role.ADMIN],
+          active: true,
+        },
+        {
+          name: 'User 3',
+          email: 'user3@email.com',
+          password: 'Acbd*2',
+          roles: [Role.USER],
+          active: true,
+        },
+      );
 
-      const users = await userRepo.find();
+      const users = await userRepo
+        .createQueryBuilder(UserConstants.USER)
+        .getMany();
 
       const generatedRefreshTokens = [
         await tokenService.generateRefreshToken(users[1]),
@@ -582,18 +823,34 @@ describe('TokenServiceService', () => {
         ),
       ];
 
-      expect(usersFromPayload[0]).toBeInstanceOf(UserEntity);
-      expect(usersFromPayload[1]).toBeInstanceOf(UserEntity);
-      expect(usersFromPayload[2]).toBeInstanceOf(UserEntity);
+      expect(usersFromPayload[0]).toBeInstanceOf(User);
+      expect(usersFromPayload[1]).toBeInstanceOf(User);
+      expect(usersFromPayload[2]).toBeInstanceOf(User);
 
-      expect(usersFromPayload[0].id).toEqual(2);
-      expect(usersFromPayload[1].id).toEqual(3);
-      expect(usersFromPayload[2].id).toEqual(3);
+      expect(usersFromPayload[0].id).toEqual(userId2);
+      expect(usersFromPayload[1].id).toEqual(userId3);
+      expect(usersFromPayload[2].id).toEqual(userId3);
     });
 
-    it('should return null when user is inexistent', async () => {
-      await userRepo.insert(userRepo.create(userData1));
-      const user = await userRepo.findOne({ where: { id: 1 } });
+    // TODO: verificar se a descrição está certa
+    it('should return null when user is inexistent (in refresh tokens)', async () => {
+      const { identifiers: userIdentifiers } = await userRepo
+        .createQueryBuilder()
+        .insert()
+        .values({
+          name: 'User 1',
+          email: 'user1@email.com',
+          roles: [Role.ROOT],
+          hash: await encryptionService.encrypt('Abcd*1'),
+        })
+        .execute();
+      const user = await userRepo
+        .createQueryBuilder(UserConstants.USER)
+        .where(UserConstants.USER_ID_EQUALS_TO, {
+          userId: userIdentifiers[0].id,
+        })
+        .getOne();
+
       const refreshToken = await tokenService.generateRefreshToken(user);
       const decodedRefreshToken = await tokenService['decodeRefreshToken'](
         refreshToken,
@@ -603,7 +860,7 @@ describe('TokenServiceService', () => {
           exp: 1000,
           iat: 900,
           jti: 2,
-          sub: '3',
+          sub: 'f136f640-90b7-11ed-a2a0-fd911f8f7f38',
         });
       await expect(fn()).rejects.toThrow(UserMessage.NOT_FOUND);
       await expect(fn()).rejects.toThrow(NotFoundException);

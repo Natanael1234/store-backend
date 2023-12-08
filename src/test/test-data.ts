@@ -4,7 +4,7 @@ export type TestErrorOptions = {
   property: string;
   value: any;
   description: string;
-  data: any;
+  data: object;
   errors: any;
   message: any;
 };
