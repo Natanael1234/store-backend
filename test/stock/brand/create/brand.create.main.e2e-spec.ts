@@ -10,6 +10,7 @@ import { SortConstants } from '../../../../src/modules/system/constants/sort/sor
 import { BoolMessage } from '../../../../src/modules/system/messages/bool/bool.messages';
 import { ExceptionText } from '../../../../src/modules/system/messages/exception-text/exception-text.enum';
 import { TextMessage } from '../../../../src/modules/system/messages/text/text.messages';
+import { ValidationPipe } from '../../../../src/modules/system/pipes/custom-validation.pipe';
 import { testValidateBrands } from '../../../../src/test/brand/test-brand-utils';
 import {
   testBuildAuthenticationScenario,
@@ -33,12 +34,12 @@ describe('BrandController (e2e) - post /brands (main)', () => {
     app = moduleFixture.createNestApplication();
 
     // app.setGlobalPrefix('api');
-    // app.useGlobalPipes(
-    //   new ValidationPipe({
-    //     stopAtFirstError: true,
-    //     errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-    //   }),
-    // );
+    app.useGlobalPipes(
+      new ValidationPipe({
+        stopAtFirstError: true,
+        errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      }),
+    );
     brandRepo = app.get<Repository<Brand>>(getRepositoryToken(Brand));
     await app.init();
     rootToken = (await testBuildAuthenticationScenario(moduleFixture))

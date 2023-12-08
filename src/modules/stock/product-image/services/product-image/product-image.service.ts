@@ -5,26 +5,25 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { plainToInstance } from 'class-transformer';
 import { Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { CloudStorageService } from '../../../../system/cloud-storage/services/cloud-storage/cloud-storage.service';
 import { SortConstants } from '../../../../system/constants/sort/sort.constants';
-import { ImagesMetadataMessage } from '../../../../system/decorators/images-metadata/messages/images-metadata/images-metadata.messages.enum';
-import { SaveFileMetadataDto } from '../../../../system/decorators/images-metadata/save-file-metadata.dto';
+import { SaveImageItemDto } from '../../../../system/dtos/save-image-item-dto/save-image-item.dto';
 import { ImageService } from '../../../../system/image/services/image-file/image-file.service';
+import { BoolMessage } from '../../../../system/messages/bool/bool.messages';
 import { FileMessage } from '../../../../system/messages/file/file.messages.enum';
 import { ImageMessage } from '../../../../system/messages/image/image.messages.enum';
+import { MutuallyExclusiveFieldsMessage } from '../../../../system/messages/mutually-exclusive-fields/mutually-exclusive-fields.messages';
 import { TextMessage } from '../../../../system/messages/text/text.messages';
 import { UuidMessage } from '../../../../system/messages/uuid/uuid.messages';
-import { isValidUUID } from '../../../../system/utils/validation/is-valid-uuid-fn';
-import { validateOrThrowError } from '../../../../system/utils/validation/validation';
+import { isMulterFile } from '../../../../system/utils/validation/multer-file/is-valid-multer-file-fn';
+import { isValidUUID } from '../../../../system/utils/validation/uuid/is-valid-uuid-fn';
 import { ProductConstants } from '../../../product/constants/product/product-entity.constants';
 import { ProductMessage } from '../../../product/messages/product/product.messages.enum';
 import { Product } from '../../../product/models/product/product.entity';
 import { ProductImageConfigs } from '../../configs/product-image/product-image.configs';
 import { ProductImageConstants } from '../../constants/product-image/product-image-entity.constants';
-import { SaveFileAdditionalDataRequestDTO } from '../../dtos/save-file-additional-data/save-file-additional-data.request.dto';
 import { ProductImage } from '../../models/product-image/product-image.entity';
 
 const ProductIdMessage = new UuidMessage('product id');
@@ -32,6 +31,21 @@ const ProductImageIdMessage = new UuidMessage('product image id');
 const NameMessage = new TextMessage('name', {
   maxLength: ProductImageConfigs.NAME_MAX_LENGTH,
 });
+const DescriptionMessage = new TextMessage('description', {
+  maxLength: ProductImageConfigs.NAME_MAX_LENGTH,
+});
+const MainMessage = new BoolMessage('main');
+const ActiveMessage = new BoolMessage('active');
+const DeleteMessage = new BoolMessage('delete');
+const ImageIdMessage = new UuidMessage('image id');
+const ExclusiveImageIdMessage = new MutuallyExclusiveFieldsMessage(
+  'imageId',
+  'file',
+);
+const ExclusiveFileMessage = new MutuallyExclusiveFieldsMessage(
+  'file',
+  'imageId',
+);
 
 @Injectable()
 export class ProductImageService {
@@ -44,6 +58,130 @@ export class ProductImageService {
     private readonly imageService: ImageService,
   ) {}
 
+  private async validateImageData(imageDataArr: SaveImageItemDto[]) {
+    // image data
+    if (imageDataArr == null) {
+      throw new UnprocessableEntityException(
+        ImageMessage.IMAGE_LIST_NOT_DEFINED,
+      );
+    }
+    if (!Array.isArray(imageDataArr)) {
+      throw new UnprocessableEntityException(ImageMessage.IMAGE_LIST_INVALID);
+    }
+    if (!imageDataArr.length) {
+      throw new UnprocessableEntityException(ImageMessage.IMAGE_LIST_EMPTY);
+    }
+    let mainCount = 0;
+    for (const imageDataItem of imageDataArr) {
+      // item
+      if (imageDataItem == null) {
+        throw new UnprocessableEntityException(
+          ImageMessage.IMAGE_ITEM_NOT_DEFINED,
+        );
+      }
+      if (typeof imageDataItem != 'object' || Array.isArray(imageDataItem)) {
+        throw new UnprocessableEntityException(ImageMessage.IMAGE_ITEM_INVALID);
+      }
+
+      // name
+      if (imageDataItem.name != null) {
+        if (typeof imageDataItem.name != 'string') {
+          throw new UnprocessableEntityException(NameMessage.INVALID);
+        }
+        if (imageDataItem.name.length > ProductImageConfigs.NAME_MAX_LENGTH) {
+          throw new UnprocessableEntityException(NameMessage.MAX_LEN);
+        }
+      }
+
+      // description
+      if (imageDataItem.description != null) {
+        if (typeof imageDataItem.description != 'string') {
+          throw new UnprocessableEntityException(DescriptionMessage.INVALID);
+        }
+        if (
+          imageDataItem.description.length >
+          ProductImageConfigs.DESCRIPTION_MAX_LENGTH
+        ) {
+          throw new UnprocessableEntityException(DescriptionMessage.MAX_LEN);
+        }
+      }
+
+      // main
+      if (imageDataItem.main !== undefined) {
+        if (imageDataItem.main == null) {
+          throw new UnprocessableEntityException(MainMessage.NULL);
+        }
+        if (typeof imageDataItem.main != 'boolean') {
+          throw new UnprocessableEntityException(MainMessage.INVALID);
+        }
+        if (imageDataItem.main) {
+          mainCount++;
+          if (mainCount > 1) {
+            throw new UnprocessableEntityException(ImageMessage.MULTIPLE_MAINS);
+          }
+        }
+      }
+
+      // active
+      if (imageDataItem.active !== undefined) {
+        if (imageDataItem.active == null) {
+          throw new UnprocessableEntityException(ActiveMessage.NULL);
+        }
+        if (typeof imageDataItem.active != 'boolean') {
+          throw new UnprocessableEntityException(ActiveMessage.INVALID);
+        }
+      }
+
+      // delete
+      if (imageDataItem.delete !== undefined) {
+        if (imageDataItem.delete == null) {
+          throw new UnprocessableEntityException(DeleteMessage.NULL);
+        }
+        if (typeof imageDataItem.delete != 'boolean') {
+          throw new UnprocessableEntityException(DeleteMessage.INVALID);
+        }
+      }
+
+      // imageId
+      if (imageDataItem.imageId !== undefined) {
+        if (
+          imageDataItem.imageId != null &&
+          !isValidUUID(imageDataItem.imageId)
+        ) {
+          throw new UnprocessableEntityException(ImageIdMessage.INVALID);
+        }
+      }
+
+      // file
+      if (imageDataItem.file !== undefined) {
+        if (imageDataItem.imageId != null && isMulterFile(imageDataItem.file)) {
+          throw new UnprocessableEntityException(FileMessage.INVALID_FILE);
+        }
+      }
+
+      // imageId and file
+      if (imageDataItem.imageId != null && imageDataItem.file != null) {
+        throw new UnprocessableEntityException(
+          ExclusiveFileMessage.BOTH_DEFINED,
+        );
+      }
+      if (imageDataItem.imageId == null && imageDataItem.file == null) {
+        throw new UnprocessableEntityException(
+          ExclusiveFileMessage.NONE_DEFINED,
+        );
+      }
+    }
+
+    // repeated image ids
+    const imageIds = imageDataArr
+      .filter((imageDataItem) => imageDataItem.imageId != null)
+      .map((imageDataItem) => imageDataItem.imageId);
+    const nonRepeatedImageIds = [...new Set(imageIds)];
+    if (imageIds.length != nonRepeatedImageIds.length) {
+      throw new UnprocessableEntityException(ImageMessage.IMAGE_ID_DUPLICATED);
+    }
+  }
+
   /**
    * Upload images of a product and generate thumbnails.
    * Create image registes in the database.
@@ -55,40 +193,18 @@ export class ProductImageService {
    */
   async bulkSave(
     productId: string,
-    imageFiles: Array<Express.Multer.File>,
-    additionalDataDto: SaveFileAdditionalDataRequestDTO,
+    imageDataArr: SaveImageItemDto[],
   ): Promise<ProductImage[]> {
     // product id
-
     if (!productId)
       throw new UnprocessableEntityException(ProductIdMessage.REQUIRED);
     if (!isValidUUID(productId)) {
       throw new UnprocessableEntityException(ProductIdMessage.INVALID);
     }
 
-    // additional data
-
-    if (!additionalDataDto) {
-      throw new UnprocessableEntityException('Data is required'); // TODO: move message to enum
-    }
-
-    if (!this.isValidAdditionalDataDto(additionalDataDto)) {
-      // TODO: maybe I should implements something like this for other dtos
-      throw new UnprocessableEntityException(
-        ImagesMetadataMessage.ADDITIONAL_DATA_INVALID,
-      );
-    }
-    additionalDataDto = plainToInstance(
-      SaveFileAdditionalDataRequestDTO,
-      additionalDataDto,
-    );
-    await validateOrThrowError(
-      additionalDataDto,
-      SaveFileAdditionalDataRequestDTO,
-    );
+    await this.validateImageData(imageDataArr);
 
     // product
-
     const product = await this.productRepo
       .createQueryBuilder(ProductConstants.PRODUCT)
       .leftJoinAndSelect(
@@ -99,114 +215,32 @@ export class ProductImageService {
       .getOne();
 
     // if product not found
-
     if (!product) {
       throw new NotFoundException(ProductMessage.NOT_FOUND);
     }
 
-    // checks if both imageFiles and metadata are not defined
-
-    if (!imageFiles?.length && !additionalDataDto?.metadatas?.length) {
-      throw new UnprocessableEntityException(
-        ImagesMetadataMessage.IMAGE_OR_METADATA_NOT_DEFINED,
-      );
-    }
-
-    // checks empty image list
-
-    if (imageFiles && !imageFiles.length) {
-      throw new UnprocessableEntityException(ImageMessage.IMAGES_EMPTY_LIST);
-    }
-
-    // merge images and files
-
-    if (imageFiles) {
-      this.mergeImageAndMetadata(imageFiles, additionalDataDto);
-    }
-
-    if (!imageFiles) {
-      // checks if imageFiles is referenced but is null
-      const containsReferenceToImageFiles =
-        !!additionalDataDto?.metadatas?.find(
-          (metadata) => metadata.imageIdx != null,
-        );
-      if (containsReferenceToImageFiles) {
-        throw new UnprocessableEntityException(ImageMessage.IMAGES_NOT_DEFINED);
-      }
-    }
-
     // max number of images
-
-    // count of images starting with existent images
-
-    let count = product.images.length;
-
-    for (const metadata of additionalDataDto.metadatas) {
-      // checks if metadata.imageId matches existent image
-
-      if (metadata.imageId) {
-        const image = product.images.find((i) => i.id == metadata.imageId);
-        if (!image) {
-          throw new NotFoundException(ImageMessage.IMAGE_NOT_FOUND);
-        }
-      }
-
-      // if new image increment image count
-
-      if (!metadata.imageId) {
-        count++;
-      }
-
-      // if deleting image decrement image count
-
-      if (metadata.delete) {
-        count--;
-      }
-    }
-
-    // check if reached maximum number of images
-    if (count > ProductImageConfigs.MAX_IMAGE_COUNT) {
-      throw new BadRequestException(
-        `Maximum number of images reached. A product can have a maximum of ${ProductImageConfigs.MAX_IMAGE_COUNT} images`, // TODO: move to class
-      );
-    }
+    let currentCount = product.images.length;
+    this.validateImageDataCount(currentCount, imageDataArr);
 
     // create files in storage
-
-    for (const metadata of additionalDataDto.metadatas) {
-      // checks if metadata is improperly referencing an missing image in imageFiles while creating
-
-      if (metadata.imageIdx !== undefined && !metadata.file) {
-        throw new UnprocessableEntityException(
-          ImagesMetadataMessage.IMAGE_IDX_NOT_FOUND,
-        );
-      }
-
-      // checks if metadata is improperly referencing an image in imageFiles while updating
-
-      if (metadata.imageId && metadata.file) {
-        throw new UnprocessableEntityException(
-          ImagesMetadataMessage.IMAGE_NOT_ALLOWED,
-        );
-      }
-
+    for (const imageDataItem of imageDataArr) {
       // TODO: add transactions (database and storage). Should not keep images in storage if failed to save in the database.
 
       // if creating new image
-
-      if (metadata.file) {
+      if (imageDataItem.file) {
         // images in storage
         const imageId = uuidv4();
 
         // file extension
         const extension = this.imageService.extractFilenameExtension(
-          metadata.file.originalname,
+          imageDataItem.file.originalname,
         );
 
         // file state
-        const state = metadata.delete
+        const state = imageDataItem.delete
           ? 'deleted'
-          : metadata.active
+          : imageDataItem.active
           ? 'public'
           : 'private';
 
@@ -229,11 +263,11 @@ export class ProductImageService {
         );
 
         // save the image
-        await this.cloudStorageService.save(metadata.file, imagePath);
+        await this.cloudStorageService.save(imageDataItem.file, imagePath);
 
         // thumbnail in storage
         const thumbnailFile = await this.imageService.generateThumbnail(
-          metadata.file,
+          imageDataItem.file,
         );
 
         // save the thumbnail in storage
@@ -247,13 +281,13 @@ export class ProductImageService {
         productImage.id = imageId;
 
         // name
-        if (metadata.name !== undefined) {
-          productImage.name = metadata.name;
+        if (imageDataItem.name !== undefined) {
+          productImage.name = imageDataItem.name;
         }
 
         // description
-        if (metadata.description !== undefined) {
-          productImage.description = metadata.description;
+        if (imageDataItem.description !== undefined) {
+          productImage.description = imageDataItem.description;
         }
 
         // image
@@ -263,13 +297,13 @@ export class ProductImageService {
         productImage.thumbnail = thumbnailPath;
 
         // main
-        productImage.main = !!metadata.main;
+        productImage.main = !!imageDataItem.main;
 
         // active
-        productImage.active = !!metadata.active;
+        productImage.active = !!imageDataItem.active;
 
         // delete
-        if (metadata.delete === true) {
+        if (imageDataItem.delete === true) {
           productImage.deletedAt = new Date();
         }
 
@@ -279,49 +313,58 @@ export class ProductImageService {
       // if updating image
       else {
         // image
-
         const productImage = product.images.find(
-          (image) => image.id == metadata.imageId,
+          (image) => image.id == imageDataItem.imageId,
         );
+        if (!productImage) {
+          throw new NotFoundException(ImageMessage.IMAGE_NOT_FOUND);
+        }
 
         // name
-        if (metadata.name !== undefined && metadata.name != productImage.name) {
-          productImage.name = metadata.name;
+        if (
+          imageDataItem.name !== undefined &&
+          imageDataItem.name != productImage.name
+        ) {
+          productImage.name = imageDataItem.name;
         }
 
         // description
         if (
-          metadata.description !== undefined &&
-          metadata.description != productImage.description
+          imageDataItem.description !== undefined &&
+          imageDataItem.description != productImage.description
         ) {
-          productImage.description = metadata.description;
+          productImage.description = imageDataItem.description;
         }
 
         // main
-        if (metadata.main !== undefined && metadata.main != productImage.main) {
-          productImage.main = metadata.main;
+        if (
+          imageDataItem.main !== undefined &&
+          imageDataItem.main != productImage.main
+        ) {
+          productImage.main = imageDataItem.main;
         }
 
         let changedState = false;
 
         // active
         if (
-          metadata.active !== undefined &&
-          metadata.active != productImage.active
+          imageDataItem.active !== undefined &&
+          imageDataItem.active != productImage.active
         ) {
           changedState = true;
-          productImage.active = !!metadata.active;
+          productImage.active = !!imageDataItem.active;
         }
 
         // delete
         if (
-          metadata.delete !== undefined &&
-          metadata.delete != !!productImage.deletedAt
+          imageDataItem.delete !== undefined &&
+          imageDataItem.delete != !!productImage.deletedAt
         ) {
           changedState = true;
           productImage.deletedAt = new Date();
         }
 
+        // change visibility of image file and thumbnail according active or deleted register state by moving to or from private folders
         if (changedState) {
           let state;
           if (productImage.deletedAt) {
@@ -374,105 +417,23 @@ export class ProductImageService {
     return images;
   }
 
-  /**
-   * Merges files and files metadata into a single array of objects.
-   * When metadata is not defined then creates it.
-   * @param imageFiles image files.
-   * @param additionalData image creation data.
-   */
-  private mergeImageAndMetadata(
-    imageFiles: Array<Express.Multer.File>,
-    additionalDataDto: SaveFileAdditionalDataRequestDTO,
+  private validateImageDataCount(
+    currentCount: number,
+    imageDataArr: SaveImageItemDto[],
   ) {
-    if (!imageFiles) {
-      throw new UnprocessableEntityException(FileMessage.FILES_NOT_DEFINED);
-    }
-    if (!imageFiles.length) {
-      throw new UnprocessableEntityException(FileMessage.EMPTY_FILE_LIST);
-    }
-
-    // if (additionalDataDto.metadatas) {
-    //   if (additionalDataDto.metadatas.length != imageFiles.length) {
-    //     throw new UnprocessableEntityException(
-    //       FileMessage.AMOUNT_OF_METADATA_DIFFERENT_FROM_THE_AMOUNT_OF_FILES,
-    //     );
-    //   }
-    // }
-    if (!additionalDataDto.metadatas) {
-      // if received file data but not file metadata create metadatas to each file
-      additionalDataDto.metadatas = [];
-    }
-
-    // images to create
-
-    for (let i = 0; i < imageFiles.length; i++) {
-      const imageFile = imageFiles[i];
-
-      // checks if file is defined
-
-      if (!imageFile) {
-        throw new UnprocessableEntityException(FileMessage.FILE_NOT_DEFINED);
-      }
-
-      // checks if is multer file
-
-      if (!this.isMulterFile(imageFile)) {
-        throw new UnprocessableEntityException(FileMessage.INVALID_FILE);
-      }
-
-      if (!imageFile.originalname) {
-        throw new UnprocessableEntityException(
-          FileMessage.FILE_NAME_NOT_DEFINED,
-        );
-      }
-      if (typeof imageFile.originalname != 'string') {
-        throw new UnprocessableEntityException(FileMessage.INVALID_FILE_NAME);
-      }
-
-      // file metadata
-
-      let fileMetadata = additionalDataDto.metadatas.find(
-        (m) => m.imageIdx == i,
+    const creationCount = imageDataArr.filter(
+      (imageDataItem) => imageDataItem.file != null,
+    ).length;
+    const deleteCount = imageDataArr.filter(
+      (imageDataItem) => imageDataItem.delete,
+    ).length;
+    let count = currentCount + creationCount - deleteCount;
+    // check if reached maximum number of images
+    if (count > ProductImageConfigs.MAX_IMAGE_COUNT) {
+      throw new BadRequestException(
+        `Maximum number of images reached. A product can have a maximum of ${ProductImageConfigs.MAX_IMAGE_COUNT} images`, // TODO: move to class
       );
-
-      if (!fileMetadata) {
-        // if don't received file metadata than creates a new one
-        fileMetadata = new SaveFileMetadataDto();
-        fileMetadata.imageIdx = i;
-        additionalDataDto.metadatas.push(fileMetadata);
-      }
-
-      // if file is main file
-
-      fileMetadata.main = !!fileMetadata?.main;
-
-      // if file is active
-
-      fileMetadata.active = !!fileMetadata?.active;
-
-      // if file is deleted
-
-      fileMetadata.delete = !!fileMetadata?.delete;
-
-      // image
-
-      fileMetadata.file = imageFile;
     }
-  }
-
-  private isMulterFile(value: any): boolean {
-    return (
-      value instanceof Object &&
-      'fieldname' in value &&
-      'originalname' in value &&
-      'encoding' in value &&
-      'mimetype' in value &&
-      'size' in value
-    );
-  }
-
-  private isValidAdditionalDataDto(value: any) {
-    return value && !Array.isArray(value) && typeof value == 'object';
   }
 
   private getProductImagesPath(

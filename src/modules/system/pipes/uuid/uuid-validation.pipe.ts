@@ -5,7 +5,7 @@ import {
   PipeTransform,
 } from '@nestjs/common';
 import { UuidMessage } from '../../messages/uuid/uuid.messages';
-import { isValidUUID } from '../../utils/validation/is-valid-uuid-fn';
+import { isValidUUID } from '../../utils/validation/uuid/is-valid-uuid-fn';
 
 @Injectable()
 export class UuidValidationPipe implements PipeTransform {

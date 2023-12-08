@@ -15,7 +15,7 @@ import { EncryptionService } from '../../../system/encryption/services/encryptio
 import { ActiveFilter } from '../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../system/enums/filter/deleted-filter/deleted-filter.enum';
 import { EmailMessage } from '../../../system/messages/email/email.messages.enum';
-import { isValidUUID } from '../../../system/utils/validation/is-valid-uuid-fn';
+import { isValidUUID } from '../../../system/utils/validation/uuid/is-valid-uuid-fn';
 import { validateOrThrowError } from '../../../system/utils/validation/validation';
 import { UserConstants } from '../../constants/user/user-entity.constants';
 import { CreateUserRequestDTO } from '../../dtos/create-user/create-user.request.dto';

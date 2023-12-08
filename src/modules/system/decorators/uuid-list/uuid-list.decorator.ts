@@ -9,7 +9,7 @@ import {
 } from 'class-validator';
 import { IdListConfigs } from '../../configs/id-list/id-list.configs';
 import { UuidListMessage } from '../../messages/uuid-list/uuid-list.messages';
-import { isValidUUID } from '../../utils/validation/is-valid-uuid-fn';
+import { isValidUUID } from '../../utils/validation/uuid/is-valid-uuid-fn';
 
 export type IsUuidListConstrantOptions = ValidationOptions & {
   label: string;

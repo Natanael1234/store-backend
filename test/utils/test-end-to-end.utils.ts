@@ -127,6 +127,55 @@ export async function testPatchMin(
   return response.body;
 }
 
+export async function testUpload(
+  app: INestApplication,
+  path: string,
+  fields: object,
+  attachments: { field: string; buffer: Buffer; filepath: string }[],
+  token: string,
+  expectedStatusCode: HttpStatus,
+) {
+  const server = app.getHttpServer();
+  let requestInstance = request(server).post(path);
+  // .set('content-type', 'multipart/form-data');
+
+  if (token != null) {
+    requestInstance.set('Authorization', 'bearer ' + token);
+  }
+  for (const attachment of attachments) {
+    requestInstance.attach('images', attachment.buffer, attachment.filepath);
+  }
+  for (const fieldName of Object.keys(fields)) {
+    requestInstance.field(fieldName, fields[fieldName]);
+  }
+
+  let response = await requestInstance;
+
+  if (expectedStatusCode) {
+    expect(response.statusCode).toEqual(expectedStatusCode);
+  }
+  return response;
+}
+
+export async function testUploadMin(
+  app: INestApplication,
+  path: string,
+  fields: object,
+  attachments: { field: string; buffer: Buffer; filepath: string }[],
+  token: string,
+  expectedStatusCode: HttpStatus,
+) {
+  const response = await testUpload(
+    app,
+    path,
+    fields,
+    attachments,
+    token,
+    expectedStatusCode,
+  );
+  return response.body;
+}
+
 export async function testGet(
   app: INestApplication,
   path: string,

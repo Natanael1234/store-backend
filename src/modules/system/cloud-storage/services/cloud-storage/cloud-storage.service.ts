@@ -33,8 +33,10 @@ export class CloudStorageService {
     if (!(await this.client.bucketExists(this.configs.bucketName))) {
       await this.client.makeBucket(this.configs.bucketName);
       const policy = MinioCongifs.getPublicReadPolicy(this.configs.bucketName, [
-        'images/products',
-        'images/products/*',
+        // 'images/products',
+        // 'images/products/*',
+        '/public',
+        '/public/*',
       ]);
       await this.client.setBucketPolicy(this.configs.bucketName, policy);
     }

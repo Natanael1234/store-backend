@@ -11,7 +11,7 @@ import { SuccessResponseDto } from '../../../../system/dtos/response/pagination/
 import { ActiveFilter } from '../../../../system/enums/filter/active-filter/active-filter.enum';
 import { DeletedFilter } from '../../../../system/enums/filter/deleted-filter/deleted-filter.enum';
 import { UuidMessage } from '../../../../system/messages/uuid/uuid.messages';
-import { isValidUUID } from '../../../../system/utils/validation/is-valid-uuid-fn';
+import { isValidUUID } from '../../../../system/utils/validation/uuid/is-valid-uuid-fn';
 import { validateOrThrowError } from '../../../../system/utils/validation/validation';
 import { CategoryConstants } from '../../constants/category/categoryd-entity.constants';
 import { CreateCategoryRequestDTO } from '../../dtos/create-category/create-category.request.dto';

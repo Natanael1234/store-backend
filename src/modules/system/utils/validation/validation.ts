@@ -13,18 +13,39 @@ export const validateAllErrors = (data, dtoClass) => {
   return validate(dto, { stopAtFirstError: false });
 };
 
+function getFirstConstraintValue(constraints?: { [type: string]: string }) {
+  if (!constraints) {
+    return null;
+  }
+  const values = Object.values(constraints);
+  if (!values.length) {
+    return null;
+  }
+  const value = Object.values(constraints)[0];
+  return value;
+}
+
+function findFirstConstraintMessage(validationError: ValidationError) {
+  if (validationError.constraints) {
+    return getFirstConstraintValue(validationError.constraints);
+  }
+  if (validationError.children) {
+    for (const validationErrorChild of validationError.children) {
+      return findFirstConstraintMessage(validationErrorChild);
+    }
+  }
+  return null;
+}
+
 export const convertValidationErrorsToMessage = (
   validationErrors: ValidationError[],
 ) => {
-  const message = {};
+  const messages = {};
   for (const validationError of validationErrors) {
-    // validationError.constraints = {};
-    message[validationError.property] = Object.values(
-      validationError.constraints,
-    )[0];
-    // TODO: handler children
+    messages[validationError.property] =
+      findFirstConstraintMessage(validationError);
   }
-  return message;
+  return messages;
 };
 
 export const validateOrThrowError = async (data, dtoClass) => {

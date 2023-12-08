@@ -8,7 +8,7 @@ import {
   registerDecorator,
 } from 'class-validator';
 import { UuidMessage } from '../../messages/uuid/uuid.messages';
-import { isValidUUID } from '../../utils/validation/is-valid-uuid-fn';
+import { isValidUUID } from '../../utils/validation/uuid/is-valid-uuid-fn';
 
 export type IsUuidConstrantOptions = ValidationOptions & {
   label: string;

@@ -1,4 +1,3 @@
-import { HttpStatus, UnprocessableEntityException } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -20,8 +19,6 @@ import {
   testInsertProducts,
 } from '../../../../../../test/product/test-product-utils';
 import { SortConstants } from '../../../../../system/constants/sort/sort.constants';
-import { ImagesMetadataMessage } from '../../../../../system/decorators/images-metadata/messages/images-metadata/images-metadata.messages.enum';
-import { ExceptionText } from '../../../../../system/messages/exception-text/exception-text.enum';
 import { Brand } from '../../../../brand/models/brand/brand.entity';
 import { CategoryRepository } from '../../../../category/repositories/category.repository';
 import { Product } from '../../../../product/models/product/product.entity';
@@ -130,47 +127,39 @@ describe('ProductImageService.bulkSave (main)', () => {
   it('should both create and update images of a product', async () => {
     const [productId1, productId2] =
       await testBuildProductImageCreationScenario(2);
-    const files = await TestImages.buildFiles(3);
+    const [file1, file2] = await TestImages.buildFiles(2);
     // create on image
-    const ret1 = await productImageService.bulkSave(
-      productId1,
-      files.slice(0, 1),
+    const ret1 = await productImageService.bulkSave(productId1, [
       {
-        metadatas: [
-          {
-            imageIdx: 0,
-            name: 'Image 1',
-            description: 'description 1',
-            active: true,
-            main: true,
-          },
-        ],
+        name: 'Image 1',
+        description: 'description 1',
+        active: true,
+        main: true,
+        file: file1,
       },
-    );
+    ]);
     // update one image, create on image with metadata and create other image without metadata
     const ret2 = await productImageService.bulkSave(
       productId1,
-      files.slice(1, 3), // one image with metadata and one image without metadata
-      {
-        metadatas: [
-          // create
-          {
-            imageIdx: 0,
-            name: 'Image 2',
-            description: 'description 2',
-            main: true,
-            active: true,
-          },
-          // update
-          {
-            imageId: ret1[0].id,
-            name: 'Image 1b',
-            description: 'description 1b',
-            main: false,
-            active: false,
-          },
-        ],
-      },
+      // one image with metadata and one image without metadata
+      [
+        // create
+        {
+          name: 'Image 2',
+          description: 'description 2',
+          main: true,
+          active: true,
+          file: file2,
+        },
+        // update
+        {
+          imageId: ret1[0].id,
+          name: 'Image 1b',
+          description: 'description 1b',
+          main: false,
+          active: false,
+        },
+      ],
     );
 
     expect(ret2).toBeDefined();
@@ -178,16 +167,6 @@ describe('ProductImageService.bulkSave (main)', () => {
     // expected register data
 
     const expectedImageData = [
-      // image created without metadata
-      {
-        name: null,
-        description: null,
-        image: `/private/products/${productId1}/images/${ret2[2].id}.jpg`,
-        thumbnail: `/private/products/${productId1}/images/${ret2[2].id}.thumbnail.jpeg`,
-        main: false,
-        active: false,
-        productId: productId1,
-      },
       // image updated
       {
         name: 'Image 1b',
@@ -228,23 +207,14 @@ describe('ProductImageService.bulkSave (main)', () => {
       [
         // image 2
         {
-          path: `/public/products/${productId1}/images/${ret2[2].id}.png`,
+          path: `/public/products/${productId1}/images/${ret2[1].id}.png`,
           size: 191777,
         },
         {
-          path: `/public/products/${productId1}/images/${ret2[2].id}.thumbnail.jpeg`,
+          path: `/public/products/${productId1}/images/${ret2[1].id}.thumbnail.jpeg`,
           size: 5215,
         },
         // image 1 (updated)
-        {
-          path: `/private/products/${productId1}/images/${ret2[1].id}.jpg`,
-          size: 5921,
-        },
-        {
-          path: `/private/products/${productId1}/images/${ret2[1].id}.thumbnail.jpeg`,
-          size: 2709,
-        },
-        // image 3
         {
           path: `/private/products/${productId1}/images/${ret2[0].id}.jpg`,
           size: 5921,
@@ -256,149 +226,5 @@ describe('ProductImageService.bulkSave (main)', () => {
       ],
       bucket,
     );
-  });
-
-  it('should reject when both imageFiles and metadatas are empty', async () => {
-    // create test scenario
-
-    const [productId1, productId2] =
-      await testBuildProductImageCreationScenario(2);
-    const files = await TestImages.buildFiles(3);
-
-    // create a product
-
-    await productImageService.bulkSave(productId1, files.slice(0, 1), {
-      metadatas: [
-        {
-          imageIdx: 0,
-          name: 'Image 1',
-          description: 'Description 1',
-          active: true,
-          main: true,
-        },
-      ],
-    });
-
-    const imagesBefore = await productImageRepo.find();
-
-    const fn = () =>
-      productImageService.bulkSave(productId1, [], {
-        metadatas: [],
-      });
-
-    await expect(fn()).rejects.toThrow(UnprocessableEntityException);
-
-    const imagesAfter = await productImageRepo.find();
-    expect(imagesBefore).toStrictEqual(imagesAfter);
-
-    await expect(fn()).rejects.toThrow(
-      ImagesMetadataMessage.IMAGE_OR_METADATA_NOT_DEFINED,
-    );
-
-    try {
-      await fn();
-    } catch (ex) {
-      expect(ex.response).toEqual({
-        error: ExceptionText.UNPROCESSABLE_ENTITY,
-        message: ImagesMetadataMessage.IMAGE_OR_METADATA_NOT_DEFINED,
-        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-      });
-    }
-  });
-
-  it('should reject when both imageFiles and metadatas are null', async () => {
-    const [productId1] = await testBuildProductImageCreationScenario(1);
-    const imagesBefore = await productImageRepo.find();
-    const fn = () =>
-      productImageService.bulkSave(productId1, null, {
-        metadatas: null,
-      });
-    await expect(fn()).rejects.toThrow(UnprocessableEntityException);
-    const imagesAfter = await productImageRepo.find();
-    expect(imagesBefore).toStrictEqual(imagesAfter);
-    await expect(fn()).rejects.toThrow(
-      ImagesMetadataMessage.IMAGE_OR_METADATA_NOT_DEFINED,
-    );
-    try {
-      await fn();
-    } catch (ex) {
-      expect(ex.response).toEqual({
-        error: ExceptionText.UNPROCESSABLE_ENTITY,
-        message: ImagesMetadataMessage.IMAGE_OR_METADATA_NOT_DEFINED,
-        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-      });
-    }
-  });
-
-  it('should reject when both imageFiles and metadatas is undefined', async () => {
-    const [productId1] = await testBuildProductImageCreationScenario(1);
-    const imagesBefore = await productImageRepo.find();
-    const fn = () =>
-      productImageService.bulkSave(productId1, undefined, {
-        metadatas: undefined,
-      });
-    await expect(fn()).rejects.toThrow(UnprocessableEntityException);
-    const imagesAfter = await productImageRepo.find();
-    expect(imagesBefore).toStrictEqual(imagesAfter);
-    await expect(fn()).rejects.toThrow(
-      ImagesMetadataMessage.IMAGE_OR_METADATA_NOT_DEFINED,
-    );
-    try {
-      await fn();
-    } catch (ex) {
-      expect(ex.response).toEqual({
-        error: ExceptionText.UNPROCESSABLE_ENTITY,
-        message: ImagesMetadataMessage.IMAGE_OR_METADATA_NOT_DEFINED,
-        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-      });
-    }
-  });
-
-  it('should reject when both imageFiles and metadatas are empty', async () => {
-    const [productId1] = await testBuildProductImageCreationScenario(1);
-    const imagesBefore = await productImageRepo.find();
-    const fn = () =>
-      productImageService.bulkSave(productId1, [], {
-        metadatas: [],
-      });
-    await expect(fn()).rejects.toThrow(UnprocessableEntityException);
-    const imagesAfter = await productImageRepo.find();
-    expect(imagesBefore).toStrictEqual(imagesAfter);
-    await expect(fn()).rejects.toThrow(
-      ImagesMetadataMessage.IMAGE_OR_METADATA_NOT_DEFINED,
-    );
-    try {
-      await fn();
-    } catch (ex) {
-      expect(ex.response).toEqual({
-        error: ExceptionText.UNPROCESSABLE_ENTITY,
-        message: ImagesMetadataMessage.IMAGE_OR_METADATA_NOT_DEFINED,
-        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-      });
-    }
-  });
-
-  it('should reject when imageFiles is empty, metadatas is null', async () => {
-    const [productId1] = await testBuildProductImageCreationScenario(1);
-    const imagesBefore = await productImageRepo.find();
-    const fn = () =>
-      productImageService.bulkSave(productId1, [], {
-        metadatas: null,
-      });
-    await expect(fn()).rejects.toThrow(UnprocessableEntityException);
-    const imagesAfter = await productImageRepo.find();
-    expect(imagesBefore).toStrictEqual(imagesAfter);
-    await expect(fn()).rejects.toThrow(
-      ImagesMetadataMessage.IMAGE_OR_METADATA_NOT_DEFINED,
-    );
-    try {
-      await fn();
-    } catch (ex) {
-      expect(ex.response).toEqual({
-        error: ExceptionText.UNPROCESSABLE_ENTITY,
-        message: ImagesMetadataMessage.IMAGE_OR_METADATA_NOT_DEFINED,
-        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-      });
-    }
   });
 });
