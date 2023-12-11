@@ -40,8 +40,9 @@ describe('ProductController (e2e) - get/producs (active)', () => {
   let brandRepo: Repository<Brand>;
   let categoryRepo: CategoryRepository;
   let productRepo: Repository<Product>;
-
   let rootToken: string;
+  let adminToken: string;
+  let userToken: string;
 
   beforeEach(async () => {
     module = await getTestingModule();
@@ -56,7 +57,10 @@ describe('ProductController (e2e) - get/producs (active)', () => {
     categoryRepo = module.get<CategoryRepository>(CategoryRepository);
     productRepo = module.get<Repository<Product>>(getRepositoryToken(Product));
     await app.init();
-    rootToken = (await testBuildAuthenticationScenario(module)).rootToken;
+    const tokens = await testBuildAuthenticationScenario(module);
+    userToken = tokens.userToken;
+    adminToken = tokens.adminToken;
+    rootToken = tokens.rootToken;
   });
 
   afterEach(async () => {
@@ -288,6 +292,296 @@ describe('ProductController (e2e) - get/producs (active)', () => {
       `/products`,
       { query: JSON.stringify({ active: ActiveFilter.ACTIVE }) },
       rootToken,
+      HttpStatus.OK,
+    );
+    expect(response).toEqual({
+      textQuery: undefined,
+      count: 1,
+      page: PaginationConfigs.DEFAULT_PAGE,
+      pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+      orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
+      results: objectToJSON(regs),
+    });
+  });
+
+  it('should retrieve active and inactive products when user is root', async () => {
+    const [categoryId1, categoryId2] = await insertCategories({
+      name: 'Category 1',
+      active: true,
+    });
+    const [brandId1, brandId2] = await insertBrands({
+      name: 'Brand 1',
+      active: true,
+    });
+    await insertProducts(
+      {
+        code: 'C001',
+        name: 'Product 1',
+        model: 'M0001',
+        price: 9.12,
+        quantityInStock: 3,
+        active: false,
+        categoryId: categoryId1,
+        brandId: brandId1,
+      },
+      {
+        code: 'C002',
+        name: 'Product 2',
+        model: 'M0002',
+        price: 500,
+        quantityInStock: 9,
+        active: true,
+        categoryId: categoryId1,
+        brandId: brandId1,
+      },
+      {
+        code: 'C001',
+        name: 'Product 3',
+        model: 'M0003',
+        price: 54.3,
+        quantityInStock: 100,
+        active: false,
+        categoryId: categoryId1,
+        brandId: brandId1,
+      },
+    );
+    const regs = await productRepo
+      .createQueryBuilder(ProductConstants.PRODUCT)
+      .leftJoinAndSelect(
+        ProductConstants.PRODUCT_CATEGORY,
+        ProductConstants.CATEGORY,
+      )
+      .leftJoinAndSelect(ProductConstants.PRODUCT_BRAND, ProductConstants.BRAND)
+      .leftJoinAndSelect(
+        ProductConstants.PRODUCT_IMAGES,
+        ProductConstants.IMAGES,
+      )
+      .orderBy(ProductConstants.PRODUCT_NAME, SortConstants.ASC)
+      .addOrderBy(ProductConstants.PRODUCT_ACTIVE, SortConstants.ASC)
+      .getMany();
+    const response = await testGetMin(
+      app,
+      `/products`,
+      { query: JSON.stringify({ active: ActiveFilter.ALL }) },
+      rootToken,
+      HttpStatus.OK,
+    );
+    expect(response).toEqual({
+      textQuery: undefined,
+      count: 3,
+      page: PaginationConfigs.DEFAULT_PAGE,
+      pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+      orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
+      results: objectToJSON(regs),
+    });
+  });
+
+  it('should retrieve active and inactive products when user is admin', async () => {
+    const [categoryId1, categoryId2] = await insertCategories({
+      name: 'Category 1',
+      active: true,
+    });
+    const [brandId1, brandId2] = await insertBrands({
+      name: 'Brand 1',
+      active: true,
+    });
+    await insertProducts(
+      {
+        code: 'C001',
+        name: 'Product 1',
+        model: 'M0001',
+        price: 9.12,
+        quantityInStock: 3,
+        active: false,
+        categoryId: categoryId1,
+        brandId: brandId1,
+      },
+      {
+        code: 'C002',
+        name: 'Product 2',
+        model: 'M0002',
+        price: 500,
+        quantityInStock: 9,
+        active: true,
+        categoryId: categoryId1,
+        brandId: brandId1,
+      },
+      {
+        code: 'C001',
+        name: 'Product 3',
+        model: 'M0003',
+        price: 54.3,
+        quantityInStock: 100,
+        active: false,
+        categoryId: categoryId1,
+        brandId: brandId1,
+      },
+    );
+    const regs = await productRepo
+      .createQueryBuilder(ProductConstants.PRODUCT)
+      .leftJoinAndSelect(
+        ProductConstants.PRODUCT_CATEGORY,
+        ProductConstants.CATEGORY,
+      )
+      .leftJoinAndSelect(ProductConstants.PRODUCT_BRAND, ProductConstants.BRAND)
+      .leftJoinAndSelect(
+        ProductConstants.PRODUCT_IMAGES,
+        ProductConstants.IMAGES,
+      )
+      .orderBy(ProductConstants.PRODUCT_NAME, SortConstants.ASC)
+      .addOrderBy(ProductConstants.PRODUCT_ACTIVE, SortConstants.ASC)
+      .getMany();
+    const response = await testGetMin(
+      app,
+      `/products`,
+      { query: JSON.stringify({ active: ActiveFilter.ALL }) },
+      adminToken,
+      HttpStatus.OK,
+    );
+    expect(response).toEqual({
+      textQuery: undefined,
+      count: 3,
+      page: PaginationConfigs.DEFAULT_PAGE,
+      pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+      orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
+      results: objectToJSON(regs),
+    });
+  });
+
+  it('should retrieve active and inactive products when user is basic user', async () => {
+    const [categoryId1, categoryId2] = await insertCategories({
+      name: 'Category 1',
+      active: true,
+    });
+    const [brandId1, brandId2] = await insertBrands({
+      name: 'Brand 1',
+      active: true,
+    });
+    await insertProducts(
+      {
+        code: 'C001',
+        name: 'Product 1',
+        model: 'M0001',
+        price: 9.12,
+        quantityInStock: 3,
+        active: false,
+        categoryId: categoryId1,
+        brandId: brandId1,
+      },
+      {
+        code: 'C002',
+        name: 'Product 2',
+        model: 'M0002',
+        price: 500,
+        quantityInStock: 9,
+        active: true,
+        categoryId: categoryId1,
+        brandId: brandId1,
+      },
+      {
+        code: 'C001',
+        name: 'Product 3',
+        model: 'M0003',
+        price: 54.3,
+        quantityInStock: 100,
+        active: false,
+        categoryId: categoryId1,
+        brandId: brandId1,
+      },
+    );
+    const regs = await productRepo
+      .createQueryBuilder(ProductConstants.PRODUCT)
+      .leftJoinAndSelect(
+        ProductConstants.PRODUCT_CATEGORY,
+        ProductConstants.CATEGORY,
+      )
+      .leftJoinAndSelect(ProductConstants.PRODUCT_BRAND, ProductConstants.BRAND)
+      .leftJoinAndSelect(
+        ProductConstants.PRODUCT_IMAGES,
+        ProductConstants.IMAGES,
+      )
+      .where(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, { active: true })
+      .orderBy(ProductConstants.PRODUCT_NAME, SortConstants.ASC)
+      .addOrderBy(ProductConstants.PRODUCT_ACTIVE, SortConstants.ASC)
+      .getMany();
+    const response = await testGetMin(
+      app,
+      `/products`,
+      { query: JSON.stringify({ active: ActiveFilter.ALL }) },
+      userToken,
+      HttpStatus.OK,
+    );
+    expect(response).toEqual({
+      textQuery: undefined,
+      count: 1,
+      page: PaginationConfigs.DEFAULT_PAGE,
+      pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+      orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
+      results: objectToJSON(regs),
+    });
+  });
+
+  it('should retrieve active and inactive products when user is not authenticated', async () => {
+    const [categoryId1, categoryId2] = await insertCategories({
+      name: 'Category 1',
+      active: true,
+    });
+    const [brandId1, brandId2] = await insertBrands({
+      name: 'Brand 1',
+      active: true,
+    });
+    await insertProducts(
+      {
+        code: 'C001',
+        name: 'Product 1',
+        model: 'M0001',
+        price: 9.12,
+        quantityInStock: 3,
+        active: false,
+        categoryId: categoryId1,
+        brandId: brandId1,
+      },
+      {
+        code: 'C002',
+        name: 'Product 2',
+        model: 'M0002',
+        price: 500,
+        quantityInStock: 9,
+        active: true,
+        categoryId: categoryId1,
+        brandId: brandId1,
+      },
+      {
+        code: 'C001',
+        name: 'Product 3',
+        model: 'M0003',
+        price: 54.3,
+        quantityInStock: 100,
+        active: false,
+        categoryId: categoryId1,
+        brandId: brandId1,
+      },
+    );
+    const regs = await productRepo
+      .createQueryBuilder(ProductConstants.PRODUCT)
+      .leftJoinAndSelect(
+        ProductConstants.PRODUCT_CATEGORY,
+        ProductConstants.CATEGORY,
+      )
+      .leftJoinAndSelect(ProductConstants.PRODUCT_BRAND, ProductConstants.BRAND)
+      .leftJoinAndSelect(
+        ProductConstants.PRODUCT_IMAGES,
+        ProductConstants.IMAGES,
+      )
+      .where(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, { active: true })
+      .orderBy(ProductConstants.PRODUCT_NAME, SortConstants.ASC)
+      .addOrderBy(ProductConstants.PRODUCT_ACTIVE, SortConstants.ASC)
+      .getMany();
+    const response = await testGetMin(
+      app,
+      `/products`,
+      { query: JSON.stringify({ active: ActiveFilter.ALL }) },
+      null,
       HttpStatus.OK,
     );
     expect(response).toEqual({
