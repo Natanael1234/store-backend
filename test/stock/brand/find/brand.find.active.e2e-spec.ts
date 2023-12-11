@@ -185,6 +185,30 @@ describe('BrandController (e2e) - find /brands (active)', () => {
     });
   });
 
+  it('should retrieve only active brands when user is basic not authenticated', async () => {
+    const [brandId1, brandId2, brandId3] = await insertBrands(
+      { name: 'Brand 1', active: false },
+      { name: 'Brand 2', active: true },
+      { name: 'Brand 3', active: false },
+    );
+    const regs = await getActiveBrands();
+    const response = await testGetMin(
+      app,
+      '/brands',
+      { query: JSON.stringify({ active: ActiveFilter.ALL }) },
+      null,
+      HttpStatus.OK,
+    );
+    expect(response).toEqual({
+      textQuery: undefined,
+      count: 1,
+      page: PaginationConfigs.DEFAULT_PAGE,
+      pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+      orderBy: BrandConfigs.BRAND_DEFAULT_ORDER_BY,
+      results: objectToJSON(regs),
+    });
+  });
+
   it('should retrieve inactive brands when active = "inactive"', async () => {
     const [brandId1, brandId2, brandId3] = await insertBrands(
       { name: 'Brand 1', active: false },
