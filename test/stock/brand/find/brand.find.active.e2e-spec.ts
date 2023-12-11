@@ -29,6 +29,8 @@ describe('BrandController (e2e) - find /brands (active)', () => {
   let module: TestingModule;
   let brandRepo: Repository<Brand>;
   let rootToken: string;
+  let adminToken: string;
+  let userToken: string;
 
   beforeEach(async () => {
     module = await getTestingModule();
@@ -44,7 +46,10 @@ describe('BrandController (e2e) - find /brands (active)', () => {
     );
     brandRepo = app.get<Repository<Brand>>(getRepositoryToken(Brand));
     await app.init();
-    rootToken = (await testBuildAuthenticationScenario(module)).rootToken;
+    const tokens = await testBuildAuthenticationScenario(module);
+    userToken = tokens.userToken;
+    adminToken = tokens.adminToken;
+    rootToken = tokens.rootToken;
   });
 
   afterEach(async () => {
@@ -101,6 +106,78 @@ describe('BrandController (e2e) - find /brands (active)', () => {
     expect(response).toEqual({
       textQuery: undefined,
       count: 3,
+      page: PaginationConfigs.DEFAULT_PAGE,
+      pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+      orderBy: BrandConfigs.BRAND_DEFAULT_ORDER_BY,
+      results: objectToJSON(regs),
+    });
+  });
+
+  it('should retrieve active and inactive brands when user is root', async () => {
+    const [brandId1, brandId2, brandId3] = await insertBrands(
+      { name: 'Brand 1', active: false },
+      { name: 'Brand 2', active: true },
+      { name: 'Brand 3', active: false },
+    );
+    const regs = await getAllBrands();
+    const response = await testGetMin(
+      app,
+      '/brands',
+      { query: JSON.stringify({ active: ActiveFilter.ALL }) },
+      rootToken,
+      HttpStatus.OK,
+    );
+    expect(response).toEqual({
+      textQuery: undefined,
+      count: 3,
+      page: PaginationConfigs.DEFAULT_PAGE,
+      pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+      orderBy: BrandConfigs.BRAND_DEFAULT_ORDER_BY,
+      results: objectToJSON(regs),
+    });
+  });
+
+  it('should retrieve active and inactive brands when user is admin', async () => {
+    const [brandId1, brandId2, brandId3] = await insertBrands(
+      { name: 'Brand 1', active: false },
+      { name: 'Brand 2', active: true },
+      { name: 'Brand 3', active: false },
+    );
+    const regs = await getAllBrands();
+    const response = await testGetMin(
+      app,
+      '/brands',
+      { query: JSON.stringify({ active: ActiveFilter.ALL }) },
+      adminToken,
+      HttpStatus.OK,
+    );
+    expect(response).toEqual({
+      textQuery: undefined,
+      count: 3,
+      page: PaginationConfigs.DEFAULT_PAGE,
+      pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+      orderBy: BrandConfigs.BRAND_DEFAULT_ORDER_BY,
+      results: objectToJSON(regs),
+    });
+  });
+
+  it('should retrieve only active brands when user is basic user', async () => {
+    const [brandId1, brandId2, brandId3] = await insertBrands(
+      { name: 'Brand 1', active: false },
+      { name: 'Brand 2', active: true },
+      { name: 'Brand 3', active: false },
+    );
+    const regs = await getActiveBrands();
+    const response = await testGetMin(
+      app,
+      '/brands',
+      { query: JSON.stringify({ active: ActiveFilter.ALL }) },
+      userToken,
+      HttpStatus.OK,
+    );
+    expect(response).toEqual({
+      textQuery: undefined,
+      count: 1,
       page: PaginationConfigs.DEFAULT_PAGE,
       pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
       orderBy: BrandConfigs.BRAND_DEFAULT_ORDER_BY,

@@ -54,8 +54,7 @@ docker-compose up --build
 docker-compose up --build -V -d
 
 
-docker-compose up -V --build
-
+s
 
 # inicia os serviços
 docker-compose start

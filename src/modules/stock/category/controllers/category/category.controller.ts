@@ -10,7 +10,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { SkipAuthentication } from '../../../../authentication/decorators/skip-authentication';
+import { OptionalAuthentication } from '../../../../authentication/decorators/skip-authentication';
 import { Role } from '../../../../authentication/enums/role/role.enum';
 import { PaginatedResponseDTO } from '../../../../system/dtos/response/pagination/pagination.response.dto';
 import { SuccessResponseDto } from '../../../../system/dtos/response/pagination/success.response.dto';
@@ -48,7 +48,7 @@ export class CategoryController {
   @Get()
   // @Roles(Role.ROOT, Role.ADMIN)
   @UseInterceptors(QueryParamToJsonInterceptor)
-  @SkipAuthentication()
+  @OptionalAuthentication()
   find(
     @Query() findDTO: { query: FindCategoriesRequestDTO },
   ): Promise<PaginatedResponseDTO<Category, CategoryOrder>> {
@@ -58,7 +58,7 @@ export class CategoryController {
   @Get('/:categoryId')
   @UseInterceptors(QueryParamToJsonInterceptor)
   // @Roles(Role.ROOT, Role.ADMIN)
-  @SkipAuthentication()
+  @OptionalAuthentication()
   findById(
     @Param('categoryId', new UuidValidationPipe('category id'))
     categoryId: string,

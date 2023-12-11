@@ -29,6 +29,8 @@ describe('BrandController (e2e) - find /brands (deleted)', () => {
   let module: TestingModule;
   let brandRepo: Repository<Brand>;
   let rootToken: string;
+  let adminToken: string;
+  let userToken: string;
 
   beforeEach(async () => {
     module = await getTestingModule();
@@ -44,7 +46,10 @@ describe('BrandController (e2e) - find /brands (deleted)', () => {
     );
     brandRepo = app.get<Repository<Brand>>(getRepositoryToken(Brand));
     await app.init();
-    rootToken = (await testBuildAuthenticationScenario(module)).rootToken;
+    const tokens = await testBuildAuthenticationScenario(module);
+    userToken = tokens.userToken;
+    adminToken = tokens.adminToken;
+    rootToken = tokens.rootToken;
   });
 
   afterEach(async () => {
@@ -138,6 +143,120 @@ describe('BrandController (e2e) - find /brands (deleted)', () => {
     expect(response).toEqual({
       textQuery: undefined,
       count: 2,
+      page: PaginationConfigs.DEFAULT_PAGE,
+      pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+      orderBy: BrandConfigs.BRAND_DEFAULT_ORDER_BY,
+      results: objectToJSON(regs),
+    });
+  });
+
+  it('should retrieve only not deleted brands when user is not authenticated', async () => {
+    const [brandId1, brandId2] = await insertBrands(
+      { name: 'Brand 1', active: true },
+      { name: 'Brand 2', active: true, deletedAt: new Date() },
+      { name: 'Brand 3', active: true },
+    );
+    const regs = await brandRepo
+      .createQueryBuilder(BrandConstants.BRAND)
+      .orderBy(BrandConstants.NAME, SortConstants.ASC)
+      .addOrderBy(BrandConstants.ACTIVE, SortConstants.ASC)
+      .getMany();
+    const response = await testGetMin(
+      app,
+      '/brands',
+      { query: JSON.stringify({ deleted: DeletedFilter.ALL }) },
+      null,
+      HttpStatus.OK,
+    );
+    expect(response).toEqual({
+      textQuery: undefined,
+      count: 2,
+      page: PaginationConfigs.DEFAULT_PAGE,
+      pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+      orderBy: BrandConfigs.BRAND_DEFAULT_ORDER_BY,
+      results: objectToJSON(regs),
+    });
+  });
+
+  it('should retrieve only deleted brands when user is basic user', async () => {
+    const [brandId1, brandId2] = await insertBrands(
+      { name: 'Brand 1', active: true },
+      { name: 'Brand 2', active: true, deletedAt: new Date() },
+      { name: 'Brand 3', active: true },
+    );
+    const regs = await brandRepo
+      .createQueryBuilder(BrandConstants.BRAND)
+      .orderBy(BrandConstants.NAME, SortConstants.ASC)
+      .addOrderBy(BrandConstants.ACTIVE, SortConstants.ASC)
+      .getMany();
+    const response = await testGetMin(
+      app,
+      '/brands',
+      { query: JSON.stringify({ deleted: DeletedFilter.ALL }) },
+      userToken,
+      HttpStatus.OK,
+    );
+    expect(response).toEqual({
+      textQuery: undefined,
+      count: 2,
+      page: PaginationConfigs.DEFAULT_PAGE,
+      pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+      orderBy: BrandConfigs.BRAND_DEFAULT_ORDER_BY,
+      results: objectToJSON(regs),
+    });
+  });
+
+  it('should retrieve both deleted and not deleted brands when user is admin', async () => {
+    const [brandId1, brandId2] = await insertBrands(
+      { name: 'Brand 1', active: true },
+      { name: 'Brand 2', active: true, deletedAt: new Date() },
+      { name: 'Brand 3', active: true },
+    );
+    const regs = await brandRepo
+      .createQueryBuilder(BrandConstants.BRAND)
+      .withDeleted()
+      .orderBy(BrandConstants.NAME, SortConstants.ASC)
+      .addOrderBy(BrandConstants.ACTIVE, SortConstants.ASC)
+      .getMany();
+    const response = await testGetMin(
+      app,
+      '/brands',
+      { query: JSON.stringify({ deleted: DeletedFilter.ALL }) },
+      adminToken,
+      HttpStatus.OK,
+    );
+    expect(response).toEqual({
+      textQuery: undefined,
+      count: 3,
+      page: PaginationConfigs.DEFAULT_PAGE,
+      pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+      orderBy: BrandConfigs.BRAND_DEFAULT_ORDER_BY,
+      results: objectToJSON(regs),
+    });
+  });
+
+  it('should retrieve both deleted and not deleted brands when user is root', async () => {
+    const [brandId1, brandId2] = await insertBrands(
+      { name: 'Brand 1', active: true },
+      { name: 'Brand 2', active: true, deletedAt: new Date() },
+      { name: 'Brand 3', active: true },
+    );
+    const regs = await brandRepo
+      .createQueryBuilder(BrandConstants.BRAND)
+      .withDeleted()
+      .orderBy(BrandConstants.NAME, SortConstants.ASC)
+      .addOrderBy(BrandConstants.ACTIVE, SortConstants.ASC)
+      .getMany();
+    const response = await testGetMin(
+      app,
+      '/brands',
+      { query: JSON.stringify({ deleted: DeletedFilter.ALL }) },
+      rootToken,
+      HttpStatus.OK,
+    );
+    expect(response).toEqual({
+      textQuery: undefined,
+      count: 3,
       page: PaginationConfigs.DEFAULT_PAGE,
       pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
       orderBy: BrandConfigs.BRAND_DEFAULT_ORDER_BY,

@@ -1,6 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { SkipAuthentication } from '../../decorators/skip-authentication';
+import { OptionalAuthentication } from '../../decorators/skip-authentication';
 import { LoginRequestDto } from '../../dtos/requests/login/login.request.dto';
 import { LogoutRequestDto } from '../../dtos/requests/logout/logout.request.dto';
 import { RefreshRequestDto } from '../../dtos/requests/refresh/refresh.request.dto';
@@ -15,7 +15,7 @@ import { AuthenticationService } from '../../services/authentication/authenticat
 export class AuthenticationController {
   constructor(private readonly authService: AuthenticationService) {}
 
-  @SkipAuthentication()
+  @OptionalAuthentication()
   @Post('register')
   public register(
     @Body() registerRequestDto: RegisterRequestDto,
@@ -23,7 +23,7 @@ export class AuthenticationController {
     return this.authService.register(registerRequestDto);
   }
 
-  @SkipAuthentication()
+  @OptionalAuthentication()
   // @UseGuards(LocalAuthGuard) // TODO:
   @Post('login')
   public login(
@@ -32,7 +32,7 @@ export class AuthenticationController {
     return this.authService.login(loginRequestDto);
   }
 
-  @SkipAuthentication()
+  @OptionalAuthentication()
   @Post('refresh')
   public refresh(
     @Body() refreshRequestDto: RefreshRequestDto,
@@ -40,7 +40,7 @@ export class AuthenticationController {
     return this.authService.refresh(refreshRequestDto.refreshToken);
   }
 
-  @SkipAuthentication()
+  @OptionalAuthentication()
   @Post('logout')
   public async logout(@Body() logoutRequestDto: LogoutRequestDto) {
     return this.authService.logout(logoutRequestDto.refreshToken);
