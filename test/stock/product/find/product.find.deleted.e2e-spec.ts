@@ -40,8 +40,9 @@ describe('ProductController (e2e) - get/producs (deleted)', () => {
   let brandRepo: Repository<Brand>;
   let categoryRepo: CategoryRepository;
   let productRepo: Repository<Product>;
-
   let rootToken: string;
+  let adminToken: string;
+  let userToken: string;
 
   beforeEach(async () => {
     module = await getTestingModule();
@@ -56,7 +57,10 @@ describe('ProductController (e2e) - get/producs (deleted)', () => {
     categoryRepo = module.get<CategoryRepository>(CategoryRepository);
     productRepo = module.get<Repository<Product>>(getRepositoryToken(Product));
     await app.init();
-    rootToken = (await testBuildAuthenticationScenario(module)).rootToken;
+    const tokens = await testBuildAuthenticationScenario(module);
+    userToken = tokens.userToken;
+    adminToken = tokens.adminToken;
+    rootToken = tokens.rootToken;
   });
 
   afterEach(async () => {
@@ -214,6 +218,140 @@ describe('ProductController (e2e) - get/producs (deleted)', () => {
       `/products`,
       { query: JSON.stringify({ deleted: DeletedFilter.NOT_DELETED }) },
       rootToken,
+      HttpStatus.OK,
+    );
+    expect(response).toEqual({
+      textQuery: undefined,
+      count: 2,
+      page: PaginationConfigs.DEFAULT_PAGE,
+      pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+      orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
+      results: objectToJSON(regs),
+    });
+  });
+
+  it('should retrieve deleted and non deleted products when user is root', async () => {
+    await createFindScenario();
+    const regs = await productRepo
+      .createQueryBuilder(ProductConstants.PRODUCT)
+      .leftJoinAndSelect(
+        ProductConstants.PRODUCT_CATEGORY,
+        ProductConstants.CATEGORY,
+      )
+      .leftJoinAndSelect(ProductConstants.PRODUCT_BRAND, ProductConstants.BRAND)
+      .leftJoinAndSelect(
+        ProductConstants.PRODUCT_IMAGES,
+        ProductConstants.IMAGES,
+      )
+      .withDeleted()
+      .orderBy(ProductConstants.PRODUCT_NAME, SortConstants.ASC)
+      .addOrderBy(ProductConstants.PRODUCT_ACTIVE, SortConstants.ASC)
+      .getMany();
+    const response = await testGetMin(
+      app,
+      `/products`,
+      { query: JSON.stringify({ deleted: DeletedFilter.ALL }) },
+      rootToken,
+      HttpStatus.OK,
+    );
+    expect(response).toEqual({
+      textQuery: undefined,
+      count: 3,
+      page: PaginationConfigs.DEFAULT_PAGE,
+      pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+      orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
+      results: objectToJSON(regs),
+    });
+  });
+
+  it('should retrieve deleted and non deleted products when user is admin', async () => {
+    await createFindScenario();
+    const regs = await productRepo
+      .createQueryBuilder(ProductConstants.PRODUCT)
+      .leftJoinAndSelect(
+        ProductConstants.PRODUCT_CATEGORY,
+        ProductConstants.CATEGORY,
+      )
+      .leftJoinAndSelect(ProductConstants.PRODUCT_BRAND, ProductConstants.BRAND)
+      .leftJoinAndSelect(
+        ProductConstants.PRODUCT_IMAGES,
+        ProductConstants.IMAGES,
+      )
+      .withDeleted()
+      .orderBy(ProductConstants.PRODUCT_NAME, SortConstants.ASC)
+      .addOrderBy(ProductConstants.PRODUCT_ACTIVE, SortConstants.ASC)
+      .getMany();
+    const response = await testGetMin(
+      app,
+      `/products`,
+      { query: JSON.stringify({ deleted: DeletedFilter.ALL }) },
+      adminToken,
+      HttpStatus.OK,
+    );
+    expect(response).toEqual({
+      textQuery: undefined,
+      count: 3,
+      page: PaginationConfigs.DEFAULT_PAGE,
+      pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+      orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
+      results: objectToJSON(regs),
+    });
+  });
+
+  it('should retrieve only not deleted products when user is basic user', async () => {
+    await createFindScenario();
+    const regs = await productRepo
+      .createQueryBuilder(ProductConstants.PRODUCT)
+      .leftJoinAndSelect(
+        ProductConstants.PRODUCT_CATEGORY,
+        ProductConstants.CATEGORY,
+      )
+      .leftJoinAndSelect(ProductConstants.PRODUCT_BRAND, ProductConstants.BRAND)
+      .leftJoinAndSelect(
+        ProductConstants.PRODUCT_IMAGES,
+        ProductConstants.IMAGES,
+      )
+      .orderBy(ProductConstants.PRODUCT_NAME, SortConstants.ASC)
+      .addOrderBy(ProductConstants.PRODUCT_ACTIVE, SortConstants.ASC)
+      .getMany();
+    const response = await testGetMin(
+      app,
+      `/products`,
+      { query: JSON.stringify({ deleted: DeletedFilter.ALL }) },
+      userToken,
+      HttpStatus.OK,
+    );
+    expect(response).toEqual({
+      textQuery: undefined,
+      count: 2,
+      page: PaginationConfigs.DEFAULT_PAGE,
+      pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+      orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
+      results: objectToJSON(regs),
+    });
+  });
+
+  it('should retrieve only not deleted products when user is not authenticated', async () => {
+    await createFindScenario();
+    const regs = await productRepo
+      .createQueryBuilder(ProductConstants.PRODUCT)
+      .leftJoinAndSelect(
+        ProductConstants.PRODUCT_CATEGORY,
+        ProductConstants.CATEGORY,
+      )
+      .leftJoinAndSelect(ProductConstants.PRODUCT_BRAND, ProductConstants.BRAND)
+      .leftJoinAndSelect(
+        ProductConstants.PRODUCT_IMAGES,
+        ProductConstants.IMAGES,
+      )
+      .orderBy(ProductConstants.PRODUCT_NAME, SortConstants.ASC)
+      .addOrderBy(ProductConstants.PRODUCT_ACTIVE, SortConstants.ASC)
+      .getMany();
+    const response = await testGetMin(
+      app,
+      `/products`,
+      { query: JSON.stringify({ deleted: DeletedFilter.ALL }) },
+      userToken,
       HttpStatus.OK,
     );
     expect(response).toEqual({
