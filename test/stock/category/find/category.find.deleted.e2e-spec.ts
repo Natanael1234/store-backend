@@ -27,6 +27,8 @@ describe('CategoryController (e2e) - find /categories (deleted)', () => {
   let module: TestingModule;
   let categoryRepo: CategoryRepository;
   let rootToken: string;
+  let adminToken: string;
+  let userToken: string;
 
   beforeEach(async () => {
     module = await getTestingModule();
@@ -39,7 +41,10 @@ describe('CategoryController (e2e) - find /categories (deleted)', () => {
     );
     categoryRepo = module.get<CategoryRepository>(CategoryRepository);
     await app.init();
-    rootToken = (await testBuildAuthenticationScenario(module)).rootToken;
+    const tokens = await testBuildAuthenticationScenario(module);
+    userToken = tokens.userToken;
+    adminToken = tokens.adminToken;
+    rootToken = tokens.rootToken;
   });
 
   afterEach(async () => {
@@ -138,6 +143,136 @@ describe('CategoryController (e2e) - find /categories (deleted)', () => {
       '/categories',
       { query: JSON.stringify({ deleted: DeletedFilter.NOT_DELETED }) },
       rootToken,
+      HttpStatus.OK,
+    );
+    expect(response).toEqual({
+      textQuery: undefined,
+      count: 2,
+      page: PaginationConfigs.DEFAULT_PAGE,
+      pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+      orderBy: CategoryConfigs.CATEGORY_DEFAULT_ORDER_BY,
+      results: objectToJSON(regs),
+    });
+  });
+
+  it('should retrieve deleted and non deleted categories when user is root', async () => {
+    const categoriesIds = await insertCategories(
+      { name: 'Category 1', active: true },
+      { name: 'Category 2', active: true, deletedAt: new Date() },
+      { name: 'Category 3', active: true },
+    );
+    const regs = await categoryRepo
+      .createQueryBuilder(CategoryConstants.CATEGORY)
+      .leftJoinAndSelect(
+        CategoryConstants.CATEGORY_PARENT,
+        CategoryConstants.PARENT,
+      )
+      .withDeleted()
+      .orderBy(CategoryConstants.CATEGORY_NAME, SortConstants.ASC)
+      .addOrderBy(CategoryConstants.CATEGORY_ACTIVE, SortConstants.ASC)
+      .getMany();
+    const response = await testGetMin(
+      app,
+      '/categories',
+      { query: JSON.stringify({ deleted: DeletedFilter.ALL }) },
+      rootToken,
+      HttpStatus.OK,
+    );
+    expect(response).toEqual({
+      textQuery: undefined,
+      count: 3,
+      page: PaginationConfigs.DEFAULT_PAGE,
+      pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+      orderBy: CategoryConfigs.CATEGORY_DEFAULT_ORDER_BY,
+      results: objectToJSON(regs),
+    });
+  });
+
+  it('should retrieve deleted and non deleted categories when user is admin', async () => {
+    const categoriesIds = await insertCategories(
+      { name: 'Category 1', active: true },
+      { name: 'Category 2', active: true, deletedAt: new Date() },
+      { name: 'Category 3', active: true },
+    );
+    const regs = await categoryRepo
+      .createQueryBuilder(CategoryConstants.CATEGORY)
+      .leftJoinAndSelect(
+        CategoryConstants.CATEGORY_PARENT,
+        CategoryConstants.PARENT,
+      )
+      .withDeleted()
+      .orderBy(CategoryConstants.CATEGORY_NAME, SortConstants.ASC)
+      .addOrderBy(CategoryConstants.CATEGORY_ACTIVE, SortConstants.ASC)
+      .getMany();
+    const response = await testGetMin(
+      app,
+      '/categories',
+      { query: JSON.stringify({ deleted: DeletedFilter.ALL }) },
+      adminToken,
+      HttpStatus.OK,
+    );
+    expect(response).toEqual({
+      textQuery: undefined,
+      count: 3,
+      page: PaginationConfigs.DEFAULT_PAGE,
+      pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+      orderBy: CategoryConfigs.CATEGORY_DEFAULT_ORDER_BY,
+      results: objectToJSON(regs),
+    });
+  });
+
+  it('should retrieve only not deleted categories when user is basic user', async () => {
+    const categoriesIds = await insertCategories(
+      { name: 'Category 1', active: true },
+      { name: 'Category 2', active: true, deletedAt: new Date() },
+      { name: 'Category 3', active: true },
+    );
+    const regs = await categoryRepo
+      .createQueryBuilder(CategoryConstants.CATEGORY)
+      .leftJoinAndSelect(
+        CategoryConstants.CATEGORY_PARENT,
+        CategoryConstants.PARENT,
+      )
+      .orderBy(CategoryConstants.CATEGORY_NAME, SortConstants.ASC)
+      .addOrderBy(CategoryConstants.CATEGORY_ACTIVE, SortConstants.ASC)
+      .getMany();
+    const response = await testGetMin(
+      app,
+      '/categories',
+      { query: JSON.stringify({ deleted: DeletedFilter.ALL }) },
+      userToken,
+      HttpStatus.OK,
+    );
+    expect(response).toEqual({
+      textQuery: undefined,
+      count: 2,
+      page: PaginationConfigs.DEFAULT_PAGE,
+      pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+      orderBy: CategoryConfigs.CATEGORY_DEFAULT_ORDER_BY,
+      results: objectToJSON(regs),
+    });
+  });
+
+  it('should retrieve only not deleted categories when user is not authenticated', async () => {
+    const categoriesIds = await insertCategories(
+      { name: 'Category 1', active: true },
+      { name: 'Category 2', active: true, deletedAt: new Date() },
+      { name: 'Category 3', active: true },
+    );
+    const regs = await categoryRepo
+      .createQueryBuilder(CategoryConstants.CATEGORY)
+      .leftJoinAndSelect(
+        CategoryConstants.CATEGORY_PARENT,
+        CategoryConstants.PARENT,
+      )
+      .orderBy(CategoryConstants.CATEGORY_NAME, SortConstants.ASC)
+      .addOrderBy(CategoryConstants.CATEGORY_ACTIVE, SortConstants.ASC)
+      .getMany();
+    const response = await testGetMin(
+      app,
+      '/categories',
+      { query: JSON.stringify({ deleted: DeletedFilter.ALL }) },
+      null,
       HttpStatus.OK,
     );
     expect(response).toEqual({

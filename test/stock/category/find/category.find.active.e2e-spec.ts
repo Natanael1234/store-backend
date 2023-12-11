@@ -26,6 +26,8 @@ describe('CategoryController (e2e) - find /categories (active)', () => {
   let module: TestingModule;
   let categoryRepo: CategoryRepository;
   let rootToken: string;
+  let adminToken: string;
+  let userToken: string;
 
   beforeEach(async () => {
     module = await getTestingModule();
@@ -38,7 +40,10 @@ describe('CategoryController (e2e) - find /categories (active)', () => {
     );
     categoryRepo = module.get<CategoryRepository>(CategoryRepository);
     await app.init();
-    rootToken = (await testBuildAuthenticationScenario(module)).rootToken;
+    const tokens = await testBuildAuthenticationScenario(module);
+    userToken = tokens.userToken;
+    adminToken = tokens.adminToken;
+    rootToken = tokens.rootToken;
   });
 
   afterEach(async () => {
@@ -136,6 +141,136 @@ describe('CategoryController (e2e) - find /categories (active)', () => {
       '/categories',
       { query: JSON.stringify({ active: ActiveFilter.ACTIVE }) },
       rootToken,
+      HttpStatus.OK,
+    );
+    expect(response).toEqual({
+      textQuery: undefined,
+      count: 1,
+      page: PaginationConfigs.DEFAULT_PAGE,
+      pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+      orderBy: CategoryConfigs.CATEGORY_DEFAULT_ORDER_BY,
+      results: objectToJSON(regs),
+    });
+  });
+
+  it('should retrieve active and inactive categories when user is root', async () => {
+    const categoriesIds = await insertCategories(
+      { name: 'Category 1', active: false },
+      { name: 'Category 2', active: true },
+      { name: 'Category 3', active: false },
+    );
+    const regs = await categoryRepo
+      .createQueryBuilder(CategoryConstants.CATEGORY)
+      .leftJoinAndSelect(
+        CategoryConstants.CATEGORY_PARENT,
+        CategoryConstants.PARENT,
+      )
+      .orderBy(CategoryConstants.CATEGORY_NAME, SortConstants.ASC)
+      .addOrderBy(CategoryConstants.CATEGORY_ACTIVE, SortConstants.ASC)
+      .getMany();
+    const response = await testGetMin(
+      app,
+      '/categories',
+      { query: JSON.stringify({ active: ActiveFilter.ALL }) },
+      rootToken,
+      HttpStatus.OK,
+    );
+    expect(response).toEqual({
+      textQuery: undefined,
+      count: 3,
+      page: PaginationConfigs.DEFAULT_PAGE,
+      pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+      orderBy: CategoryConfigs.CATEGORY_DEFAULT_ORDER_BY,
+      results: objectToJSON(regs),
+    });
+  });
+
+  it('should retrieve active and inactive categories when user is admin', async () => {
+    const categoriesIds = await insertCategories(
+      { name: 'Category 1', active: false },
+      { name: 'Category 2', active: true },
+      { name: 'Category 3', active: false },
+    );
+    const regs = await categoryRepo
+      .createQueryBuilder(CategoryConstants.CATEGORY)
+      .leftJoinAndSelect(
+        CategoryConstants.CATEGORY_PARENT,
+        CategoryConstants.PARENT,
+      )
+      .orderBy(CategoryConstants.CATEGORY_NAME, SortConstants.ASC)
+      .addOrderBy(CategoryConstants.CATEGORY_ACTIVE, SortConstants.ASC)
+      .getMany();
+    const response = await testGetMin(
+      app,
+      '/categories',
+      { query: JSON.stringify({ active: ActiveFilter.ALL }) },
+      adminToken,
+      HttpStatus.OK,
+    );
+    expect(response).toEqual({
+      textQuery: undefined,
+      count: 3,
+      page: PaginationConfigs.DEFAULT_PAGE,
+      pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+      orderBy: CategoryConfigs.CATEGORY_DEFAULT_ORDER_BY,
+      results: objectToJSON(regs),
+    });
+  });
+
+  it('should retrieve active and inactive categories when user is basic user', async () => {
+    const categoriesIds = await insertCategories(
+      { name: 'Category 1', active: false },
+      { name: 'Category 2', active: true },
+      { name: 'Category 3', active: false },
+    );
+    const regs = await categoryRepo
+      .createQueryBuilder(CategoryConstants.CATEGORY)
+      .leftJoinAndSelect(
+        CategoryConstants.CATEGORY_PARENT,
+        CategoryConstants.PARENT,
+      )
+      .where(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, { active: true })
+      .orderBy(CategoryConstants.CATEGORY_NAME, SortConstants.ASC)
+      .addOrderBy(CategoryConstants.CATEGORY_ACTIVE, SortConstants.ASC)
+      .getMany();
+    const response = await testGetMin(
+      app,
+      '/categories',
+      { query: JSON.stringify({ active: ActiveFilter.ALL }) },
+      userToken,
+      HttpStatus.OK,
+    );
+    expect(response).toEqual({
+      textQuery: undefined,
+      count: 1,
+      page: PaginationConfigs.DEFAULT_PAGE,
+      pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+      orderBy: CategoryConfigs.CATEGORY_DEFAULT_ORDER_BY,
+      results: objectToJSON(regs),
+    });
+  });
+
+  it('should retrieve active and inactive categories when user is null', async () => {
+    const categoriesIds = await insertCategories(
+      { name: 'Category 1', active: false },
+      { name: 'Category 2', active: true },
+      { name: 'Category 3', active: false },
+    );
+    const regs = await categoryRepo
+      .createQueryBuilder(CategoryConstants.CATEGORY)
+      .leftJoinAndSelect(
+        CategoryConstants.CATEGORY_PARENT,
+        CategoryConstants.PARENT,
+      )
+      .where(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, { active: true })
+      .orderBy(CategoryConstants.CATEGORY_NAME, SortConstants.ASC)
+      .addOrderBy(CategoryConstants.CATEGORY_ACTIVE, SortConstants.ASC)
+      .getMany();
+    const response = await testGetMin(
+      app,
+      '/categories',
+      { query: JSON.stringify({ active: ActiveFilter.ALL }) },
+      null,
       HttpStatus.OK,
     );
     expect(response).toEqual({
