@@ -46,16 +46,15 @@ export async function testBuildAuthenticationScenario(module: TestingModule) {
     encryptionService,
     userData,
   );
-  const loginResponses = [
-    await authenticationService.login(userData[0]),
-    await authenticationService.login(userData[1]),
-    await authenticationService.login(userData[2]),
-  ];
-  return {
-    rootToken: await loginResponses[0].data.payload.token,
-    adminToken: await loginResponses[1].data.payload.token,
-    userToken: await loginResponses[2].data.payload.token,
-  };
+
+  const response1 = await authenticationService.login(userData[0]);
+  const response2 = await authenticationService.login(userData[1]);
+  const response3 = await authenticationService.login(userData[2]);
+
+  const rootToken = await response1.data.payload.token;
+  const adminToken = await response2.data.payload.token;
+  const userToken = await response3.data.payload.token;
+  return { rootToken, adminToken, userToken };
 }
 
 export async function testPost(

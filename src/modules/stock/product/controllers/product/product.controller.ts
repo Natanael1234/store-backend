@@ -10,7 +10,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { SkipAuthentication } from '../../../../authentication/decorators/skip-authentication';
+import { OptionalAuthentication } from '../../../../authentication/decorators/skip-authentication';
 import { Role } from '../../../../authentication/enums/role/role.enum';
 import { PaginatedResponseDTO } from '../../../../system/dtos/response/pagination/pagination.response.dto';
 import { SuccessResponseDto } from '../../../../system/dtos/response/pagination/success.response.dto';
@@ -47,7 +47,7 @@ export class ProductController {
 
   @Get()
   // @Roles(Role.ROOT, Role.ADMIN)
-  @SkipAuthentication() // TODO: allow inactive access only to authorized users
+  @OptionalAuthentication() // TODO: allow inactive access only to authorized users
   @UseInterceptors(QueryParamToJsonInterceptor)
   find(
     @Query() findDTO: { query: FindProductRequestDTO },
@@ -57,7 +57,7 @@ export class ProductController {
 
   @Get('/:productId')
   // @Roles(Role.ROOT, Role.ADMIN)
-  @SkipAuthentication()
+  @OptionalAuthentication()
   findById(
     @Param('productId', new UuidValidationPipe('product id')) productId: string,
   ): Promise<Product> {
