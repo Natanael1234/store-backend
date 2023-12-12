@@ -28,6 +28,7 @@ import { CategoryOrder } from '../../enums/category-order/category-order.enum';
 import { Category } from '../../models/category/category.entity';
 import { CategoryService } from '../../services/category/category.service';
 
+// TODO: mover para decorator
 function filterFindDtoByPermission(
   query: FindCategoriesRequestDTO,
   user: User,
@@ -78,14 +79,16 @@ export class CategoryController {
   }
 
   @Get('/:categoryId')
-  @UseInterceptors(QueryParamToJsonInterceptor)
-  // @Roles(Role.ROOT, Role.ADMIN)
   @OptionalAuthentication()
+  @UseInterceptors(QueryParamToJsonInterceptor)
   findById(
+    @Req() req: { user: User },
     @Param('categoryId', new UuidValidationPipe('category id'))
     categoryId: string,
+    @Query() findDTO: { query: FindCategoriesRequestDTO },
   ): Promise<Category> {
-    return this.categoryService.findById(categoryId);
+    filterFindDtoByPermission(findDTO.query, req.user);
+    return this.categoryService.findById(categoryId, findDTO.query);
   }
 
   @Delete('/:categoryId')

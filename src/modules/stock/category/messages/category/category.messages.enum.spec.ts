@@ -10,6 +10,7 @@ describe('CategoryMessage', () => {
       NOT_FOUND: 'Category not found',
       DATA_REQUIRED: 'Category data required',
       REQUIRED: 'Category required',
+      DATA_INVALID: 'Invalid category data',
       ID_REQUIRED: 'Category id is required',
       REQUIRED_CATEGORY_ID: 'Category id is required',
       CATEGORY_ID_TYPE: 'Category id should be integer greater or equal 1',
