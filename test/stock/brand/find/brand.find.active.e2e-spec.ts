@@ -24,7 +24,7 @@ import {
 
 const ActiveMessage = new BoolMessage('active');
 
-describe('BrandController (e2e) - find /brands (active)', () => {
+describe('BrandController (e2e) - get /brands (active)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let brandRepo: Repository<Brand>;

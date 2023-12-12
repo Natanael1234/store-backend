@@ -27,11 +27,13 @@ import {
 const ActiveMessage = new BoolMessage('active');
 const DeletedMessage = new BoolMessage('deleted');
 
-describe('CategoryController (e2e) - find /categories (main)', () => {
+describe('CategoryController (e2e) - get /categories (main)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let categoryRepo: CategoryRepository;
   let rootToken: string;
+  let adminToken: string;
+  let userToken: string;
 
   beforeEach(async () => {
     module = await getTestingModule();
@@ -44,7 +46,10 @@ describe('CategoryController (e2e) - find /categories (main)', () => {
     );
     categoryRepo = module.get<CategoryRepository>(CategoryRepository);
     await app.init();
-    rootToken = (await testBuildAuthenticationScenario(module)).rootToken;
+    const tokens = await testBuildAuthenticationScenario(module);
+    userToken = tokens.userToken;
+    adminToken = tokens.adminToken;
+    rootToken = tokens.rootToken;
   });
 
   afterEach(async () => {

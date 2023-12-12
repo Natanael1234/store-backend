@@ -19,7 +19,7 @@ import {
   testGetMin,
 } from '../../../utils/test-end-to-end.utils';
 
-describe('BrandController (e2e) - find /brands (pagination)', () => {
+describe('BrandController (e2e) - get /brands (pagination)', () => {
   const count = 15;
 
   let app: INestApplication;

@@ -9,7 +9,7 @@ import { DeletedFilter } from '../../../../system/enums/filter/deleted-filter/de
 import { BrandConfigs } from '../../configs/brand/brand.configs';
 import { BrandOrder } from '../../enums/brand-order/brand-order.enum';
 
-export class FindBrandRequestDTO {
+export class FindBrandsRequestDTO {
   /**
    * Textual query.
    *

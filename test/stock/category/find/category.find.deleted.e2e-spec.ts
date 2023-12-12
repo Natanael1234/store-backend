@@ -22,7 +22,7 @@ import {
 
 const DeletedMessage = new BoolMessage('deleted');
 
-describe('CategoryController (e2e) - find /categories (deleted)', () => {
+describe('CategoryController (e2e) - get /categories (deleted)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let categoryRepo: CategoryRepository;

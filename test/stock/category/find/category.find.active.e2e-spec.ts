@@ -21,7 +21,7 @@ import {
 
 const ActiveMessage = new BoolMessage('active');
 
-describe('CategoryController (e2e) - find /categories (active)', () => {
+describe('CategoryController (e2e) - get /categories (active)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let categoryRepo: CategoryRepository;
