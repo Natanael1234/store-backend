@@ -46,11 +46,8 @@ export class BrandService {
     brandId: string,
     brandDto: UpdateBrandRequestDTO,
   ): Promise<Brand> {
-    if (!brandId)
-      throw new UnprocessableEntityException(BrandIdMessage.REQUIRED);
-    if (!isValidUUID(brandId)) {
-      throw new UnprocessableEntityException(BrandIdMessage.INVALID);
-    }
+    this.validateBrandId(brandId);
+
     if (!brandDto) throw new BadRequestException(BrandMessage.DATA_REQUIRED);
     brandDto = plainToInstance(UpdateBrandRequestDTO, brandDto);
     await validateOrThrowError(brandDto, UpdateBrandRequestDTO);
@@ -135,9 +132,7 @@ export class BrandService {
   }
 
   async findById(brandId: string, findBrandDto?: FindBrandRequestDTO) {
-    if (!brandId) {
-      throw new UnprocessableEntityException(BrandMessage.REQUIRED_BRAND_ID);
-    }
+    this.validateBrandId(brandId);
     if (!isValidUUID(brandId)) {
       throw new UnprocessableEntityException(BrandIdMessage.INVALID);
     }
@@ -145,8 +140,8 @@ export class BrandService {
     if (typeof findBrandDto != 'object' || Array.isArray(findBrandDto)) {
       throw new UnprocessableEntityException(BrandMessage.DATA_INVALID);
     }
-    findBrandDto = plainToInstance(FindBrandsRequestDTO, findBrandDto);
-    await validateOrThrowError(findBrandDto, FindBrandsRequestDTO);
+    findBrandDto = plainToInstance(FindBrandRequestDTO, findBrandDto);
+    await validateOrThrowError(findBrandDto, FindBrandRequestDTO);
 
     let { active, deleted } = findBrandDto;
 
@@ -155,7 +150,6 @@ export class BrandService {
       .where(BrandConstants.BRAND_ID_EQUALS_TO, { brandId });
 
     // active
-
     if (active == ActiveFilter.ACTIVE) {
       select = select.andWhere(BrandConstants.BRAND_ACTIVE_EQUALS_TO, {
         active: true,
@@ -167,7 +161,6 @@ export class BrandService {
     }
 
     // deleted
-
     if (deleted == DeletedFilter.DELETED) {
       select = select
         .withDeleted()
@@ -184,17 +177,20 @@ export class BrandService {
   }
 
   async delete(brandId: string): Promise<SuccessResponseDto> {
-    if (!brandId) {
-      throw new UnprocessableEntityException(BrandMessage.REQUIRED_BRAND_ID);
-    }
-    if (!isValidUUID(brandId)) {
-      throw new UnprocessableEntityException(BrandIdMessage.INVALID);
-    }
+    this.validateBrandId(brandId);
     const brand = await this.brandRepo.findOne({ where: { id: brandId } });
     if (!brand) throw new NotFoundException(BrandMessage.NOT_FOUND);
     await this.brandRepo.softDelete(brandId);
     const response = new SuccessResponseDto();
     response.status = 'success';
     return response;
+  }
+
+  private validateBrandId(brandId: string) {
+    if (!brandId)
+      throw new UnprocessableEntityException(BrandIdMessage.REQUIRED);
+    if (!isValidUUID(brandId)) {
+      throw new UnprocessableEntityException(BrandIdMessage.INVALID);
+    }
   }
 }

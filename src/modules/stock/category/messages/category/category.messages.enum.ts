@@ -1,6 +1,7 @@
 export enum CategoryMessage {
   NOT_FOUND = 'Category not found',
   DATA_REQUIRED = 'Category data required',
+  DATA_INVALID = 'Invalid category data',
   REQUIRED = 'Category required',
   ID_REQUIRED = 'Category id is required',
   REQUIRED_CATEGORY_ID = 'Category id is required',
