@@ -19,7 +19,7 @@ import {
   testGetMin,
 } from '../../../utils/test-end-to-end.utils';
 
-describe('CategoryController (e2e) - find /categories (orderBy)', () => {
+describe('CategoryController (e2e) - get /categories (orderBy)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let categoryRepo: CategoryRepository;

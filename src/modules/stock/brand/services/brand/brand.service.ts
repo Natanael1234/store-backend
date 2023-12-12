@@ -17,7 +17,8 @@ import { isValidUUID } from '../../../../system/utils/validation/uuid/is-valid-u
 import { validateOrThrowError } from '../../../../system/utils/validation/validation';
 import { BrandConstants } from '../../constants/brand/brand-entity.constants';
 import { CreateBrandRequestDTO } from '../../dtos/create-brand/create-brand.request.dto';
-import { FindBrandRequestDTO } from '../../dtos/find-brands/find-brands.request.dto';
+import { FindBrandRequestDTO } from '../../dtos/find-brand/find-brand.request.dto';
+import { FindBrandsRequestDTO } from '../../dtos/find-brands/find-brands.request.dto';
 import { UpdateBrandRequestDTO } from '../../dtos/update-brand/update-brand.request.dto';
 import { BrandOrder } from '../../enums/brand-order/brand-order.enum';
 import { BrandMessage } from '../../messages/brand-messages/brand.messages.enum';
@@ -64,10 +65,10 @@ export class BrandService {
   }
 
   async find(
-    findDTO?: FindBrandRequestDTO,
+    findDTO?: FindBrandsRequestDTO,
   ): Promise<PaginatedResponseDTO<Brand, BrandOrder>> {
-    findDTO = plainToInstance(FindBrandRequestDTO, findDTO || {});
-    await validateOrThrowError(findDTO || {}, FindBrandRequestDTO);
+    findDTO = plainToInstance(FindBrandsRequestDTO, findDTO || {});
+    await validateOrThrowError(findDTO || {}, FindBrandsRequestDTO);
 
     let { textQuery, active, deleted, page, pageSize, orderBy } = findDTO;
 
@@ -133,22 +134,63 @@ export class BrandService {
     );
   }
 
-  async findById(brandId: string) {
-    if (!brandId)
+  async findById(brandId: string, findBrandDto?: FindBrandRequestDTO) {
+    if (!brandId) {
       throw new UnprocessableEntityException(BrandMessage.REQUIRED_BRAND_ID);
-    const brand = await this.brandRepo.findOne({
-      where: { id: brandId },
-    });
+    }
+    if (!isValidUUID(brandId)) {
+      throw new UnprocessableEntityException(BrandIdMessage.INVALID);
+    }
+    findBrandDto = findBrandDto ?? {};
+    if (typeof findBrandDto != 'object' || Array.isArray(findBrandDto)) {
+      throw new UnprocessableEntityException(BrandMessage.DATA_INVALID);
+    }
+    findBrandDto = plainToInstance(FindBrandsRequestDTO, findBrandDto);
+    await validateOrThrowError(findBrandDto, FindBrandsRequestDTO);
+
+    let { active, deleted } = findBrandDto;
+
+    let select = this.brandRepo
+      .createQueryBuilder(BrandConstants.BRAND)
+      .where(BrandConstants.BRAND_ID_EQUALS_TO, { brandId });
+
+    // active
+
+    if (active == ActiveFilter.ACTIVE) {
+      select = select.andWhere(BrandConstants.BRAND_ACTIVE_EQUALS_TO, {
+        active: true,
+      });
+    } else if (active == ActiveFilter.INACTIVE) {
+      select = select.andWhere(BrandConstants.BRAND_ACTIVE_EQUALS_TO, {
+        active: false,
+      });
+    }
+
+    // deleted
+
+    if (deleted == DeletedFilter.DELETED) {
+      select = select
+        .withDeleted()
+        .andWhere(BrandConstants.BRAND_DELETED_AT_IS_NOT_NULL);
+    } else if (deleted == DeletedFilter.ALL) {
+      select = select.withDeleted();
+    }
+
+    const brand = await select.getOne();
+
     if (!brand) throw new NotFoundException(BrandMessage.NOT_FOUND);
+
     return brand;
   }
 
   async delete(brandId: string): Promise<SuccessResponseDto> {
-    if (!brandId)
+    if (!brandId) {
       throw new UnprocessableEntityException(BrandMessage.REQUIRED_BRAND_ID);
-    const brand = await this.brandRepo.findOne({
-      where: { id: brandId },
-    });
+    }
+    if (!isValidUUID(brandId)) {
+      throw new UnprocessableEntityException(BrandIdMessage.INVALID);
+    }
+    const brand = await this.brandRepo.findOne({ where: { id: brandId } });
     if (!brand) throw new NotFoundException(BrandMessage.NOT_FOUND);
     await this.brandRepo.softDelete(brandId);
     const response = new SuccessResponseDto();

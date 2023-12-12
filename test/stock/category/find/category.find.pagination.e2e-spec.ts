@@ -17,7 +17,7 @@ import {
   testGetMin,
 } from '../../../utils/test-end-to-end.utils';
 
-describe('CategoryController (e2e) - find /categories (pagination)', () => {
+describe('CategoryController (e2e) - get /categories (pagination)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let categoryRepo: CategoryRepository;

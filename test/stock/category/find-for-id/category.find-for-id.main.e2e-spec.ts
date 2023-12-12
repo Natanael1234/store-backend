@@ -50,7 +50,7 @@ describe('CategoryService', () => {
     return testInsertCategories(categoryRepo, categories);
   }
 
-  describe('CategoryController (e2e) - find /categories (main)', () => {
+  describe('CategoryController (e2e) - get /categories (main)', () => {
     it('should find category for id', async () => {
       // id 1
       const c1 = new Category();

@@ -22,13 +22,17 @@ import { UuidValidationPipe } from '../../../../system/pipes/uuid/uuid-validatio
 import { Roles } from '../../../../user/decorators/roles/roles.decorator';
 import { User } from '../../../../user/models/user/user.entity';
 import { CreateBrandRequestDTO } from '../../dtos/create-brand/create-brand.request.dto';
-import { FindBrandRequestDTO } from '../../dtos/find-brands/find-brands.request.dto';
+import { FindBrandRequestDTO } from '../../dtos/find-brand/find-brand.request.dto';
+import { FindBrandsRequestDTO } from '../../dtos/find-brands/find-brands.request.dto';
 import { UpdateBrandRequestDTO } from '../../dtos/update-brand/update-brand.request.dto';
 import { BrandOrder } from '../../enums/brand-order/brand-order.enum';
 import { Brand } from '../../models/brand/brand.entity';
 import { BrandService } from '../../services/brand/brand.service';
 
-function filterFindDtoByPermission(query: FindBrandRequestDTO, user: User) {
+function filterFindDtoByPermission(
+  query: { active?: ActiveFilter; deleted?: DeletedFilter },
+  user: User,
+) {
   if (
     !user ||
     !user.roles ||
@@ -66,19 +70,22 @@ export class BrandController {
   @UseInterceptors(QueryParamToJsonInterceptor)
   find(
     @Req() req: { user: User },
-    @Query() findDTO: { query: FindBrandRequestDTO },
+    @Query() findDTO: { query: FindBrandsRequestDTO },
   ): Promise<PaginatedResponseDTO<Brand, BrandOrder>> {
     filterFindDtoByPermission(findDTO.query, req.user);
     return this.brandService.find(findDTO.query);
   }
 
   @Get('/:brandId')
-  // @Roles(Role.ROOT, Role.ADMIN)
   @OptionalAuthentication()
+  @UseInterceptors(QueryParamToJsonInterceptor)
   findById(
+    @Req() req: { user: User },
     @Param('brandId', new UuidValidationPipe('brand id')) brandId: string,
+    @Query() findDTO: { query: FindBrandRequestDTO },
   ): Promise<Brand> {
-    return this.brandService.findById(brandId);
+    filterFindDtoByPermission(findDTO.query, req.user);
+    return this.brandService.findById(brandId, findDTO.query);
   }
 
   @Delete('/:brandId')

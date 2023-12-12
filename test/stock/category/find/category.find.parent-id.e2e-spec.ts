@@ -21,7 +21,7 @@ const ParentIdMessage = new UuidListMessage('parent ids', {
   maxLength: CategoryConfigs.FILTER_PARENT_IDS_MAX_LENGTH,
 });
 
-describe('CategoryController (e2e) - find /categories (parentIds)', () => {
+describe('CategoryController (e2e) - get /categories (parentIds)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let categoryRepo: CategoryRepository;

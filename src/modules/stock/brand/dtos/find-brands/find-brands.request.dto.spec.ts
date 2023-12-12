@@ -8,28 +8,28 @@ import { TextMessageOLD } from '../../../../system/messages/text-old/text.messag
 import { validateFirstError } from '../../../../system/utils/validation/validation';
 import { BrandConfigs } from '../../configs/brand/brand.configs';
 import { BrandOrder } from '../../enums/brand-order/brand-order.enum';
-import { FindBrandRequestDTO } from './find-brands.request.dto';
+import { FindBrandsRequestDTO } from './find-brands.request.dto';
 
 const ActiveMessage = new BoolMessage('active');
 const DeletedMessage = new BoolMessage('deleted');
 
 async function testAccept(
-  data: FindBrandRequestDTO,
-  expectedResult: FindBrandRequestDTO,
+  data: FindBrandsRequestDTO,
+  expectedResult: FindBrandsRequestDTO,
 ) {
-  const dto = plainToInstance(FindBrandRequestDTO, data);
+  const dto = plainToInstance(FindBrandsRequestDTO, data);
   expect(dto).toEqual(expectedResult);
-  const errors = await validateFirstError(data, FindBrandRequestDTO);
+  const errors = await validateFirstError(data, FindBrandsRequestDTO);
   expect(errors).toHaveLength(0);
 }
 
 async function testReject(data: any, constraints: { [type: string]: string }) {
-  const errors = await validateFirstError(data, FindBrandRequestDTO);
+  const errors = await validateFirstError(data, FindBrandsRequestDTO);
   expect(errors).toHaveLength(1);
   expect(errors[0].constraints).toEqual(constraints);
 }
 
-describe('FindBrandRequestDTO', () => {
+describe('FindBrandsRequestDTO', () => {
   it('should accept', async () => {
     const data = {
       textQuery: 'test',
@@ -39,7 +39,7 @@ describe('FindBrandRequestDTO', () => {
       pageSize: 4,
       orderBy: [BrandOrder.NAME_DESC, BrandOrder.ACTIVE_ASC],
     };
-    const dto = plainToInstance(FindBrandRequestDTO, data);
+    const dto = plainToInstance(FindBrandsRequestDTO, data);
     expect(dto).toEqual({
       textQuery: '%test%',
       active: ActiveFilter.ALL,
@@ -48,7 +48,7 @@ describe('FindBrandRequestDTO', () => {
       pageSize: 4,
       orderBy: [BrandOrder.NAME_DESC, BrandOrder.ACTIVE_ASC],
     });
-    const errors = await validateFirstError(data, FindBrandRequestDTO);
+    const errors = await validateFirstError(data, FindBrandsRequestDTO);
     expect(errors).toHaveLength(0);
   });
 
@@ -1074,7 +1074,7 @@ describe('FindBrandRequestDTO', () => {
         pageSize: 'invalid',
         orderBy: ['invalid'],
       };
-      const errors = await validateFirstError(data, FindBrandRequestDTO);
+      const errors = await validateFirstError(data, FindBrandsRequestDTO);
       expect(errors).toHaveLength(3);
       expect(errors[0].constraints).toEqual({
         isString: TextMessageOLD.INVALID,

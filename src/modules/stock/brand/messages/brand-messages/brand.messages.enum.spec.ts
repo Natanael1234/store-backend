@@ -9,6 +9,7 @@ describe('BrandMessage', () => {
     expect({ ...BrandMessage }).toEqual({
       NOT_FOUND: 'Brand not found',
       DATA_REQUIRED: 'Brand data required',
+      DATA_INVALID: 'Invalid brand data',
       REQUIRED: 'Brand required', // TODO: brandId or brand?
 
       // brand id

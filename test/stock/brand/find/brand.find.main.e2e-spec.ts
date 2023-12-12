@@ -36,7 +36,7 @@ function buildBrandData(quantity: number, startNumber?: number) {
   }));
 }
 
-describe('BrandController (e2e) - find /brands (main)', () => {
+describe('BrandController (e2e) - get /brands (main)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let brandRepo: Repository<Brand>;
