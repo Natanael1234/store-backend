@@ -42,7 +42,7 @@ describe('CategoryService.find', () => {
       { name: 'Category 2', active: true },
       { name: 'Category 3', active: false },
     );
-    const regs = await categoryRepo
+    const categories = await categoryRepo
       .createQueryBuilder(CategoryConstants.CATEGORY)
       .leftJoinAndSelect(
         CategoryConstants.CATEGORY_PARENT,
@@ -58,7 +58,7 @@ describe('CategoryService.find', () => {
       page: PaginationConfigs.DEFAULT_PAGE,
       pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
       orderBy: CategoryConfigs.CATEGORY_DEFAULT_ORDER_BY,
-      results: regs,
+      results: categories,
     });
   });
 
@@ -68,13 +68,15 @@ describe('CategoryService.find', () => {
       { name: 'Category 2', active: true },
       { name: 'Category 3', active: false },
     );
-    const regs = await categoryRepo
+    const categories = await categoryRepo
       .createQueryBuilder(CategoryConstants.CATEGORY)
       .leftJoinAndSelect(
         CategoryConstants.CATEGORY_PARENT,
         CategoryConstants.PARENT,
       )
-      .where(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, { active: false })
+      .where(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, {
+        isActiveCategory: false,
+      })
       .orderBy(CategoryConstants.CATEGORY_NAME, SortConstants.ASC)
       .addOrderBy(CategoryConstants.CATEGORY_ACTIVE, SortConstants.ASC)
       .getMany();
@@ -87,7 +89,7 @@ describe('CategoryService.find', () => {
       page: PaginationConfigs.DEFAULT_PAGE,
       pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
       orderBy: CategoryConfigs.CATEGORY_DEFAULT_ORDER_BY,
-      results: regs,
+      results: categories,
     });
   });
 
@@ -97,13 +99,15 @@ describe('CategoryService.find', () => {
       { name: 'Category 2', active: true },
       { name: 'Category 3', active: false },
     );
-    const regs = await categoryRepo
+    const categories = await categoryRepo
       .createQueryBuilder(CategoryConstants.CATEGORY)
       .leftJoinAndSelect(
         CategoryConstants.CATEGORY_PARENT,
         CategoryConstants.PARENT,
       )
-      .where(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, { active: true })
+      .where(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, {
+        isActiveCategory: true,
+      })
       .orderBy(CategoryConstants.CATEGORY_NAME, SortConstants.ASC)
       .addOrderBy(CategoryConstants.CATEGORY_ACTIVE, SortConstants.ASC)
       .getMany();
@@ -116,7 +120,7 @@ describe('CategoryService.find', () => {
       page: PaginationConfigs.DEFAULT_PAGE,
       pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
       orderBy: CategoryConfigs.CATEGORY_DEFAULT_ORDER_BY,
-      results: regs,
+      results: categories,
     });
   });
 
@@ -126,13 +130,15 @@ describe('CategoryService.find', () => {
       { name: 'Category 2', active: true },
       { name: 'Category 3', active: false },
     );
-    const regs = await categoryRepo
+    const categories = await categoryRepo
       .createQueryBuilder(CategoryConstants.CATEGORY)
       .leftJoinAndSelect(
         CategoryConstants.CATEGORY_PARENT,
         CategoryConstants.PARENT,
       )
-      .where(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, { active: true })
+      .where(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, {
+        isActiveCategory: true,
+      })
       .orderBy(CategoryConstants.CATEGORY_NAME, SortConstants.ASC)
       .addOrderBy(CategoryConstants.CATEGORY_ACTIVE, SortConstants.ASC)
       .getMany();
@@ -143,7 +149,7 @@ describe('CategoryService.find', () => {
       page: PaginationConfigs.DEFAULT_PAGE,
       pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
       orderBy: CategoryConfigs.CATEGORY_DEFAULT_ORDER_BY,
-      results: regs,
+      results: categories,
     });
   });
 
@@ -153,13 +159,15 @@ describe('CategoryService.find', () => {
       { name: 'Category 2', active: true },
       { name: 'Category 3', active: false },
     );
-    const regs = await categoryRepo
+    const categories = await categoryRepo
       .createQueryBuilder(CategoryConstants.CATEGORY)
       .leftJoinAndSelect(
         CategoryConstants.CATEGORY_PARENT,
         CategoryConstants.PARENT,
       )
-      .where(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, { active: true })
+      .where(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, {
+        isActiveCategory: true,
+      })
       .orderBy(CategoryConstants.CATEGORY_NAME, SortConstants.ASC)
       .addOrderBy(CategoryConstants.CATEGORY_ACTIVE, SortConstants.ASC)
       .getMany();
@@ -170,7 +178,7 @@ describe('CategoryService.find', () => {
       page: PaginationConfigs.DEFAULT_PAGE,
       pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
       orderBy: CategoryConfigs.CATEGORY_DEFAULT_ORDER_BY,
-      results: regs,
+      results: categories,
     });
   });
 

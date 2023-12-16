@@ -64,7 +64,9 @@ describe('CategoryController (e2e) - get /categories (active)', () => {
           CategoryConstants.CATEGORY_PARENT,
           CategoryConstants.PARENT,
         )
-        .where(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, { active: false })
+        .where(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, {
+          isActiveCategory: false,
+        })
         .orderBy(CategoryConstants.CATEGORY_NAME, SortConstants.ASC)
         .addOrderBy(CategoryConstants.CATEGORY_ACTIVE, SortConstants.ASC)
         .getMany(),
@@ -79,7 +81,9 @@ describe('CategoryController (e2e) - get /categories (active)', () => {
           CategoryConstants.CATEGORY_PARENT,
           CategoryConstants.PARENT,
         )
-        .where(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, { active: true })
+        .where(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, {
+          isActiveCategory: true,
+        })
         .orderBy(CategoryConstants.CATEGORY_NAME, SortConstants.ASC)
         .addOrderBy(CategoryConstants.CATEGORY_ACTIVE, SortConstants.ASC)
         .getMany(),

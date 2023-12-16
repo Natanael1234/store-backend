@@ -137,7 +137,9 @@ describe('CategoryService.find (main)', () => {
         CategoryConstants.CATEGORY_PARENT,
         CategoryConstants.PARENT,
       )
-      .where(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, { active: true })
+      .where(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, {
+        isActiveCategory: true,
+      })
       .orderBy(CategoryConstants.CATEGORY_NAME, SortConstants.ASC)
       .addOrderBy(CategoryConstants.CATEGORY_ACTIVE, SortConstants.ASC)
       .take(PaginationConfigs.DEFAULT_PAGE_SIZE)
@@ -263,7 +265,9 @@ describe('CategoryService.find (main)', () => {
         CategoryConstants.CATEGORY_PARENT,
         CategoryConstants.PARENT,
       )
-      .where(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, { active: true })
+      .where(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, {
+        isActiveCategory: true,
+      })
       .orderBy(CategoryConstants.CATEGORY_NAME, SortConstants.ASC)
       .addOrderBy(CategoryConstants.CATEGORY_ACTIVE, SortConstants.ASC)
       .getMany();
@@ -290,7 +294,9 @@ describe('CategoryService.find (main)', () => {
         CategoryConstants.CATEGORY_PARENT,
         CategoryConstants.PARENT,
       )
-      .where(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, { active: true })
+      .where(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, {
+        isActiveCategory: true,
+      })
       .orderBy(CategoryConstants.CATEGORY_NAME, SortConstants.ASC)
       .addOrderBy(CategoryConstants.CATEGORY_ACTIVE, SortConstants.ASC)
       .getMany();

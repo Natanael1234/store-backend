@@ -101,7 +101,7 @@ describe('UserController (e2e) - get /users (main)', () => {
 
     const registers = await userRepo
       .createQueryBuilder(UserConstants.USER)
-      .where(UserConstants.USER_ACTIVE_EQUALS_TO, { active: true })
+      .where(UserConstants.USER_ACTIVE_EQUALS_TO, { isActiveUser: true })
       .orderBy(UserConstants.USER_NAME, SortConstants.ASC)
       .addOrderBy(UserConstants.USER_ACTIVE, SortConstants.ASC)
       .getMany();

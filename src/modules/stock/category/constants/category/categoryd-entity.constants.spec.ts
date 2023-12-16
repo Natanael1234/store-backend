@@ -36,7 +36,7 @@ describe('CategoryConstants', () => {
       CATEGORY_PARENT_ID_IN: 'category.parentId IN (:...parentIds)',
       CATEGORY_ID_IS_NOT_NULL: 'category.id IS NOT NULL',
       CATEGORY_NAME_LIKE_TEXT_QUERY: 'LOWER(category.name) LIKE :textQuery',
-      CATEGORY_ACTIVE_EQUALS_TO: 'category.active = :active',
+      CATEGORY_ACTIVE_EQUALS_TO: 'category.active = :isActiveCategory',
 
       CATEGORY_DELETED_AT_IS_NOT_NULL: 'category.deletedAt IS NOT NULL',
       PARENT_IS_NULL: 'category.parent IS NULL',

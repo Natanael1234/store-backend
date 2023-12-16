@@ -111,7 +111,7 @@ describe('UserController (e2e) - get /users (active)', () => {
     await createTestAcceptScenario();
     const regs = await userRepo
       .createQueryBuilder(UserConstants.USER)
-      .where(UserConstants.USER_ACTIVE_EQUALS_TO, { active: false })
+      .where(UserConstants.USER_ACTIVE_EQUALS_TO, { isActiveUser: false })
       .orderBy(UserConstants.USER_NAME, SortConstants.ASC)
       .addOrderBy(UserConstants.USER_ACTIVE, SortConstants.ASC)
       .getMany();
@@ -136,7 +136,7 @@ describe('UserController (e2e) - get /users (active)', () => {
     await createTestAcceptScenario();
     const regs = await userRepo
       .createQueryBuilder(UserConstants.USER)
-      .where(UserConstants.USER_ACTIVE_EQUALS_TO, { active: true })
+      .where(UserConstants.USER_ACTIVE_EQUALS_TO, { isActiveUser: true })
       .orderBy(UserConstants.USER_NAME, SortConstants.ASC)
       .addOrderBy(UserConstants.USER_ACTIVE, SortConstants.ASC)
       .getMany();
@@ -161,7 +161,7 @@ describe('UserController (e2e) - get /users (active)', () => {
     await createTestAcceptScenario();
     const regs = await userRepo
       .createQueryBuilder(UserConstants.USER)
-      .where(UserConstants.USER_ACTIVE_EQUALS_TO, { active: true })
+      .where(UserConstants.USER_ACTIVE_EQUALS_TO, { isActiveUser: true })
       .orderBy(UserConstants.USER_NAME, SortConstants.ASC)
       .addOrderBy(UserConstants.USER_ACTIVE, SortConstants.ASC)
       .getMany();
@@ -186,7 +186,7 @@ describe('UserController (e2e) - get /users (active)', () => {
     await createTestAcceptScenario();
     const regs = await userRepo
       .createQueryBuilder(UserConstants.USER)
-      .where(UserConstants.USER_ACTIVE_EQUALS_TO, { active: true })
+      .where(UserConstants.USER_ACTIVE_EQUALS_TO, { isActiveUser: true })
       .orderBy(UserConstants.USER_NAME, SortConstants.ASC)
       .addOrderBy(UserConstants.USER_ACTIVE, SortConstants.ASC)
       .getMany();

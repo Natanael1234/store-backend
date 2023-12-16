@@ -130,7 +130,9 @@ describe('ProductService.find (main)', () => {
         ProductConstants.IMAGES,
       )
       .andWhere('LOWER(product.name) LIKE :textQuery', { textQuery: '%uct%1%' })
-      .andWhere(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, { active: false })
+      .andWhere(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, {
+        isActiveProduct: false,
+      })
       .andWhere(ProductConstants.PRODUCT_DELETED_AT_IS_NOT_NULL)
       .withDeleted()
       .orderBy(ProductConstants.PRODUCT_NAME, SortConstants.DESC)
@@ -189,7 +191,9 @@ describe('ProductService.find (main)', () => {
         ProductConstants.IMAGE_MAIN_EQUALS_TO,
         { main: true },
       )
-      .where(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, { active: true })
+      .where(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, {
+        isActiveProduct: true,
+      })
       .andWhere(ProductConstants.PRODUCT_DELETED_AT_IS_NULL)
       .take(12)
       .orderBy(ProductConstants.PRODUCT_NAME, SortConstants.ASC)
@@ -330,7 +334,9 @@ describe('ProductService.find (main)', () => {
         ProductConstants.PRODUCT_IMAGES,
         ProductConstants.IMAGES,
       )
-      .where(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, { active: true })
+      .where(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, {
+        isActiveProduct: true,
+      })
       .orderBy(ProductConstants.PRODUCT_NAME, SortConstants.ASC)
       .addOrderBy(ProductConstants.PRODUCT_ACTIVE, SortConstants.ASC)
       .getMany();
@@ -394,7 +400,9 @@ describe('ProductService.find (main)', () => {
         ProductConstants.PRODUCT_IMAGES,
         ProductConstants.IMAGES,
       )
-      .where(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, { active: true })
+      .where(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, {
+        isActiveProduct: true,
+      })
       .orderBy(ProductConstants.PRODUCT_NAME, SortConstants.ASC)
       .addOrderBy(ProductConstants.PRODUCT_ACTIVE, SortConstants.ASC)
       .getMany();

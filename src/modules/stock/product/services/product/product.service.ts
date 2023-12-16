@@ -252,11 +252,11 @@ export class ProductService {
 
     if (active == ActiveFilter.ACTIVE) {
       select = select.andWhere(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, {
-        active: true,
+        isActiveProduct: true,
       });
     } else if (active == ActiveFilter.INACTIVE) {
       select = select.andWhere(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, {
-        active: false,
+        isActiveProduct: false,
       });
     }
 
@@ -337,9 +337,13 @@ export class ProductService {
       )
       .where(ProductConstants.PRODUCT_ID_EQUALS_TO, { productId });
     if (publicAccess === true) {
-      select = select.andWhere(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, {
-        active: true,
-      });
+      select = select
+        .andWhere(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, {
+          isActiveProduct: true,
+        })
+        .andWhere(ProductConstants.PRODUCT_BRAND_ACTIVE_EQUALS_TO, {
+          isActiveBrand: true,
+        });
     } else {
       select = select.withDeleted();
     }

@@ -184,7 +184,9 @@ describe('ProductService.find (active)', () => {
         ProductConstants.PRODUCT_IMAGES,
         ProductConstants.IMAGES,
       )
-      .where(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, { active: false })
+      .where(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, {
+        isActiveProduct: false,
+      })
       .orderBy(ProductConstants.PRODUCT_NAME, SortConstants.ASC)
       .addOrderBy(ProductConstants.PRODUCT_ACTIVE, SortConstants.ASC)
       .getMany();
@@ -253,7 +255,9 @@ describe('ProductService.find (active)', () => {
         ProductConstants.PRODUCT_IMAGES,
         ProductConstants.IMAGES,
       )
-      .where(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, { active: true })
+      .where(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, {
+        isActiveProduct: true,
+      })
       .orderBy(ProductConstants.PRODUCT_NAME, SortConstants.ASC)
       .addOrderBy(ProductConstants.PRODUCT_ACTIVE, SortConstants.ASC)
       .getMany();
@@ -320,7 +324,9 @@ describe('ProductService.find (active)', () => {
         ProductConstants.PRODUCT_IMAGES,
         ProductConstants.IMAGES,
       )
-      .where(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, { active: true })
+      .where(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, {
+        isActiveProduct: true,
+      })
       .orderBy(ProductConstants.PRODUCT_NAME, SortConstants.ASC)
       .addOrderBy(ProductConstants.PRODUCT_ACTIVE, SortConstants.ASC)
       .getMany();
@@ -387,7 +393,9 @@ describe('ProductService.find (active)', () => {
         ProductConstants.PRODUCT_IMAGES,
         ProductConstants.IMAGES,
       )
-      .where(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, { active: true })
+      .where(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, {
+        isActiveProduct: true,
+      })
       .orderBy(ProductConstants.PRODUCT_NAME, SortConstants.ASC)
       .addOrderBy(ProductConstants.PRODUCT_ACTIVE, SortConstants.ASC)
       .getMany();

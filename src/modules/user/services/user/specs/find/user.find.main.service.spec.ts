@@ -79,7 +79,7 @@ describe('UserService.find (main)', () => {
       .andWhere(UserConstants.USER_NAME_LIKE_TEXT_QUERY, {
         textQuery: '%ser%1%',
       })
-      .andWhere(UserConstants.USER_ACTIVE_EQUALS_TO, { active: false })
+      .andWhere(UserConstants.USER_ACTIVE_EQUALS_TO, { isActiveUser: false })
       .andWhere(UserConstants.USER_DELETED_AT_IS_NOT_NULL)
       .withDeleted()
       .orderBy(UserConstants.USER_NAME, SortConstants.DESC)
@@ -137,7 +137,7 @@ describe('UserService.find (main)', () => {
 
     const registers = await userRepo
       .createQueryBuilder(UserConstants.USER)
-      .where(UserConstants.USER_ACTIVE_EQUALS_TO, { active: true })
+      .where(UserConstants.USER_ACTIVE_EQUALS_TO, { isActiveUser: true })
       .orderBy(UserConstants.USER_NAME, SortConstants.ASC)
       .addOrderBy(UserConstants.USER_ACTIVE, SortConstants.ASC)
       .getMany();
@@ -250,7 +250,7 @@ describe('UserService.find (main)', () => {
       .execute();
     const regs = await userRepo
       .createQueryBuilder(UserConstants.USER)
-      .where(UserConstants.USER_ACTIVE_EQUALS_TO, { active: true })
+      .where(UserConstants.USER_ACTIVE_EQUALS_TO, { isActiveUser: true })
       .orderBy(UserConstants.USER_NAME, SortConstants.ASC)
       .addOrderBy(UserConstants.USER_ACTIVE, SortConstants.ASC)
       .getMany();
@@ -296,7 +296,7 @@ describe('UserService.find (main)', () => {
       .execute();
     const regs = await userRepo
       .createQueryBuilder(UserConstants.USER)
-      .where(UserConstants.USER_ACTIVE_EQUALS_TO, { active: true })
+      .where(UserConstants.USER_ACTIVE_EQUALS_TO, { isActiveUser: true })
       .orderBy(UserConstants.USER_NAME, SortConstants.ASC)
       .addOrderBy(UserConstants.USER_ACTIVE, SortConstants.ASC)
       .getMany();

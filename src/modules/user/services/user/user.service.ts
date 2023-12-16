@@ -143,11 +143,11 @@ export class UserService {
 
     if (active == ActiveFilter.ACTIVE) {
       select = select.andWhere(UserConstants.USER_ACTIVE_EQUALS_TO, {
-        active: true,
+        isActiveUser: true,
       });
     } else if (active == ActiveFilter.INACTIVE) {
       select = select.andWhere(UserConstants.USER_ACTIVE_EQUALS_TO, {
-        active: false,
+        isActiveUser: false,
       });
     }
 
