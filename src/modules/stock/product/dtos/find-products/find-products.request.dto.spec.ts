@@ -9,7 +9,7 @@ import { UuidListMessage } from '../../../../system/messages/uuid-list/uuid-list
 import { validateFirstError } from '../../../../system/utils/validation/validation';
 import { ProductConfigs } from '../../configs/product/product.configs';
 import { ProductOrder } from '../../enums/product-order/product-order.enum';
-import { FindProductRequestDTO } from './find-products.request.dto';
+import { FindProductsRequestDTO } from './find-products.request.dto';
 
 const { FILTER_BRANDS_IDS_MAX_LENGTH, FILTER_CATEGORY_IDS_MAX_LENGTH } =
   ProductConfigs;
@@ -17,18 +17,18 @@ const { FILTER_BRANDS_IDS_MAX_LENGTH, FILTER_CATEGORY_IDS_MAX_LENGTH } =
 const ActiveMessage = new BoolMessage('active');
 const DeletedMessage = new BoolMessage('deleted');
 
-async function testAccept(data: FindProductRequestDTO, expectedResult: any) {
-  const dto = plainToInstance(FindProductRequestDTO, data);
+async function testAccept(data: FindProductsRequestDTO, expectedResult: any) {
+  const dto = plainToInstance(FindProductsRequestDTO, data);
   expect(dto).toEqual(expectedResult);
-  const errors = await validateFirstError(data, FindProductRequestDTO);
+  const errors = await validateFirstError(data, FindProductsRequestDTO);
   expect(errors).toHaveLength(0);
 }
 
 async function testReject(
-  data: FindProductRequestDTO,
+  data: FindProductsRequestDTO,
   constraints: { [type: string]: string },
 ) {
-  const errors = await validateFirstError(data, FindProductRequestDTO);
+  const errors = await validateFirstError(data, FindProductsRequestDTO);
   expect(errors).toHaveLength(1);
   expect(errors[0].constraints).toEqual(constraints);
 }
@@ -47,7 +47,7 @@ describe('FindProductsRequestDTO', () => {
       pageSize: 4,
       orderBy: ['name_desc', 'active_asc'],
     };
-    const dto = plainToInstance(FindProductRequestDTO, data);
+    const dto = plainToInstance(FindProductsRequestDTO, data);
     expect(dto).toEqual({
       textQuery: '%test%',
       brandIds,
@@ -58,7 +58,7 @@ describe('FindProductsRequestDTO', () => {
       pageSize: 4,
       orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
     });
-    const errors = await validateFirstError(data, FindProductRequestDTO);
+    const errors = await validateFirstError(data, FindProductsRequestDTO);
     expect(errors).toHaveLength(0);
   });
 
@@ -77,7 +77,7 @@ describe('FindProductsRequestDTO', () => {
         pageSize: 4,
         orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
       };
-      const dto = plainToInstance(FindProductRequestDTO, data);
+      const dto = plainToInstance(FindProductsRequestDTO, data);
       expect(dto).toEqual({
         textQuery: '%test%',
         brandIds: undefined,
@@ -88,7 +88,7 @@ describe('FindProductsRequestDTO', () => {
         pageSize: 4,
         orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
       });
-      const errors = await validateFirstError(data, FindProductRequestDTO);
+      const errors = await validateFirstError(data, FindProductsRequestDTO);
       expect(errors).toHaveLength(0);
     });
 
@@ -105,7 +105,7 @@ describe('FindProductsRequestDTO', () => {
         pageSize: 4,
         orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
       };
-      const dto = plainToInstance(FindProductRequestDTO, data);
+      const dto = plainToInstance(FindProductsRequestDTO, data);
       expect(dto).toEqual({
         textQuery: '%test%',
         brandIds: undefined,
@@ -116,7 +116,7 @@ describe('FindProductsRequestDTO', () => {
         pageSize: 4,
         orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
       });
-      const errors = await validateFirstError(data, FindProductRequestDTO);
+      const errors = await validateFirstError(data, FindProductsRequestDTO);
       expect(errors).toHaveLength(0);
     });
 
@@ -142,7 +142,7 @@ describe('FindProductsRequestDTO', () => {
         pageSize: 4,
         orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
       };
-      const dto = plainToInstance(FindProductRequestDTO, data);
+      const dto = plainToInstance(FindProductsRequestDTO, data);
       expect(dto).toEqual({
         textQuery: '%test%',
         brandIds: undefined,
@@ -153,7 +153,7 @@ describe('FindProductsRequestDTO', () => {
         pageSize: 4,
         orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
       });
-      const errors = await validateFirstError(data, FindProductRequestDTO);
+      const errors = await validateFirstError(data, FindProductsRequestDTO);
       expect(errors).toHaveLength(0);
     });
 
@@ -169,7 +169,7 @@ describe('FindProductsRequestDTO', () => {
     // min length
 
     it('should accept when categoryIds is empty', async () => {
-      const dto = plainToInstance(FindProductRequestDTO, {
+      const dto = plainToInstance(FindProductsRequestDTO, {
         categoryIds: [],
       });
       expect(dto).toEqual({
@@ -184,7 +184,7 @@ describe('FindProductsRequestDTO', () => {
       });
       const errors = await validateFirstError(
         { categoryIds: [] },
-        FindProductRequestDTO,
+        FindProductsRequestDTO,
       );
       expect(errors).toHaveLength(0);
     });
@@ -362,7 +362,7 @@ describe('FindProductsRequestDTO', () => {
         pageSize: 4,
         orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
       };
-      const dto = plainToInstance(FindProductRequestDTO, data);
+      const dto = plainToInstance(FindProductsRequestDTO, data);
       expect(dto).toEqual({
         textQuery: '%test%',
         brandIds,
@@ -373,7 +373,7 @@ describe('FindProductsRequestDTO', () => {
         pageSize: 4,
         orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
       });
-      const errors = await validateFirstError(data, FindProductRequestDTO);
+      const errors = await validateFirstError(data, FindProductsRequestDTO);
       expect(errors).toHaveLength(0);
     });
 
@@ -390,7 +390,7 @@ describe('FindProductsRequestDTO', () => {
         pageSize: 4,
         orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
       };
-      const dto = plainToInstance(FindProductRequestDTO, data);
+      const dto = plainToInstance(FindProductsRequestDTO, data);
       expect(dto).toEqual({
         textQuery: '%test%',
         brandIds: null,
@@ -401,7 +401,7 @@ describe('FindProductsRequestDTO', () => {
         pageSize: 4,
         orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
       });
-      const errors = await validateFirstError(data, FindProductRequestDTO);
+      const errors = await validateFirstError(data, FindProductsRequestDTO);
       expect(errors).toHaveLength(0);
     });
 
@@ -418,7 +418,7 @@ describe('FindProductsRequestDTO', () => {
         pageSize: 4,
         orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
       };
-      const dto = plainToInstance(FindProductRequestDTO, data);
+      const dto = plainToInstance(FindProductsRequestDTO, data);
       expect(dto).toEqual({
         textQuery: '%test%',
         brandIds: undefined,
@@ -429,14 +429,14 @@ describe('FindProductsRequestDTO', () => {
         pageSize: 4,
         orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
       });
-      const errors = await validateFirstError(data, FindProductRequestDTO);
+      const errors = await validateFirstError(data, FindProductsRequestDTO);
       expect(errors).toHaveLength(0);
     });
 
     // min length
 
     it('should accept when brandIds is empty', async () => {
-      const dto = plainToInstance(FindProductRequestDTO, {
+      const dto = plainToInstance(FindProductsRequestDTO, {
         brandIds: [],
       });
       expect(dto).toEqual({
@@ -451,7 +451,7 @@ describe('FindProductsRequestDTO', () => {
       });
       const errors = await validateFirstError(
         { brandIds: [] },
-        FindProductRequestDTO,
+        FindProductsRequestDTO,
       );
       expect(errors).toHaveLength(0);
     });
@@ -1589,7 +1589,7 @@ describe('FindProductsRequestDTO', () => {
         orderBy: ['invalid'],
       };
 
-      const errors = await validateFirstError(data, FindProductRequestDTO);
+      const errors = await validateFirstError(data, FindProductsRequestDTO);
       expect(errors).toHaveLength(3);
       expect(errors[0].constraints).toEqual({
         isString: TextMessageOLD.INVALID,

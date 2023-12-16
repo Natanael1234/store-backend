@@ -8,6 +8,7 @@ import {
   Post,
   Query,
   Req,
+  UnauthorizedException,
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
@@ -25,12 +26,13 @@ import { CreateCategoryRequestDTO } from '../../dtos/create-category/create-cate
 import { FindCategoriesRequestDTO } from '../../dtos/find-categories/find-categories.request.dto';
 import { UpdateCategoryRequestDTO } from '../../dtos/update-category/update-category.request.dto';
 import { CategoryOrder } from '../../enums/category-order/category-order.enum';
+import { CategoryMessage } from '../../messages/category/category.messages.enum';
 import { Category } from '../../models/category/category.entity';
 import { CategoryService } from '../../services/category/category.service';
 
 // TODO: mover para decorator
-function filterFindDtoByPermission(
-  query: FindCategoriesRequestDTO,
+function checkPermissions(
+  query: { active?: ActiveFilter; deleted?: DeletedFilter },
   user: User,
 ) {
   if (
@@ -38,11 +40,32 @@ function filterFindDtoByPermission(
     !user.roles ||
     (!user.roles.includes(Role.ADMIN) && !user.roles.includes(Role.ROOT))
   ) {
-    if (query) {
-      query.active = ActiveFilter.ACTIVE;
-      query.deleted = DeletedFilter.NOT_DELETED;
+    if (
+      query.active == ActiveFilter.ALL ||
+      query.active == ActiveFilter.INACTIVE
+    ) {
+      throw new UnauthorizedException(CategoryMessage.PRIVATE_ACCESS);
+    }
+    if (
+      query.deleted == DeletedFilter.ALL ||
+      query.deleted == DeletedFilter.DELETED
+    ) {
+      throw new UnauthorizedException(CategoryMessage.DELETED_ACCESS);
     }
   }
+}
+
+function isPublicAccess(user: User): boolean {
+  if (!user) {
+    return true;
+  }
+  if (!user.roles) {
+    return true;
+  }
+  if (!user.roles.includes(Role.ADMIN) && !user.roles.includes(Role.ROOT)) {
+    return true;
+  }
+  return false;
 }
 
 @ApiTags('categories')
@@ -74,7 +97,7 @@ export class CategoryController {
     @Req() req: { user: User },
     @Query() findDTO: { query: FindCategoriesRequestDTO },
   ): Promise<PaginatedResponseDTO<Category, CategoryOrder>> {
-    filterFindDtoByPermission(findDTO.query, req.user);
+    checkPermissions(findDTO.query, req.user);
     return this.categoryService.find(findDTO.query);
   }
 
@@ -87,8 +110,8 @@ export class CategoryController {
     categoryId: string,
     @Query() findDTO: { query: FindCategoriesRequestDTO },
   ): Promise<Category> {
-    filterFindDtoByPermission(findDTO.query, req.user);
-    return this.categoryService.findById(categoryId, findDTO.query);
+    checkPermissions(findDTO.query, req.user);
+    return this.categoryService.findById(categoryId, isPublicAccess(req.user));
   }
 
   @Delete('/:categoryId')

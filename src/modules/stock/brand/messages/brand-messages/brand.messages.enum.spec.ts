@@ -25,6 +25,10 @@ describe('BrandMessage', () => {
       INVALID_BRAND_ID_LIST_ITEM:
         'Brand id list items should be integers greater or equal 1',
       NULL_BRAND_ID_LIST_ITEM: 'Brand id list items cannot be null',
+
+      // authorization
+      PRIVATE_ACCESS: 'Cannot access private brands',
+      DELETED_ACCESS: 'Cannot access deleted brands',
     });
   });
 });

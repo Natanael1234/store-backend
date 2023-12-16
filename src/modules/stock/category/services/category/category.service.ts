@@ -16,7 +16,6 @@ import { validateOrThrowError } from '../../../../system/utils/validation/valida
 import { CategoryConstants } from '../../constants/category/categoryd-entity.constants';
 import { CreateCategoryRequestDTO } from '../../dtos/create-category/create-category.request.dto';
 import { FindCategoriesRequestDTO } from '../../dtos/find-categories/find-categories.request.dto';
-import { FindCategoryRequestDTO } from '../../dtos/find-category/find-category.request.dto';
 import { UpdateCategoryRequestDTO } from '../../dtos/update-category/update-category.request.dto';
 import { CategoryOrder } from '../../enums/category-order/category-order.enum';
 import { CategoryMessage } from '../../messages/category/category.messages.enum';
@@ -254,17 +253,8 @@ export class CategoryService {
     );
   }
 
-  async findById(categoryId: string, findCategoryDto?: FindCategoryRequestDTO) {
+  async findById(categoryId: string, publicAccess?: boolean) {
     this.validateCategoryId(categoryId);
-    findCategoryDto = findCategoryDto ?? {};
-    if (typeof findCategoryDto != 'object' || Array.isArray(findCategoryDto)) {
-      throw new UnprocessableEntityException(CategoryMessage.DATA_INVALID);
-    }
-    findCategoryDto = plainToInstance(FindCategoryRequestDTO, findCategoryDto);
-    await validateOrThrowError(findCategoryDto, FindCategoryRequestDTO);
-
-    let { active, deleted } = findCategoryDto;
-
     let select = this.categoryRepo
       .createQueryBuilder(CategoryConstants.CATEGORY)
       .leftJoinAndSelect(
@@ -272,29 +262,14 @@ export class CategoryService {
         CategoryConstants.PARENT,
       ) // TODO: filter parent by active state
       .where(CategoryConstants.CATEGORY_ID_EQUALS_TO, { categoryId });
-
-    // active
-    if (active == ActiveFilter.ACTIVE) {
+    if (publicAccess === true) {
       select = select.andWhere(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, {
         active: true,
       });
-    } else if (active == ActiveFilter.INACTIVE) {
-      select = select.andWhere(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, {
-        active: false,
-      });
-    }
-
-    // deleted
-    if (deleted == DeletedFilter.DELETED) {
-      select = select
-        .withDeleted()
-        .andWhere(CategoryConstants.CATEGORY_DELETED_AT_IS_NOT_NULL);
-    } else if (deleted == DeletedFilter.ALL) {
+    } else {
       select = select.withDeleted();
     }
-
     const category = await select.getOne();
-
     if (!category) throw new NotFoundException(CategoryMessage.NOT_FOUND);
     return category;
   }

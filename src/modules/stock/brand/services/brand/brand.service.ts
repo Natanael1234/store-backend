@@ -17,7 +17,6 @@ import { isValidUUID } from '../../../../system/utils/validation/uuid/is-valid-u
 import { validateOrThrowError } from '../../../../system/utils/validation/validation';
 import { BrandConstants } from '../../constants/brand/brand-entity.constants';
 import { CreateBrandRequestDTO } from '../../dtos/create-brand/create-brand.request.dto';
-import { FindBrandRequestDTO } from '../../dtos/find-brand/find-brand.request.dto';
 import { FindBrandsRequestDTO } from '../../dtos/find-brands/find-brands.request.dto';
 import { UpdateBrandRequestDTO } from '../../dtos/update-brand/update-brand.request.dto';
 import { BrandOrder } from '../../enums/brand-order/brand-order.enum';
@@ -131,48 +130,23 @@ export class BrandService {
     );
   }
 
-  async findById(brandId: string, findBrandDto?: FindBrandRequestDTO) {
+  async findById(brandId: string, publicAccess?: boolean) {
     this.validateBrandId(brandId);
     if (!isValidUUID(brandId)) {
       throw new UnprocessableEntityException(BrandIdMessage.INVALID);
     }
-    findBrandDto = findBrandDto ?? {};
-    if (typeof findBrandDto != 'object' || Array.isArray(findBrandDto)) {
-      throw new UnprocessableEntityException(BrandMessage.DATA_INVALID);
-    }
-    findBrandDto = plainToInstance(FindBrandRequestDTO, findBrandDto);
-    await validateOrThrowError(findBrandDto, FindBrandRequestDTO);
-
-    let { active, deleted } = findBrandDto;
-
     let select = this.brandRepo
       .createQueryBuilder(BrandConstants.BRAND)
       .where(BrandConstants.BRAND_ID_EQUALS_TO, { brandId });
-
-    // active
-    if (active == ActiveFilter.ACTIVE) {
+    if (publicAccess === true) {
       select = select.andWhere(BrandConstants.BRAND_ACTIVE_EQUALS_TO, {
         active: true,
       });
-    } else if (active == ActiveFilter.INACTIVE) {
-      select = select.andWhere(BrandConstants.BRAND_ACTIVE_EQUALS_TO, {
-        active: false,
-      });
-    }
-
-    // deleted
-    if (deleted == DeletedFilter.DELETED) {
-      select = select
-        .withDeleted()
-        .andWhere(BrandConstants.BRAND_DELETED_AT_IS_NOT_NULL);
-    } else if (deleted == DeletedFilter.ALL) {
+    } else {
       select = select.withDeleted();
     }
-
     const brand = await select.getOne();
-
     if (!brand) throw new NotFoundException(BrandMessage.NOT_FOUND);
-
     return brand;
   }
 
