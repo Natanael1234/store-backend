@@ -343,6 +343,9 @@ export class ProductService {
         })
         .andWhere(ProductConstants.PRODUCT_BRAND_ACTIVE_EQUALS_TO, {
           isActiveBrand: true,
+        })
+        .andWhere(ProductConstants.PRODUCT_CATEGORY_ACTIVE_EQUALS_TO, {
+          isActiveCategory: true,
         });
     } else {
       select = select.withDeleted();

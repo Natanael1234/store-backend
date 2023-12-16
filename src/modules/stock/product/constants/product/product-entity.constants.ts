@@ -43,6 +43,8 @@ export class ProductConstants {
     'product.active = :isActiveProduct';
   static readonly PRODUCT_BRAND_ACTIVE_EQUALS_TO =
     'brand.active = :isActiveBrand';
+  static readonly PRODUCT_CATEGORY_ACTIVE_EQUALS_TO =
+    'category.active = :isActiveCategory';
   static readonly PRODUCT_DELETED_AT_IS_NOT_NULL =
     'product.deletedAt IS NOT NULL';
   static readonly PRODUCT_DELETED_AT_IS_NULL = 'product.deletedAt IS NULL';
