@@ -28,7 +28,8 @@ export class CategoryConstants {
   static readonly CATEGORY_ID_IS_NOT_NULL = 'category.id IS NOT NULL';
   static readonly CATEGORY_NAME_LIKE_TEXT_QUERY =
     'LOWER(category.name) LIKE :textQuery';
-  static readonly CATEGORY_ACTIVE_EQUALS_TO = 'category.active = :active';
+  static readonly CATEGORY_ACTIVE_EQUALS_TO =
+    'category.active = :isActiveCategory';
 
   static readonly CATEGORY_DELETED_AT_IS_NOT_NULL =
     'category.deletedAt IS NOT NULL';

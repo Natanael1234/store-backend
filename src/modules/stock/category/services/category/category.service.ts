@@ -176,11 +176,11 @@ export class CategoryService {
 
     if (active == ActiveFilter.ACTIVE) {
       select = select.andWhere(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, {
-        active: true,
+        isActiveCategory: true,
       });
     } else if (active == ActiveFilter.INACTIVE) {
       select = select.andWhere(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, {
-        active: false,
+        isActiveCategory: false,
       });
     }
 
@@ -264,7 +264,7 @@ export class CategoryService {
       .where(CategoryConstants.CATEGORY_ID_EQUALS_TO, { categoryId });
     if (publicAccess === true) {
       select = select.andWhere(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, {
-        active: true,
+        isActiveCategory: true,
       });
     } else {
       select = select.withDeleted();

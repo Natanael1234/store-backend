@@ -59,7 +59,7 @@ describe('BrandController (e2e) - get /brands (active)', () => {
     return objectToJSON(
       await brandRepo
         .createQueryBuilder(BrandConstants.BRAND)
-        .where(BrandConstants.BRAND_ACTIVE_EQUALS_TO, { active: true })
+        .where(BrandConstants.BRAND_ACTIVE_EQUALS_TO, { isActiveBrand: true })
         .orderBy(BrandConstants.BRAND_NAME, SortConstants.ASC)
         .addOrderBy(BrandConstants.BRAND_ACTIVE, SortConstants.ASC)
         .getMany(),
@@ -70,7 +70,7 @@ describe('BrandController (e2e) - get /brands (active)', () => {
     return objectToJSON(
       await brandRepo
         .createQueryBuilder(BrandConstants.BRAND)
-        .where(BrandConstants.BRAND_ACTIVE_EQUALS_TO, { active: false })
+        .where(BrandConstants.BRAND_ACTIVE_EQUALS_TO, { isActiveBrand: false })
         .orderBy(BrandConstants.BRAND_NAME, SortConstants.ASC)
         .addOrderBy(BrandConstants.BRAND_ACTIVE, SortConstants.ASC)
         .getMany(),

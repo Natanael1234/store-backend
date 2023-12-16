@@ -33,7 +33,7 @@ describe('BrandConstants', () => {
       BRAND_ID_IS_NOT_NULL: 'brand.id IS NOT NULL',
       BRAND_NAME_IS_NOT_NULL: 'brand.name IS NOT NULL',
       BRAND_NAME_LIKE_TEXT_QUERY: 'LOWER(brand.name) LIKE :textQuery',
-      BRAND_ACTIVE_EQUALS_TO: 'brand.active = :active',
+      BRAND_ACTIVE_EQUALS_TO: 'brand.active = :isActiveBrand',
       BRAND_DELETED_AT_IS_NOT_NULL: 'brand.deletedAt IS NOT NULL',
     });
   });

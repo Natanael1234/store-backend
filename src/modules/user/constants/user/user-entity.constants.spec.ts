@@ -34,7 +34,7 @@ describe('UserConstants', () => {
       USER_EMAIL_EQUALS_TO: `user.email = :email`,
       USER_NAME_EQUALS_TO: `user.name = :name`,
       USER_NAME_LIKE_TEXT_QUERY: `LOWER(user.name) LIKE :textQuery`,
-      USER_ACTIVE_EQUALS_TO: `user.active = :active`,
+      USER_ACTIVE_EQUALS_TO: `user.active = :isActiveUser`,
       USER_DELETED_AT_IS_NULL: `user.deletedAt IS NULL`,
       USER_DELETED_AT_IS_NOT_NULL: `user.deletedAt IS NOT NULL`,
 

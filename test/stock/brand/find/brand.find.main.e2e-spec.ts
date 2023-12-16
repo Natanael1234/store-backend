@@ -136,7 +136,7 @@ describe('BrandController (e2e) - get /brands (main)', () => {
     const [brandId1, brandId2] = await insertBrands(...brandData);
     const regs = await brandRepo
       .createQueryBuilder(BrandConstants.BRAND)
-      .where(BrandConstants.BRAND_ACTIVE_EQUALS_TO, { active: true })
+      .where(BrandConstants.BRAND_ACTIVE_EQUALS_TO, { isActiveBrand: true })
       .skip(0)
       .take(PaginationConfigs.DEFAULT_PAGE_SIZE)
       .orderBy(BrandConstants.BRAND_NAME, SortConstants.ASC)

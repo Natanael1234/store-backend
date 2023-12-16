@@ -18,7 +18,7 @@ import {
   testGetMin,
 } from '../../../utils/test-end-to-end.utils';
 
-describe('ProductService.findForId (deleted)', () => {
+describe('ProductService.findForId (brand)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let brandRepo: Repository<Brand>;
@@ -53,12 +53,12 @@ describe('ProductService.findForId (deleted)', () => {
   });
 
   async function createTestScenario() {
-    const [categoryId1, categoryId2] = await testInsertCategories(
-      categoryRepo,
-      [{ name: 'Category 1', active: true }],
-    );
+    const [categoryId1] = await testInsertCategories(categoryRepo, [
+      { name: 'Category 1', active: true },
+    ]);
     const [brandId1, brandId2] = await testInsertBrands(brandRepo, [
       { name: 'Brand 1', active: true },
+      { name: 'Brand 2', active: false },
     ]);
     const products = await testInsertProducts(productRepo, [
       {
@@ -77,20 +77,9 @@ describe('ProductService.findForId (deleted)', () => {
         model: 'M0002',
         price: 500,
         quantityInStock: 9,
-        active: false,
-        categoryId: categoryId1,
-        brandId: brandId1,
-      },
-      {
-        code: 'C003',
-        name: 'Product 3',
-        model: 'M0003',
-        price: 4000,
-        quantityInStock: 1,
         active: true,
-        deletedAt: new Date(),
         categoryId: categoryId1,
-        brandId: brandId1,
+        brandId: brandId2,
       },
     ]);
     return products;
@@ -113,8 +102,8 @@ describe('ProductService.findForId (deleted)', () => {
       .getMany();
   }
 
-  it('should find not deleted product when user is root', async () => {
-    const [productId1, productId2, productId3] = await createTestScenario();
+  it('should find product with active brand when user is root', async () => {
+    const [productId1, productId2] = await createTestScenario();
     const productsBefore = await getProducts();
     const response = await testGetMin(
       app,
@@ -127,8 +116,8 @@ describe('ProductService.findForId (deleted)', () => {
     expect(response).toEqual(objectToJSON(productsBefore[0]));
   });
 
-  it('should find not deleted product when user is admin', async () => {
-    const [productId1, productId2, productId3] = await createTestScenario();
+  it('should find product with active brand when user is admin', async () => {
+    const [productId1, productId2] = await createTestScenario();
     const productsBefore = await getProducts();
     const response = await testGetMin(
       app,
@@ -141,68 +130,68 @@ describe('ProductService.findForId (deleted)', () => {
     expect(response).toEqual(objectToJSON(productsBefore[0]));
   });
 
-  it('should find not deleted product when user basic user', async () => {
-    const [productId1, productId2, productId3] = await createTestScenario();
+  it('should find product with active brand when user is basic user', async () => {
+    const [productId1, productId2] = await createTestScenario();
     const productsBefore = await getProducts();
     const response = await testGetMin(
       app,
       `/products/${productId1}`,
       { query: JSON.stringify({}) },
-      rootToken,
+      userToken,
       HttpStatus.OK,
     );
     expect(await getProducts()).toEqual(productsBefore);
     expect(response).toEqual(objectToJSON(productsBefore[0]));
   });
 
-  it('should find not deleted product when user is not authenticated', async () => {
-    const [productId1, productId2, productId3] = await createTestScenario();
+  it('should find product with active brand when user is not authenticated', async () => {
+    const [productId1, productId2] = await createTestScenario();
     const productsBefore = await getProducts();
     const response = await testGetMin(
       app,
       `/products/${productId1}`,
       { query: JSON.stringify({}) },
-      rootToken,
+      null,
       HttpStatus.OK,
     );
     expect(await getProducts()).toEqual(productsBefore);
     expect(response).toEqual(objectToJSON(productsBefore[0]));
   });
 
-  it('should find deleted product when user is root', async () => {
-    const [productId1, productId2, productId3] = await createTestScenario();
+  it('should find product with inactive brand when user is root', async () => {
+    const [productId1, productId2] = await createTestScenario();
     const productsBefore = await getProducts();
     const response = await testGetMin(
       app,
-      `/products/${productId3}`,
+      `/products/${productId2}`,
       { query: JSON.stringify({}) },
       rootToken,
       HttpStatus.OK,
     );
     expect(await getProducts()).toEqual(productsBefore);
-    expect(response).toEqual(objectToJSON(productsBefore[2]));
+    expect(response).toEqual(objectToJSON(productsBefore[1]));
   });
 
-  it('should find deleted product when user is admin', async () => {
-    const [productId1, productId2, productId3] = await createTestScenario();
+  it('should find product with inactive brand when user is admin', async () => {
+    const [productId1, productId2] = await createTestScenario();
     const productsBefore = await getProducts();
     const response = await testGetMin(
       app,
-      `/products/${productId3}`,
+      `/products/${productId2}`,
       { query: JSON.stringify({}) },
       adminToken,
       HttpStatus.OK,
     );
     expect(await getProducts()).toEqual(productsBefore);
-    expect(response).toEqual(objectToJSON(productsBefore[2]));
+    expect(response).toEqual(objectToJSON(productsBefore[1]));
   });
 
-  it('should not find deleted product when user basic user', async () => {
-    const [productId1, productId2, productId3] = await createTestScenario();
+  it('should not find active product with inactive brand when user is basic user', async () => {
+    const [productId1, productId2] = await createTestScenario();
     const productsBefore = await getProducts();
     const response = await testGetMin(
       app,
-      `/products/${productId3}`,
+      `/products/${productId2}`,
       { query: JSON.stringify({}) },
       userToken,
       HttpStatus.NOT_FOUND,
@@ -215,12 +204,12 @@ describe('ProductService.findForId (deleted)', () => {
     });
   });
 
-  it('should not find not deleted product when user is not authenticated', async () => {
-    const [productId1, productId2, productId3] = await createTestScenario();
+  it('should not find active product with inactive brand when user is not authenticated', async () => {
+    const [productId1, productId2] = await createTestScenario();
     const productsBefore = await getProducts();
     const response = await testGetMin(
       app,
-      `/products/${productId3}`,
+      `/products/${productId2}`,
       { query: JSON.stringify({}) },
       null,
       HttpStatus.NOT_FOUND,

@@ -25,6 +25,6 @@ export class BrandConstants {
   static readonly BRAND_NAME_IS_NOT_NULL = 'brand.name IS NOT NULL';
   static readonly BRAND_NAME_LIKE_TEXT_QUERY =
     'LOWER(brand.name) LIKE :textQuery';
-  static readonly BRAND_ACTIVE_EQUALS_TO = 'brand.active = :active';
+  static readonly BRAND_ACTIVE_EQUALS_TO = 'brand.active = :isActiveBrand';
   static readonly BRAND_DELETED_AT_IS_NOT_NULL = 'brand.deletedAt IS NOT NULL';
 }

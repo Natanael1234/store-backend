@@ -39,7 +39,10 @@ export class ProductConstants {
   static readonly PRODUCT_ID_IS_NOT_NULL = 'product.id IS NOT NULL';
   static readonly PRODUCT_NAME_IS_NOT_NULL = 'product.name IS NOT NULL';
   static readonly PRODUCT_NAME_LIKE_TEXT_QUERY = `LOWER(product.name) LIKE :textQuery`;
-  static readonly PRODUCT_ACTIVE_EQUALS_TO = 'product.active = :active';
+  static readonly PRODUCT_ACTIVE_EQUALS_TO =
+    'product.active = :isActiveProduct';
+  static readonly PRODUCT_BRAND_ACTIVE_EQUALS_TO =
+    'brand.active = :isActiveBrand';
   static readonly PRODUCT_DELETED_AT_IS_NOT_NULL =
     'product.deletedAt IS NOT NULL';
   static readonly PRODUCT_DELETED_AT_IS_NULL = 'product.deletedAt IS NULL';

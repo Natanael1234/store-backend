@@ -82,11 +82,11 @@ export class BrandService {
 
     if (active == ActiveFilter.ACTIVE) {
       select = select.andWhere(BrandConstants.BRAND_ACTIVE_EQUALS_TO, {
-        active: true,
+        isActiveBrand: true,
       });
     } else if (active == ActiveFilter.INACTIVE) {
       select = select.andWhere(BrandConstants.BRAND_ACTIVE_EQUALS_TO, {
-        active: false,
+        isActiveBrand: false,
       });
     }
 
@@ -140,7 +140,7 @@ export class BrandService {
       .where(BrandConstants.BRAND_ID_EQUALS_TO, { brandId });
     if (publicAccess === true) {
       select = select.andWhere(BrandConstants.BRAND_ACTIVE_EQUALS_TO, {
-        active: true,
+        isActiveBrand: true,
       });
     } else {
       select = select.withDeleted();

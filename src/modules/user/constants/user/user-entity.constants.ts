@@ -24,7 +24,7 @@ export class UserConstants {
   static readonly USER_EMAIL_EQUALS_TO = `user.email = :email`;
   static readonly USER_NAME_EQUALS_TO = `user.name = :name`;
   static readonly USER_NAME_LIKE_TEXT_QUERY = `LOWER(user.name) LIKE :textQuery`;
-  static readonly USER_ACTIVE_EQUALS_TO = `user.active = :active`;
+  static readonly USER_ACTIVE_EQUALS_TO = `user.active = :isActiveUser`;
   static readonly USER_DELETED_AT_IS_NULL = `user.deletedAt IS NULL`;
   static readonly USER_DELETED_AT_IS_NOT_NULL = `user.deletedAt IS NOT NULL`;
 

@@ -46,7 +46,8 @@ describe('ProductConstants', () => {
       ID_EQUALS_TO: 'id = :productId',
       PRODUCT_NAME_IS_NOT_NULL: 'product.name IS NOT NULL',
       PRODUCT_NAME_LIKE_TEXT_QUERY: `LOWER(product.name) LIKE :textQuery`,
-      PRODUCT_ACTIVE_EQUALS_TO: 'product.active = :active',
+      PRODUCT_ACTIVE_EQUALS_TO: 'product.active = :isActiveProduct',
+      PRODUCT_BRAND_ACTIVE_EQUALS_TO: 'brand.active = :isActiveBrand',
       PRODUCT_DELETED_AT_IS_NOT_NULL: 'product.deletedAt IS NOT NULL',
       PRODUCT_DELETED_AT_IS_NULL: 'product.deletedAt IS NULL',
 
