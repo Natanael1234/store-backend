@@ -24,7 +24,7 @@ import { CategoryMessage } from '../../../category/messages/category/category.me
 import { Category } from '../../../category/models/category/category.entity';
 import { ProductConstants } from '../../constants/product/product-entity.constants';
 import { CreateProductRequestDTO } from '../../dtos/create-product/create-product.request.dto';
-import { FindProductRequestDTO } from '../../dtos/find-products/find-products.request.dto';
+import { FindProductsRequestDTO } from '../../dtos/find-products/find-products.request.dto';
 import { UpdateProductRequestDTO } from '../../dtos/update-product/update-product.request.dto';
 import { ProductOrder } from '../../enums/product-order/product-order.enum';
 import { ProductMessage } from '../../messages/product/product.messages.enum';
@@ -89,14 +89,8 @@ export class ProductService {
     productId: string,
     productDto: UpdateProductRequestDTO,
   ): Promise<Product> {
-    if (!productId)
-      throw new UnprocessableEntityException(ProductIdMessage.REQUIRED);
-    if (!isValidUUID(productId)) {
-      throw new UnprocessableEntityException(ProductIdMessage.INVALID);
-    }
+    this.validateProductId(productId);
 
-    if (!productId)
-      throw new UnprocessableEntityException(ProductMessage.ID_REQUIRED);
     if (!productDto) {
       throw new BadRequestException(ProductMessage.DATA_REQUIRED);
     }
@@ -213,10 +207,10 @@ export class ProductService {
   }
 
   async find(
-    findDTO?: FindProductRequestDTO,
+    findDTO?: FindProductsRequestDTO,
   ): Promise<PaginatedResponseDTO<Product, ProductOrder>> {
-    findDTO = plainToInstance(FindProductRequestDTO, findDTO || {});
-    await validateOrThrowError(findDTO || {}, FindProductRequestDTO);
+    findDTO = plainToInstance(FindProductsRequestDTO, findDTO || {});
+    await validateOrThrowError(findDTO || {}, FindProductsRequestDTO);
     let {
       textQuery,
       brandIds,
@@ -328,31 +322,57 @@ export class ProductService {
     );
   }
 
-  async findById(productId: string) {
-    if (!productId)
-      throw new UnprocessableEntityException(ProductMessage.ID_REQUIRED);
-    const product = await this.productRepo.findOne({
-      where: { id: productId },
-      relations: {
-        brand: true,
-        category: true,
-        images: true,
-      },
-    });
-    if (!product) throw new NotFoundException(ProductMessage.NOT_FOUND);
+  async findById(productId: string, publicAccess?: boolean) {
+    this.validateProductId(productId);
+    let select = this.productRepo
+      .createQueryBuilder(ProductConstants.PRODUCT)
+      .leftJoinAndSelect(ProductConstants.PRODUCT_BRAND, ProductConstants.BRAND)
+      .leftJoinAndSelect(
+        ProductConstants.PRODUCT_CATEGORY,
+        ProductConstants.CATEGORY,
+      )
+      .leftJoinAndSelect(
+        ProductConstants.PRODUCT_IMAGES,
+        ProductConstants.IMAGES,
+      )
+      .where(ProductConstants.PRODUCT_ID_EQUALS_TO, { productId });
+    if (publicAccess === true) {
+      select = select.andWhere(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, {
+        active: true,
+      });
+    } else {
+      select = select.withDeleted();
+    }
+    select = select
+      .orderBy(ProductConstants.PRODUCT_NAME)
+      .addOrderBy(ProductConstants.IMAGES_NAME);
+    const product = await select.getOne();
+    if (!product) {
+      throw new NotFoundException(ProductMessage.NOT_FOUND);
+    }
     return product;
   }
 
   async delete(productId: string): Promise<SuccessResponseDto> {
-    if (!productId)
-      throw new UnprocessableEntityException(ProductMessage.ID_REQUIRED);
+    this.validateProductId(productId);
+
     const product = await this.productRepo.findOne({
       where: { id: productId },
     });
-    if (!product) throw new NotFoundException(ProductMessage.NOT_FOUND);
+    if (!product) {
+      throw new NotFoundException(ProductMessage.NOT_FOUND);
+    }
     await this.productRepo.softDelete(productId);
     const ret = new SuccessResponseDto();
     ret.status = 'success';
     return ret;
+  }
+
+  private validateProductId(productId: string) {
+    if (!productId)
+      throw new UnprocessableEntityException(ProductIdMessage.REQUIRED);
+    if (!isValidUUID(productId)) {
+      throw new UnprocessableEntityException(ProductIdMessage.INVALID);
+    }
   }
 }

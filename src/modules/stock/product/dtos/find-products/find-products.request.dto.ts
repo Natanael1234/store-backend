@@ -10,9 +10,7 @@ import { DeletedFilter } from '../../../../system/enums/filter/deleted-filter/de
 import { ProductConfigs } from '../../configs/product/product.configs';
 import { ProductOrder } from '../../enums/product-order/product-order.enum';
 
-const { FILTER_BRANDS_IDS_MAX_LENGTH, FILTER_CATEGORY_IDS_MAX_LENGTH } =
-  ProductConfigs;
-export class FindProductRequestDTO {
+export class FindProductsRequestDTO {
   /**
    * Textual query.
    *
@@ -47,7 +45,7 @@ export class FindProductRequestDTO {
     allowUndefined: true,
     allowNull: true,
     allowNullItem: false,
-    maxLength: FILTER_BRANDS_IDS_MAX_LENGTH,
+    maxLength: ProductConfigs.FILTER_BRANDS_IDS_MAX_LENGTH,
   })
   brandIds?: string[];
 
@@ -61,7 +59,7 @@ export class FindProductRequestDTO {
     allowUndefined: true,
     allowNull: true,
     allowNullItem: false,
-    maxLength: FILTER_CATEGORY_IDS_MAX_LENGTH,
+    maxLength: ProductConfigs.FILTER_CATEGORY_IDS_MAX_LENGTH,
   })
   categoryIds?: string[];
 

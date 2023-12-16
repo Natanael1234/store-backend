@@ -8,6 +8,7 @@ import {
   Post,
   Query,
   Req,
+  UnauthorizedException,
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
@@ -26,10 +27,11 @@ import { FindBrandRequestDTO } from '../../dtos/find-brand/find-brand.request.dt
 import { FindBrandsRequestDTO } from '../../dtos/find-brands/find-brands.request.dto';
 import { UpdateBrandRequestDTO } from '../../dtos/update-brand/update-brand.request.dto';
 import { BrandOrder } from '../../enums/brand-order/brand-order.enum';
+import { BrandMessage } from '../../messages/brand-messages/brand.messages.enum';
 import { Brand } from '../../models/brand/brand.entity';
 import { BrandService } from '../../services/brand/brand.service';
 
-function filterFindDtoByPermission(
+function checkPermissions(
   query: { active?: ActiveFilter; deleted?: DeletedFilter },
   user: User,
 ) {
@@ -38,11 +40,32 @@ function filterFindDtoByPermission(
     !user.roles ||
     (!user.roles.includes(Role.ADMIN) && !user.roles.includes(Role.ROOT))
   ) {
-    if (query) {
-      query.active = ActiveFilter.ACTIVE;
-      query.deleted = DeletedFilter.NOT_DELETED;
+    if (
+      query.active == ActiveFilter.ALL ||
+      query.active == ActiveFilter.INACTIVE
+    ) {
+      throw new UnauthorizedException(BrandMessage.PRIVATE_ACCESS);
+    }
+    if (
+      query.deleted == DeletedFilter.ALL ||
+      query.deleted == DeletedFilter.DELETED
+    ) {
+      throw new UnauthorizedException(BrandMessage.DELETED_ACCESS);
     }
   }
+}
+
+function isPublicAccess(user: User): boolean {
+  if (!user) {
+    return true;
+  }
+  if (!user.roles) {
+    return true;
+  }
+  if (!user.roles.includes(Role.ADMIN) && !user.roles.includes(Role.ROOT)) {
+    return true;
+  }
+  return false;
 }
 
 @ApiTags('brands')
@@ -72,7 +95,7 @@ export class BrandController {
     @Req() req: { user: User },
     @Query() findDTO: { query: FindBrandsRequestDTO },
   ): Promise<PaginatedResponseDTO<Brand, BrandOrder>> {
-    filterFindDtoByPermission(findDTO.query, req.user);
+    checkPermissions(findDTO.query, req.user);
     return this.brandService.find(findDTO.query);
   }
 
@@ -84,8 +107,8 @@ export class BrandController {
     @Param('brandId', new UuidValidationPipe('brand id')) brandId: string,
     @Query() findDTO: { query: FindBrandRequestDTO },
   ): Promise<Brand> {
-    filterFindDtoByPermission(findDTO.query, req.user);
-    return this.brandService.findById(brandId, findDTO.query);
+    checkPermissions(findDTO.query, req.user);
+    return this.brandService.findById(brandId, isPublicAccess(req.user));
   }
 
   @Delete('/:brandId')

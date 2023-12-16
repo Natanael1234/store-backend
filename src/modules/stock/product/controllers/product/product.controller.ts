@@ -8,6 +8,7 @@ import {
   Post,
   Query,
   Req,
+  UnauthorizedException,
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
@@ -22,23 +23,45 @@ import { UuidValidationPipe } from '../../../../system/pipes/uuid/uuid-validatio
 import { Roles } from '../../../../user/decorators/roles/roles.decorator';
 import { User } from '../../../../user/models/user/user.entity';
 import { CreateProductRequestDTO } from '../../dtos/create-product/create-product.request.dto';
-import { FindProductRequestDTO } from '../../dtos/find-products/find-products.request.dto';
+import { FindProductsRequestDTO } from '../../dtos/find-products/find-products.request.dto';
 import { UpdateProductRequestDTO } from '../../dtos/update-product/update-product.request.dto';
 import { ProductOrder } from '../../enums/product-order/product-order.enum';
+import { ProductMessage } from '../../messages/product/product.messages.enum';
 import { Product } from '../../models/product/product.entity';
 import { ProductService } from '../../services/product/product.service';
 
-function filterFindDtoByPermission(query: FindProductRequestDTO, user: User) {
+function checkPermissions(query: FindProductsRequestDTO, user: User) {
   if (
     !user ||
     !user.roles ||
     (!user.roles.includes(Role.ADMIN) && !user.roles.includes(Role.ROOT))
   ) {
-    if (query) {
-      query.active = ActiveFilter.ACTIVE;
-      query.deleted = DeletedFilter.NOT_DELETED;
+    if (
+      query.active == ActiveFilter.ALL ||
+      query.active == ActiveFilter.INACTIVE
+    ) {
+      throw new UnauthorizedException(ProductMessage.PRIVATE_ACCESS);
+    }
+    if (
+      query.deleted == DeletedFilter.ALL ||
+      query.deleted == DeletedFilter.DELETED
+    ) {
+      throw new UnauthorizedException(ProductMessage.DELETED_ACCESS);
     }
   }
+}
+
+function isPublicAccess(user: User): boolean {
+  if (!user) {
+    return true;
+  }
+  if (!user.roles) {
+    return true;
+  }
+  if (!user.roles.includes(Role.ADMIN) && !user.roles.includes(Role.ROOT)) {
+    return true;
+  }
+  return false;
 }
 
 @ApiTags('products')
@@ -63,24 +86,23 @@ export class ProductController {
   }
 
   @Get()
-  // @Roles(Role.ROOT, Role.ADMIN)
   @OptionalAuthentication() // TODO: allow inactive access only to authorized users
   @UseInterceptors(QueryParamToJsonInterceptor)
   find(
     @Req() req: { user: User },
-    @Query() findDTO: { query: FindProductRequestDTO },
+    @Query() findDTO: { query: FindProductsRequestDTO },
   ): Promise<PaginatedResponseDTO<Product, ProductOrder>> {
-    filterFindDtoByPermission(findDTO.query, req.user);
+    checkPermissions(findDTO.query, req.user);
     return this.productService.find(findDTO.query);
   }
 
   @Get('/:productId')
-  // @Roles(Role.ROOT, Role.ADMIN)
   @OptionalAuthentication()
   findById(
+    @Req() req: { user: User },
     @Param('productId', new UuidValidationPipe('product id')) productId: string,
   ): Promise<Product> {
-    return this.productService.findById(productId);
+    return this.productService.findById(productId, isPublicAccess(req.user));
   }
 
   @Delete('/:productId')

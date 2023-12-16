@@ -44,6 +44,10 @@ describe('CategoryMessage', () => {
         'Parent category id list items should be integers greater or equal 1',
       NULL_PARENT_CATEGORY_ID_LIST_ITEM:
         'Parent category id list items cannot be null',
+
+      // authorization
+      PRIVATE_ACCESS: 'Cannot access private categories',
+      DELETED_ACCESS: 'Cannot access deleted categories',
     });
   });
 });

@@ -16,4 +16,8 @@ export enum ProductMessage {
   PRODUCT_ID_TYPE = 'Product id should be integer or equal 1',
   INVALID_PRODUCT_ID = 'Invalid product id',
   NULL_PRODUCT_ID = 'Null product id',
+
+  // authorization
+  PRIVATE_ACCESS = 'Cannot access private products',
+  DELETED_ACCESS = 'Cannot access deleted products',
 }
