@@ -34,4 +34,8 @@ export class CategoryConstants {
   static readonly CATEGORY_DELETED_AT_IS_NOT_NULL =
     'category.deletedAt IS NOT NULL';
   static readonly PARENT_IS_NULL = 'category.parent IS NULL';
+  static readonly PARENT_ACTIVE_AND_NOT_DELETED =
+    '(parent.active = 1 AND parent.deletedAt IS NULL)';
+  static readonly PARENT_INACTIVE_AND_DELETED =
+    '(parent.active = 0 OR parent.deletedAt IS NOT NULL)';
 }

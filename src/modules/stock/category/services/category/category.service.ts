@@ -255,14 +255,27 @@ export class CategoryService {
 
   async findById(categoryId: string, publicAccess?: boolean) {
     this.validateCategoryId(categoryId);
-    let select = this.categoryRepo
-      .createQueryBuilder(CategoryConstants.CATEGORY)
-      .leftJoinAndSelect(
+    let select = this.categoryRepo.createQueryBuilder(
+      CategoryConstants.CATEGORY,
+    );
+    if (publicAccess) {
+      select = select.leftJoinAndSelect(
         CategoryConstants.CATEGORY_PARENT,
         CategoryConstants.PARENT,
-      ) // TODO: filter parent by active state
-      .where(CategoryConstants.CATEGORY_ID_EQUALS_TO, { categoryId });
-    if (publicAccess === true) {
+        CategoryConstants.PARENT_ACTIVE_AND_NOT_DELETED,
+      );
+    } else {
+      select = select
+        .withDeleted()
+        .leftJoinAndSelect(
+          CategoryConstants.CATEGORY_PARENT,
+          CategoryConstants.PARENT,
+        );
+    }
+    select = select.where(CategoryConstants.CATEGORY_ID_EQUALS_TO, {
+      categoryId,
+    });
+    if (publicAccess) {
       select = select.andWhere(CategoryConstants.CATEGORY_ACTIVE_EQUALS_TO, {
         isActiveCategory: true,
       });
