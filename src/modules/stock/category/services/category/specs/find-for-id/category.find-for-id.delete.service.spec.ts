@@ -100,7 +100,7 @@ describe('CategoryService.findForId (active)', () => {
     expect(await getCategories()).toEqual(categoriesBefore);
   });
 
-  it('should find not find deleted category when publicAccess is false', async () => {
+  it('should find deleted category when publicAccess is false', async () => {
     const [categoryId1, categoryId2] = await insertCategories(
       { name: 'Category 1', active: true },
       { name: 'Category 2', active: true, deletedAt: new Date() },
@@ -111,7 +111,7 @@ describe('CategoryService.findForId (active)', () => {
     expect(await getCategories()).toEqual(categoriesBefore);
   });
 
-  it('should find not find deleted category when publicAccess is null', async () => {
+  it('should find deleted category when publicAccess is null', async () => {
     const [categoryId1, categoryId2] = await insertCategories(
       { name: 'Category 1', active: true },
       { name: 'Category 2', active: true, deletedAt: new Date() },
@@ -122,7 +122,7 @@ describe('CategoryService.findForId (active)', () => {
     expect(await getCategories()).toEqual(categoriesBefore);
   });
 
-  it('should find not find deleted category when publicAccess is undefined', async () => {
+  it('should find deleted category when publicAccess is undefined', async () => {
     const [categoryId1, categoryId2] = await insertCategories(
       { name: 'Category 1', active: true },
       { name: 'Category 2', active: true, deletedAt: new Date() },
@@ -133,7 +133,7 @@ describe('CategoryService.findForId (active)', () => {
     expect(await getCategories()).toEqual(categoriesBefore);
   });
 
-  it('should find not find deleted category when publicAccess is not defined', async () => {
+  it('should find deleted category when publicAccess is not defined', async () => {
     const [categoryId1, categoryId2] = await insertCategories(
       { name: 'Category 1', active: true },
       { name: 'Category 2', active: true, deletedAt: new Date() },

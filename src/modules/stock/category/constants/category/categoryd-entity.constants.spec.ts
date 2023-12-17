@@ -40,6 +40,10 @@ describe('CategoryConstants', () => {
 
       CATEGORY_DELETED_AT_IS_NOT_NULL: 'category.deletedAt IS NOT NULL',
       PARENT_IS_NULL: 'category.parent IS NULL',
+      PARENT_ACTIVE_AND_NOT_DELETED:
+        '(parent.active = 1 AND parent.deletedAt IS NULL)',
+      PARENT_INACTIVE_AND_DELETED:
+        '(parent.active = 0 OR parent.deletedAt IS NOT NULL)',
     });
   });
 });
