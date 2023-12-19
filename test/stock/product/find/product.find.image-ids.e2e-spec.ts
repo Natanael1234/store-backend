@@ -9,7 +9,7 @@ import { Product } from '../../../../src/modules/stock/product/models/product/pr
 import { ValidationPipe } from '../../../../src/modules/system/pipes/custom-validation.pipe';
 import { testBuildAuthenticationScenario } from '../../../utils/test-end-to-end.utils';
 
-describe('ProductController (e2e) - get/producs (imagesIds)', () => {
+describe('ProductController (e2e) - get/products (imagesIds)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let brandRepo: Repository<Brand>;

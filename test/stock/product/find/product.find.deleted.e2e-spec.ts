@@ -26,7 +26,7 @@ import {
 
 const DeletedMessage = new BoolMessage('deleted');
 
-describe('ProductController (e2e) - get/producs (deleted)', () => {
+describe('ProductController (e2e) - get/products (deleted)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let brandRepo: Repository<Brand>;

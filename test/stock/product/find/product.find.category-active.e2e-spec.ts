@@ -23,7 +23,7 @@ import {
   testGetMin,
 } from '../../../utils/test-end-to-end.utils';
 
-describe('ProductController (e2e) - get/products (activeBrands)', () => {
+describe('ProductController (e2e) - get/products (activeCategories)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let brandRepo: Repository<Brand>;
@@ -58,12 +58,15 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
   });
 
   async function createTestScenario() {
-    const [categoryId1] = await testInsertCategories(categoryRepo, [
-      { name: 'Category 1', active: true },
-    ]);
-    const [brandId1, brandId2] = await testInsertBrands(brandRepo, [
+    const [categoryId1, categoryId2] = await testInsertCategories(
+      categoryRepo,
+      [
+        { name: 'Category 1', active: true },
+        { name: 'Category 2', active: false },
+      ],
+    );
+    const [brandId1] = await testInsertBrands(brandRepo, [
       { name: 'Brand 1', active: true },
-      { name: 'Brand 2', active: false },
     ]);
     await testInsertProducts(productRepo, [
       {
@@ -73,8 +76,8 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
         price: 9.12,
         quantityInStock: 3,
         active: true,
-        categoryId: categoryId1,
         brandId: brandId1,
+        categoryId: categoryId1,
       },
       {
         code: 'C002',
@@ -83,8 +86,8 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
         price: 500,
         quantityInStock: 9,
         active: true,
-        categoryId: categoryId1,
-        brandId: brandId2,
+        brandId: brandId1,
+        categoryId: categoryId2,
       },
     ]);
   }
@@ -111,7 +114,7 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
     );
   }
 
-  async function findActiveBrandsProducts() {
+  async function findActiveCategoriesProducts() {
     return objectToJSON(
       await productRepo
         .createQueryBuilder(ProductConstants.PRODUCT)
@@ -127,8 +130,8 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
           ProductConstants.PRODUCT_IMAGES,
           ProductConstants.IMAGES,
         )
-        .where(ProductConstants.BRAND_ACTIVE_EQUALS_TO, {
-          isActiveBrand: true,
+        .where(ProductConstants.CATEGORY_ACTIVE_EQUALS_TO, {
+          isActiveCategory: true,
         })
         .orderBy(ProductConstants.PRODUCT_NAME, SortConstants.ASC)
         .addOrderBy(ProductConstants.PRODUCT_ACTIVE, SortConstants.ASC)
@@ -136,7 +139,7 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
     );
   }
 
-  async function findInactiveBrandsProducts() {
+  async function findInactiveCategoriesProducts() {
     return objectToJSON(
       await productRepo
         .createQueryBuilder(ProductConstants.PRODUCT)
@@ -152,8 +155,8 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
           ProductConstants.PRODUCT_IMAGES,
           ProductConstants.IMAGES,
         )
-        .where(ProductConstants.BRAND_ACTIVE_EQUALS_TO, {
-          isActiveBrand: false,
+        .where(ProductConstants.CATEGORY_ACTIVE_EQUALS_TO, {
+          isActiveCategory: false,
         })
         .orderBy(ProductConstants.PRODUCT_NAME, SortConstants.ASC)
         .addOrderBy(ProductConstants.PRODUCT_ACTIVE, SortConstants.ASC)
@@ -162,13 +165,13 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
   }
 
   describe('active = "active"', () => {
-    it('should retrieve products when activeBrands = "active" and user is root', async () => {
+    it('should retrieve products when activeCategories = "active" and user is root', async () => {
       await createTestScenario();
-      const product = await findActiveBrandsProducts();
+      const product = await findActiveCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: ActiveFilter.ACTIVE }) },
+        { query: JSON.stringify({ activeCategories: ActiveFilter.ACTIVE }) },
         rootToken,
         HttpStatus.OK,
       );
@@ -182,13 +185,13 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should retrieve products when activeBrands = "active" and user is admin', async () => {
+    it('should retrieve products when activeCategories = "active" and user is admin', async () => {
       await createTestScenario();
-      const product = await findActiveBrandsProducts();
+      const product = await findActiveCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: ActiveFilter.ACTIVE }) },
+        { query: JSON.stringify({ activeCategories: ActiveFilter.ACTIVE }) },
         adminToken,
         HttpStatus.OK,
       );
@@ -202,13 +205,13 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should retrieve products when activeBrands = "active" and user is basic user', async () => {
+    it('should retrieve products when activeCategories = "active" and user is basic user', async () => {
       await createTestScenario();
-      const product = await findActiveBrandsProducts();
+      const product = await findActiveCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: ActiveFilter.ACTIVE }) },
+        { query: JSON.stringify({ activeCategories: ActiveFilter.ACTIVE }) },
         userToken,
         HttpStatus.OK,
       );
@@ -222,13 +225,13 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should retrieve products when activeBrands = "active" and user is not authenticated', async () => {
+    it('should retrieve products when activeCategories = "active" and user is not authenticated', async () => {
       await createTestScenario();
-      const product = await findActiveBrandsProducts();
+      const product = await findActiveCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: ActiveFilter.ACTIVE }) },
+        { query: JSON.stringify({ activeCategories: ActiveFilter.ACTIVE }) },
         null,
         HttpStatus.OK,
       );
@@ -244,13 +247,13 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
   });
 
   describe('active = "inactive"', () => {
-    it('should retrieve products when activeBrands = "inactive" and user is root', async () => {
+    it('should retrieve products when activeCategories = "inactive" and user is root', async () => {
       await createTestScenario();
-      const product = await findInactiveBrandsProducts();
+      const product = await findInactiveCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: ActiveFilter.INACTIVE }) },
+        { query: JSON.stringify({ activeCategories: ActiveFilter.INACTIVE }) },
         rootToken,
         HttpStatus.OK,
       );
@@ -264,13 +267,13 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should retrieve products when activeBrands = "inactive" and user is admin', async () => {
+    it('should retrieve products when activeCategories = "inactive" and user is admin', async () => {
       await createTestScenario();
-      const product = await findInactiveBrandsProducts();
+      const product = await findInactiveCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: ActiveFilter.INACTIVE }) },
+        { query: JSON.stringify({ activeCategories: ActiveFilter.INACTIVE }) },
         adminToken,
         HttpStatus.OK,
       );
@@ -284,12 +287,12 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should not retrieve products when activeBrands = "inactive" and user is basic user', async () => {
+    it('should not retrieve products when activeCategories = "inactive" and user is basic user', async () => {
       await createTestScenario();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: ActiveFilter.INACTIVE }) },
+        { query: JSON.stringify({ activeCategories: ActiveFilter.INACTIVE }) },
         userToken,
         HttpStatus.UNAUTHORIZED,
       );
@@ -300,12 +303,12 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should not retrieve products when activeBrands = "inactive" and user is not authenticated', async () => {
+    it('should not retrieve products when activeCategories = "inactive" and user is not authenticated', async () => {
       await createTestScenario();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: ActiveFilter.INACTIVE }) },
+        { query: JSON.stringify({ activeCategories: ActiveFilter.INACTIVE }) },
         null,
         HttpStatus.UNAUTHORIZED,
       );
@@ -324,7 +327,7 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: ActiveFilter.ALL }) },
+        { query: JSON.stringify({ activeCategories: ActiveFilter.ALL }) },
         rootToken,
         HttpStatus.OK,
       );
@@ -344,7 +347,7 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: ActiveFilter.ALL }) },
+        { query: JSON.stringify({ activeCategories: ActiveFilter.ALL }) },
         adminToken,
         HttpStatus.OK,
       );
@@ -358,12 +361,12 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should not retrieve products when activeBrands = "all" and user is basic user', async () => {
+    it('should not retrieve products when activeCategories = "all" and user is basic user', async () => {
       await createTestScenario();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: ActiveFilter.ALL }) },
+        { query: JSON.stringify({ activeCategories: ActiveFilter.ALL }) },
         userToken,
         HttpStatus.UNAUTHORIZED,
       );
@@ -374,12 +377,12 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should not retrieve products when activeBrands = "all" and user is not authenticated', async () => {
+    it('should not retrieve products when activeCategories = "all" and user is not authenticated', async () => {
       await createTestScenario();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: ActiveFilter.ALL }) },
+        { query: JSON.stringify({ activeCategories: ActiveFilter.ALL }) },
         null,
         HttpStatus.UNAUTHORIZED,
       );
@@ -392,13 +395,13 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
   });
 
   describe('active = null', () => {
-    it('should retrieve products when activeBrands = null and user is root', async () => {
+    it('should retrieve products when activeCategories = null and user is root', async () => {
       await createTestScenario();
-      const product = await findActiveBrandsProducts();
+      const product = await findActiveCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: null }) },
+        { query: JSON.stringify({ activeCategories: null }) },
         rootToken,
         HttpStatus.OK,
       );
@@ -412,13 +415,13 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should retrieve products when activeBrands = null and user is admin', async () => {
+    it('should retrieve products when activeCategories = null and user is admin', async () => {
       await createTestScenario();
-      const product = await findActiveBrandsProducts();
+      const product = await findActiveCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: null }) },
+        { query: JSON.stringify({ activeCategories: null }) },
         adminToken,
         HttpStatus.OK,
       );
@@ -432,13 +435,13 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should retrieve products when activeBrands = null and user is basic user', async () => {
+    it('should retrieve products when activeCategories = null and user is basic user', async () => {
       await createTestScenario();
-      const product = await findActiveBrandsProducts();
+      const product = await findActiveCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: null }) },
+        { query: JSON.stringify({ activeCategories: null }) },
         userToken,
         HttpStatus.OK,
       );
@@ -452,13 +455,13 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should retrieve products when activeBrands = null and user is not authenticated', async () => {
+    it('should retrieve products when activeCategories = null and user is not authenticated', async () => {
       await createTestScenario();
-      const product = await findActiveBrandsProducts();
+      const product = await findActiveCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: null }) },
+        { query: JSON.stringify({ activeCategories: null }) },
         null,
         HttpStatus.OK,
       );
@@ -474,13 +477,13 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
   });
 
   describe('active = undefined', () => {
-    it('should retrieve products when activeBrands = null and user is root', async () => {
+    it('should retrieve products when activeCategories = null and user is root', async () => {
       await createTestScenario();
-      const product = await findActiveBrandsProducts();
+      const product = await findActiveCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: undefined }) },
+        { query: JSON.stringify({ activeCategories: undefined }) },
         rootToken,
         HttpStatus.OK,
       );
@@ -494,13 +497,13 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should retrieve products when activeBrands = undefined and user is admin', async () => {
+    it('should retrieve products when activeCategories = undefined and user is admin', async () => {
       await createTestScenario();
-      const product = await findActiveBrandsProducts();
+      const product = await findActiveCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: undefined }) },
+        { query: JSON.stringify({ activeCategories: undefined }) },
         adminToken,
         HttpStatus.OK,
       );
@@ -514,13 +517,13 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should retrieve products when activeBrands = undefined and user is basic user', async () => {
+    it('should retrieve products when activeCategories = undefined and user is basic user', async () => {
       await createTestScenario();
-      const product = await findActiveBrandsProducts();
+      const product = await findActiveCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: undefined }) },
+        { query: JSON.stringify({ activeCategories: undefined }) },
         userToken,
         HttpStatus.OK,
       );
@@ -534,13 +537,13 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should retrieve products when activeBrands = undefined and user is not authenticated', async () => {
+    it('should retrieve products when activeCategories = undefined and user is not authenticated', async () => {
       await createTestScenario();
-      const product = await findActiveBrandsProducts();
+      const product = await findActiveCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: undefined }) },
+        { query: JSON.stringify({ activeCategories: undefined }) },
         null,
         HttpStatus.OK,
       );

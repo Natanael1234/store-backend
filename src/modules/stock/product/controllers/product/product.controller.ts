@@ -40,7 +40,9 @@ function checkPermissions(query: FindProductsRequestDTO, user: User) {
       query.active == ActiveFilter.ALL ||
       query.active == ActiveFilter.INACTIVE ||
       query.activeBrands == ActiveFilter.ALL ||
-      query.activeBrands == ActiveFilter.INACTIVE
+      query.activeBrands == ActiveFilter.INACTIVE ||
+      query.activeCategories == ActiveFilter.ALL ||
+      query.activeCategories == ActiveFilter.INACTIVE
     ) {
       throw new UnauthorizedException(ProductMessage.PRIVATE_ACCESS);
     }
@@ -48,7 +50,9 @@ function checkPermissions(query: FindProductsRequestDTO, user: User) {
       query.deleted == DeletedFilter.ALL ||
       query.deleted == DeletedFilter.DELETED ||
       query.deletedBrands == DeletedFilter.ALL ||
-      query.deletedBrands == DeletedFilter.DELETED
+      query.deletedBrands == DeletedFilter.DELETED ||
+      query.deletedCategories == DeletedFilter.ALL ||
+      query.deletedCategories == DeletedFilter.DELETED
     ) {
       throw new UnauthorizedException(ProductMessage.DELETED_ACCESS);
     }

@@ -217,27 +217,38 @@ export class ProductService {
       categoryIds,
       active,
       activeBrands,
+      activeCategories,
       deleted,
       deletedBrands,
+      deletedCategories,
       page,
       pageSize,
       orderBy,
     } = findDTO;
 
     let select = this.productRepo.createQueryBuilder(ProductConstants.PRODUCT);
+
     if (
       deletedBrands == DeletedFilter.ALL ||
       deletedBrands == DeletedFilter.DELETED
     ) {
       select.withDeleted();
     }
+    select = select.leftJoinAndSelect(
+      ProductConstants.PRODUCT_BRAND,
+      ProductConstants.BRAND,
+    );
 
-    select = select
-      .leftJoinAndSelect(ProductConstants.PRODUCT_BRAND, ProductConstants.BRAND)
-      .leftJoinAndSelect(
-        ProductConstants.PRODUCT_CATEGORY,
-        ProductConstants.CATEGORY,
-      );
+    if (
+      deletedCategories == DeletedFilter.ALL ||
+      deletedCategories == DeletedFilter.DELETED
+    ) {
+      select.withDeleted();
+    }
+    select = select.leftJoinAndSelect(
+      ProductConstants.PRODUCT_CATEGORY,
+      ProductConstants.CATEGORY,
+    );
 
     select = select.leftJoinAndSelect(
       ProductConstants.PRODUCT_IMAGES,
@@ -280,6 +291,18 @@ export class ProductService {
       });
     }
 
+    // activeCategories
+    if (activeCategories == ActiveFilter.ACTIVE) {
+      select = select.andWhere(ProductConstants.CATEGORY_ACTIVE_EQUALS_TO, {
+        isActiveCategory: true,
+      });
+    }
+    if (activeCategories == ActiveFilter.INACTIVE) {
+      select = select.andWhere(ProductConstants.CATEGORY_ACTIVE_EQUALS_TO, {
+        isActiveCategory: false,
+      });
+    }
+
     // deletedAt
     if (deleted == DeletedFilter.DELETED) {
       select = select
@@ -295,6 +318,16 @@ export class ProductService {
     }
     if (deletedBrands == DeletedFilter.DELETED) {
       select = select.andWhere(ProductConstants.BRAND_DELETED_AT_IS_NOT_NULL);
+    }
+
+    // deletedCategories
+    if (deletedCategories == DeletedFilter.NOT_DELETED) {
+      select = select.andWhere(ProductConstants.CATEGORY_DELETED_AT_IS_NULL);
+    }
+    if (deletedCategories == DeletedFilter.DELETED) {
+      select = select.andWhere(
+        ProductConstants.CATEGORY_DELETED_AT_IS_NOT_NULL,
+      );
     }
 
     // pagination

@@ -43,7 +43,7 @@ import {
 const ActiveMessage = new BoolMessage('active');
 const DeletedMessage = new BoolMessage('deleted');
 
-describe('ProductController (e2e) - get/producs (main)', () => {
+describe('ProductController (e2e) - get/products (main)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let brandRepo: Repository<Brand>;

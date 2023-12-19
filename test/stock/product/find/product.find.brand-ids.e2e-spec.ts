@@ -38,7 +38,7 @@ const BrandIdMessage = new UuidListMessage('brand ids', {
   maxLength: ProductConfigs.FILTER_BRANDS_IDS_MAX_LENGTH,
 });
 
-describe('ProductController (e2e) - get/producs (brandIds)', () => {
+describe('ProductController (e2e) - get/products (brandIds)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let brandRepo: Repository<Brand>;
