@@ -5,13 +5,12 @@ import { ActiveFilter } from '../../enums/filter/active-filter/active-filter.enu
 import { BoolMessage } from '../../messages/bool/bool.messages';
 import { getEnumTransformer } from '../transformers/enum/enum-transformer';
 
-const ActiveMessage = new BoolMessage('active');
-
 const activeEnumTransformer = getEnumTransformer(ActiveFilter, {
   defaultValue: ActiveFilter.ACTIVE,
 });
 
-export function Active() {
+export function Active(label: string) {
+  const ActiveMessage = new BoolMessage(label);
   const decorators = applyDecorators(
     IsEnum(ActiveFilter, { message: ActiveMessage.INVALID }),
     Transform(({ value }) => activeEnumTransformer(value)),

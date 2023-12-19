@@ -16,7 +16,7 @@ describe('Active decorator', () => {
     expected: { active: 'all' | 'active' | 'inactive' },
   ) {
     class Clazz {
-      @Active() active: ActiveFilter;
+      @Active('active') active: ActiveFilter;
     }
 
     const errors = await validateFirstError(data, Clazz);
@@ -28,7 +28,7 @@ describe('Active decorator', () => {
   async function testReject(data: { active: ActiveFilter }, constraints) {
     const dtoData = { active: data.active };
     class Clazz {
-      @Active() active: ActiveFilter;
+      @Active('active') active: ActiveFilter;
     }
     const errors = await validateFirstError(data, Clazz);
     expect(errors).toHaveLength(1);

@@ -216,28 +216,37 @@ export class ProductService {
       brandIds,
       categoryIds,
       active,
+      activeBrands,
       deleted,
+      deletedBrands,
       page,
       pageSize,
       orderBy,
     } = findDTO;
 
-    let select = this.productRepo
-      .createQueryBuilder(ProductConstants.PRODUCT)
+    let select = this.productRepo.createQueryBuilder(ProductConstants.PRODUCT);
+    if (
+      deletedBrands == DeletedFilter.ALL ||
+      deletedBrands == DeletedFilter.DELETED
+    ) {
+      select.withDeleted();
+    }
+
+    select = select
       .leftJoinAndSelect(ProductConstants.PRODUCT_BRAND, ProductConstants.BRAND)
       .leftJoinAndSelect(
         ProductConstants.PRODUCT_CATEGORY,
         ProductConstants.CATEGORY,
-      )
-      .leftJoinAndSelect(
-        ProductConstants.PRODUCT_IMAGES,
-        ProductConstants.IMAGE,
-        ProductConstants.IMAGE_MAIN_EQUALS_TO,
-        { main: true },
       );
 
-    // textQuery by name
+    select = select.leftJoinAndSelect(
+      ProductConstants.PRODUCT_IMAGES,
+      ProductConstants.IMAGE,
+      ProductConstants.IMAGE_MAIN_EQUALS_TO,
+      { main: true },
+    );
 
+    // textQuery by name
     if (textQuery) {
       select = select
         .andWhere(ProductConstants.PRODUCT_NAME_IS_NOT_NULL, {
@@ -249,7 +258,6 @@ export class ProductService {
     }
 
     // active
-
     if (active == ActiveFilter.ACTIVE) {
       select = select.andWhere(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, {
         isActiveProduct: true,
@@ -260,8 +268,19 @@ export class ProductService {
       });
     }
 
-    // deletedAt
+    // activeBrands
+    if (activeBrands == ActiveFilter.ACTIVE) {
+      select = select.andWhere(ProductConstants.BRAND_ACTIVE_EQUALS_TO, {
+        isActiveBrand: true,
+      });
+    }
+    if (activeBrands == ActiveFilter.INACTIVE) {
+      select = select.andWhere(ProductConstants.BRAND_ACTIVE_EQUALS_TO, {
+        isActiveBrand: false,
+      });
+    }
 
+    // deletedAt
     if (deleted == DeletedFilter.DELETED) {
       select = select
         .withDeleted()
@@ -270,14 +289,20 @@ export class ProductService {
       select = select.withDeleted();
     }
 
-    // pagination
+    // deletedBrands
+    if (deletedBrands == DeletedFilter.NOT_DELETED) {
+      select = select.andWhere(ProductConstants.BRAND_DELETED_AT_IS_NULL);
+    }
+    if (deletedBrands == DeletedFilter.DELETED) {
+      select = select.andWhere(ProductConstants.BRAND_DELETED_AT_IS_NOT_NULL);
+    }
 
+    // pagination
     page = page || PaginationConfigs.DEFAULT_PAGE;
     pageSize = pageSize || PaginationConfigs.DEFAULT_PAGE_SIZE;
     select = select.take(pageSize).skip((page - 1) * pageSize);
 
     // sort
-
     for (let i = 0; i < orderBy.length; i++) {
       const [column, direction] = orderBy[i].split('_'); // TODO: move to DTO
       if (i == 0) {
@@ -341,10 +366,10 @@ export class ProductService {
         .andWhere(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, {
           isActiveProduct: true,
         })
-        .andWhere(ProductConstants.PRODUCT_BRAND_ACTIVE_EQUALS_TO, {
+        .andWhere(ProductConstants.BRAND_ACTIVE_EQUALS_TO, {
           isActiveBrand: true,
         })
-        .andWhere(ProductConstants.PRODUCT_CATEGORY_ACTIVE_EQUALS_TO, {
+        .andWhere(ProductConstants.CATEGORY_ACTIVE_EQUALS_TO, {
           isActiveCategory: true,
         });
     } else {

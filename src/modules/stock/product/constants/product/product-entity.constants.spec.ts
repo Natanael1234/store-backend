@@ -47,10 +47,17 @@ describe('ProductConstants', () => {
       PRODUCT_NAME_IS_NOT_NULL: 'product.name IS NOT NULL',
       PRODUCT_NAME_LIKE_TEXT_QUERY: `LOWER(product.name) LIKE :textQuery`,
       PRODUCT_ACTIVE_EQUALS_TO: 'product.active = :isActiveProduct',
-      PRODUCT_BRAND_ACTIVE_EQUALS_TO: 'brand.active = :isActiveBrand',
-      PRODUCT_CATEGORY_ACTIVE_EQUALS_TO: 'category.active = :isActiveCategory',
+
       PRODUCT_DELETED_AT_IS_NOT_NULL: 'product.deletedAt IS NOT NULL',
       PRODUCT_DELETED_AT_IS_NULL: 'product.deletedAt IS NULL',
+
+      BRAND_ACTIVE_EQUALS_TO: 'brand.active = :isActiveBrand',
+      BRAND_DELETED_AT_IS_NOT_NULL: 'brand.deletedAt IS NOT NULL',
+      BRAND_DELETED_AT_IS_NULL: 'brand.deletedAt IS NULL',
+
+      CATEGORY_ACTIVE_EQUALS_TO: 'category.active = :isActiveCategory',
+      CATEGORY_DELETED_AT_IS_NOT_NULL: 'category.deletedAt IS NOT NULL',
+      CATEGORY_DELETED_AT_IS_NULL: 'category.deletedAt IS NULL',
 
       IMAGE_MAIN_EQUALS_TO: 'image.main = :main',
     });

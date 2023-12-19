@@ -24,7 +24,7 @@ export class FindCategoriesRequestDTO {
    *
    * @example "all"
    */
-  @Active()
+  @Active('active')
   active?: ActiveFilter;
 
   /**
@@ -32,7 +32,7 @@ export class FindCategoriesRequestDTO {
    *
    * @example "not_deleted"
    */
-  @Deleted()
+  @Deleted('deleted')
   deleted?: DeletedFilter;
 
   /**

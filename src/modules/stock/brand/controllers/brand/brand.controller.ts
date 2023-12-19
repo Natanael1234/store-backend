@@ -23,7 +23,6 @@ import { UuidValidationPipe } from '../../../../system/pipes/uuid/uuid-validatio
 import { Roles } from '../../../../user/decorators/roles/roles.decorator';
 import { User } from '../../../../user/models/user/user.entity';
 import { CreateBrandRequestDTO } from '../../dtos/create-brand/create-brand.request.dto';
-import { FindBrandRequestDTO } from '../../dtos/find-brand/find-brand.request.dto';
 import { FindBrandsRequestDTO } from '../../dtos/find-brands/find-brands.request.dto';
 import { UpdateBrandRequestDTO } from '../../dtos/update-brand/update-brand.request.dto';
 import { BrandOrder } from '../../enums/brand-order/brand-order.enum';
@@ -105,9 +104,7 @@ export class BrandController {
   findById(
     @Req() req: { user: User },
     @Param('brandId', new UuidValidationPipe('brand id')) brandId: string,
-    @Query() findDTO: { query: FindBrandRequestDTO },
   ): Promise<Brand> {
-    checkPermissions(findDTO.query, req.user);
     return this.brandService.findById(brandId, isPublicAccess(req.user));
   }
 
