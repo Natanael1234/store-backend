@@ -31,3 +31,13 @@ https://javascript.plainenglish.io/nestjs-implementing-access-refresh-token-jwt-
 # test
 
 https://github.com/jmcdo29/testing-nestjs
+
+# docs
+
+https://docs.nestjs.com/recipes/documentation
+
+# minio (cloud storage)
+
+http://www.sefidian.com/2022/04/08/deploy-standalone-minio-using-docker-compose/
+https://github.com/minio/minio-js#readme
+https://plainenglish.io/blog/how-to-mock-aws-s3-in-a-jest-unit-test

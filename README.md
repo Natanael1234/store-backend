@@ -54,8 +54,7 @@ docker-compose up --build
 docker-compose up --build -V -d
 
 
-docker-compose up -V --build
-
+s
 
 # inicia os serviços
 docker-compose start
@@ -92,8 +91,26 @@ npm run typeorm -- -d ./typeOrm.config.ts migration:revert
 
 # Debugging
 
-# 1 - With Docker Desktop running type:
+1 - With Docker Desktop running type in the VS Code terminal:
 
+```bash
 docker-compose up --build -V
+```
 
-# 2 - Run "Debug: NestJS-Store" in VS Code debug tab.
+2 - Run "Debug: NestJS-Store" in VS Code debug tab.
+
+# API Documentation
+
+Execute:
+
+```bash
+docker-compose up --build -V
+```
+
+Goto: http://localhost:3000/api.
+
+# Minio (s3 like file storage)
+
+Got to: http://localhost:9001.
+
+TODO: After create container manually setup acess key

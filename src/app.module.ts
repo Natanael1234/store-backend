@@ -1,21 +1,20 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ConfigModule } from '@nestjs/config';
-import { UserModule } from './modules/user/user.module';
-import { AuthModule } from './modules/auth/auth.module';
-import { CachingModule } from './modules/system/caching/caching.module';
+import { AuthenticationModule } from './modules/authentication/authentication.module';
+import { StockModule } from './modules/stock/stock.module';
 import { DatabaseModule } from './modules/system/database/database.module';
+import { UserModule } from './modules/user/user.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
+    ConfigModule.forRoot({ isGlobal: true }),
+    AuthenticationModule,
     UserModule,
-    AuthModule,
-    CachingModule,
+    // CachingModule,
     DatabaseModule,
+    StockModule,
   ],
   controllers: [AppController],
   providers: [AppService],

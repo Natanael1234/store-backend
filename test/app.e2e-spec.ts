@@ -1,21 +1,24 @@
-import { TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { getTestingModule } from '../src/.jest/test-config.module';
+import { Role } from '../src/modules/authentication/enums/role/role.enum';
+import { AuthenticationService } from '../src/modules/authentication/services/authentication/authentication.service';
 import { UserService } from '../src/modules/user/services/user/user.service';
-import { AuthService } from '../src/modules/auth/services/auth/auth.service';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
-  let moduleFixture: TestingModule;
+  let module: TestingModule;
   let userService: UserService;
-  let authService: AuthService;
+  let authenticationService: AuthenticationService;
 
   beforeEach(async () => {
-    moduleFixture = await getTestingModule();
-    app = moduleFixture.createNestApplication();
+    module = await getTestingModule();
+    app = module.createNestApplication();
     userService = app.get<UserService>(UserService);
-    authService = app.get<AuthService>(AuthService);
+    authenticationService = app.get<AuthenticationService>(
+      AuthenticationService,
+    );
     await app.init();
     // TODO: https://github.com/nestjs/nest/issues/5264
   });
@@ -25,41 +28,46 @@ describe('AppController (e2e)', () => {
       name: 'User 1',
       email: 'user1@email.com',
       password: 'Abc12*',
+      roles: [Role.ADMIN],
+      active: true,
     });
     await userService.create({
       name: 'User 2',
       email: 'user2@email.com',
       password: 'Xyz789*',
+      roles: [Role.ADMIN],
+      active: true,
     });
 
     if (authenticated) {
-      const authRet = await authService.login({
+      const authenticationRet = await authenticationService.login({
         email: 'user1@email.com',
         password: 'Abc12*',
       });
       return {
-        refreshToken: authRet.data.payload.token,
-        token: authRet.data.payload.refreshToken,
+        refreshToken: authenticationRet.data.payload.token,
+        token: authenticationRet.data.payload.refreshToken,
       };
     }
   }
 
   afterEach(async () => {
     await app.close();
-    await moduleFixture.close();
+    await module.close();
   });
 
-  describe('/ (GET)', () => {
+  describe('/hello (GET)', () => {
     it('should succed when authorized', async () => {
       const { token } = await authenticationScenario(true);
       return request(app.getHttpServer())
-        .get('/')
+        .get('/hello')
         .set('Authorization', 'bearer ' + token)
         .expect(200)
         .expect('Hello World!');
     });
+
     it('should fail when unauthorized', async () => {
-      return request(app.getHttpServer()).get('/').expect(401);
+      return request(app.getHttpServer()).get('/hello').expect(401);
     });
   });
 });

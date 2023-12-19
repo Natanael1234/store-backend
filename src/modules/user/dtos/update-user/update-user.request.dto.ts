@@ -1,26 +1,51 @@
-import {
-  IsEmail,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  MaxLength,
-  MinLength,
-} from 'class-validator';
-import { EmailMessage } from '../../enums/email-messages/email-messages.enum';
-import { NameMessage } from '../../enums/name-messages/name-messages.enum';
+import { Bool } from '../../../system/decorators/bool/bool.decorator';
+import { Text } from '../../../system/decorators/text/text.decorator';
+import { UserConfigs } from '../../configs/user/user.configs';
+
+const { EMAIL_MAX_LENGTH, NAME_MAX_LENGTH, NAME_MIN_LENGTH } = UserConfigs;
 
 export class UpdateUserRequestDTO {
-  @MaxLength(60, { message: NameMessage.MAX_LEN })
-  @MinLength(6, { message: NameMessage.MIN_LEN })
-  @IsString({ message: NameMessage.STRING })
-  @IsNotEmpty({ message: NameMessage.REQUIRED })
-  @IsOptional()
+  /**
+   * User name.
+   *
+   * @example 'Jhon Silverman'
+   */
+  @Text({
+    label: 'name',
+    minLength: NAME_MIN_LENGTH,
+    maxLength: NAME_MAX_LENGTH,
+    allowNull: false,
+    allowUndefined: true,
+  })
   name?: string;
 
-  @MaxLength(60, { message: EmailMessage.MAX_LEN })
-  @IsEmail({}, { message: EmailMessage.INVALID })
-  @IsString({ message: EmailMessage.STRING })
-  @IsNotEmpty({ message: EmailMessage.REQUIRED })
-  @IsOptional()
+  /**
+   * User email.
+   * Must be a valid non repeated email.
+   *
+   * @example "joaodasilva1@email.com"
+   */
+  @Text({
+    label: 'email',
+    maxLength: EMAIL_MAX_LENGTH,
+    allowNull: false,
+    allowUndefined: true,
+    pattern: 'email',
+  })
   email?: string;
+
+  // @IsEnum(Role, { each: true, message: RoleMessage.INVALID })
+  // @ArrayMinSize(1, { message: RoleMessage.MIN_LEN })
+  // @IsArray({ message: RoleMessage.INVALID })
+  // @IsNotEmpty({ message: RoleMessage.REQUIRED })
+  // @IsOptional()
+  // roles?: Role[];
+
+  /**
+   * If user is active.
+   *
+   * @example true
+   */
+  @Bool({ label: 'active', allowNull: false, allowUndefined: true })
+  active?: boolean;
 }

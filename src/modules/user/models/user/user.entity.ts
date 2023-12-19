@@ -1,4 +1,3 @@
-import { EncryptedDataDto } from '../../../system/encryption/dtos/encrypted-data.dto';
 import {
   Column,
   CreateDateColumn,
@@ -7,11 +6,13 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Role } from '../../../authentication/enums/role/role.enum';
+import { EncryptedDataDto } from '../../../system/encryption/dtos/encrypted-data.dto';
 
 @Entity({ name: 'users' })
-export class UserEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
+export class User {
+  @PrimaryGeneratedColumn('uuid')
+  id: string; // TODO: replace numeric ids by uuid
 
   @Column({ nullable: false })
   name: string;
@@ -23,8 +24,15 @@ export class UserEntity {
     // type: DatabaseConfig.DB_TYPE == 'sqlite' ? 'simple-json' : 'json',
     type: 'simple-json',
     select: false,
+    nullable: false,
   })
   hash: EncryptedDataDto;
+
+  @Column({ type: 'simple-json', nullable: false })
+  roles: Role[];
+
+  @Column({ nullable: false, default: false })
+  active: boolean;
 
   @CreateDateColumn()
   created!: Date;

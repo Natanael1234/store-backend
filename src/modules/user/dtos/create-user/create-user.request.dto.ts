@@ -1,31 +1,55 @@
 import {
-  IsEmail,
+  ArrayMinSize,
+  IsArray,
+  IsEnum,
   IsNotEmpty,
-  IsString,
   IsStrongPassword,
-  MaxLength,
-  MinLength,
 } from 'class-validator';
-import { EmailMessage } from '../../enums/email-messages/email-messages.enum';
-import { NameMessage } from '../../enums/name-messages/name-messages.enum';
-import { PasswordMessage } from '../../enums/password-messages/password-messages.enum';
+import { Role } from '../../../authentication/enums/role/role.enum';
+import { Bool } from '../../../system/decorators/bool/bool.decorator';
+import { Text } from '../../../system/decorators/text/text.decorator';
+import { PasswordMessage } from '../../../system/messages/password/password.messages.enum';
+import { UserConfigs } from '../../configs/user/user.configs';
+import { RoleMessage } from '../../enums/messages/role/role.messages.enum';
 
 export class CreateUserRequestDTO {
-  @MaxLength(60, { message: NameMessage.MAX_LEN })
-  @MinLength(6, { message: NameMessage.MIN_LEN })
-  @IsString({ message: NameMessage.STRING })
-  @IsNotEmpty({ message: NameMessage.REQUIRED })
+  /**
+   * User name.
+   *
+   * @example 'Jhon Silverman'
+   */
+  @Text({
+    label: 'name',
+    minLength: UserConfigs.NAME_MIN_LENGTH,
+    maxLength: UserConfigs.NAME_MAX_LENGTH,
+    allowNull: false,
+    allowUndefined: false,
+  })
   name: string;
 
-  @MaxLength(60, { message: EmailMessage.MAX_LEN })
-  @IsEmail({}, { message: EmailMessage.INVALID })
-  @IsString({ message: EmailMessage.STRING })
-  @IsNotEmpty({ message: EmailMessage.REQUIRED })
+  /**
+   * User email.
+   *
+   * @example "joaodasilva1@email.com"
+   */
+  @Text({
+    label: 'email',
+    maxLength: UserConfigs.EMAIL_MAX_LENGTH,
+    allowNull: false,
+    allowUndefined: false,
+    pattern: 'email',
+  })
   email: string;
 
+  /**
+   * User password.
+   * Should have from 6 up to 12 characters, one uppercase, one lowercase, one symbol and one number.
+   *
+   * @example Abc123*
+   */
   @IsStrongPassword(
     {
-      minLength: 3,
+      minLength: UserConfigs.PASSWORD_MIN_LENGTH,
       minLowercase: 1,
       minNumbers: 1,
       minSymbols: 1,
@@ -33,9 +57,31 @@ export class CreateUserRequestDTO {
     },
     { message: PasswordMessage.INVALID },
   )
-  @MaxLength(12, { message: PasswordMessage.MAX_LEN })
-  @MinLength(6, { message: PasswordMessage.MIN_LEN })
-  @IsString({ message: PasswordMessage.STRING })
-  @IsNotEmpty({ message: PasswordMessage.REQUIRED })
+  @Text({
+    label: 'password',
+    minLength: UserConfigs.PASSWORD_MIN_LENGTH,
+    maxLength: UserConfigs.PASSWORD_MAX_LENGTH,
+    allowNull: false,
+    allowUndefined: false,
+  })
   password: string;
+
+  /**
+   * User roles.
+   *
+   * @example ["ADMIN", "ROOT"]
+   */
+  @IsEnum(Role, { each: true, message: RoleMessage.INVALID })
+  @ArrayMinSize(1, { message: RoleMessage.MIN_LEN })
+  @IsArray({ message: RoleMessage.INVALID })
+  @IsNotEmpty({ message: RoleMessage.REQUIRED })
+  roles: Role[];
+
+  /**
+   * If user is active. false by default.
+   *
+   * @example true
+   */
+  @Bool({ label: 'active', allowNull: false, allowUndefined: true })
+  active?: boolean;
 }
