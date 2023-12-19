@@ -15,11 +15,31 @@ const { FILTER_BRANDS_IDS_MAX_LENGTH, FILTER_CATEGORY_IDS_MAX_LENGTH } =
   ProductConfigs;
 
 const ActiveMessage = new BoolMessage('active');
-const ActiveBrandMessage = new BoolMessage('active brands');
+const ActiveBrandsMessage = new BoolMessage('active brands');
+const ActiveCategoriesMessage = new BoolMessage('active categories');
 const DeletedMessage = new BoolMessage('deleted');
-const DeletedBrandMessage = new BoolMessage('deleted brands');
+const DeletedBrandsMessage = new BoolMessage('deleted brands');
+const DeletedCategoriesMessage = new BoolMessage('deleted categories');
 
-async function testAccept(data: FindProductsRequestDTO, expectedResult: any) {
+type ExpectedResult = {
+  textQuery: string | undefined;
+  brandIds: string[] | undefined;
+  categoryIds: string[] | undefined;
+  active: ActiveFilter;
+  activeBrands: ActiveFilter;
+  activeCategories: ActiveFilter;
+  deleted: DeletedFilter;
+  deletedBrands: DeletedFilter;
+  deletedCategories: DeletedFilter;
+  orderBy: ProductOrder[];
+  page: number;
+  pageSize: number;
+};
+
+async function testAccept(
+  data: FindProductsRequestDTO,
+  expectedResult: ExpectedResult,
+) {
   const dto = plainToInstance(FindProductsRequestDTO, data);
   expect(dto).toEqual(expectedResult);
   const errors = await validateFirstError(data, FindProductsRequestDTO);
@@ -45,8 +65,10 @@ describe('FindProductsRequestDTO', () => {
       categoryIds,
       active: ActiveFilter.ALL,
       activeBrands: ActiveFilter.ALL,
+      activeCategories: ActiveFilter.ACTIVE,
       deleted: DeletedFilter.NOT_DELETED,
       deletedBrands: DeletedFilter.NOT_DELETED,
+      deletedCategories: DeletedFilter.DELETED,
       page: 2,
       pageSize: 4,
       orderBy: ['name_desc', 'active_asc'],
@@ -58,8 +80,10 @@ describe('FindProductsRequestDTO', () => {
       categoryIds,
       active: ActiveFilter.ALL,
       activeBrands: ActiveFilter.ALL,
+      activeCategories: ActiveFilter.ACTIVE,
       deleted: DeletedFilter.NOT_DELETED,
       deletedBrands: DeletedFilter.NOT_DELETED,
+      deletedCategories: DeletedFilter.DELETED,
       page: 2,
       pageSize: 4,
       orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
@@ -79,8 +103,10 @@ describe('FindProductsRequestDTO', () => {
         categoryIds,
         active: ActiveFilter.ALL,
         activeBrands: ActiveFilter.ACTIVE,
+        activeCategories: ActiveFilter.ACTIVE,
         deleted: DeletedFilter.NOT_DELETED,
         deletedBrands: DeletedFilter.NOT_DELETED,
+        deletedCategories: DeletedFilter.DELETED,
         page: 2,
         pageSize: 4,
         orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
@@ -92,8 +118,10 @@ describe('FindProductsRequestDTO', () => {
         categoryIds,
         active: ActiveFilter.ALL,
         activeBrands: ActiveFilter.ACTIVE,
+        activeCategories: ActiveFilter.ACTIVE,
         deleted: DeletedFilter.NOT_DELETED,
         deletedBrands: DeletedFilter.NOT_DELETED,
+        deletedCategories: DeletedFilter.DELETED,
         page: 2,
         pageSize: 4,
         orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
@@ -113,6 +141,7 @@ describe('FindProductsRequestDTO', () => {
         activeBrands: ActiveFilter.ACTIVE,
         deleted: DeletedFilter.NOT_DELETED,
         deletedBrands: DeletedFilter.NOT_DELETED,
+        deletedCategories: DeletedFilter.NOT_DELETED,
         page: 2,
         pageSize: 4,
         orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
@@ -124,8 +153,10 @@ describe('FindProductsRequestDTO', () => {
         categoryIds: null,
         active: ActiveFilter.ALL,
         activeBrands: ActiveFilter.ACTIVE,
+        activeCategories: ActiveFilter.ACTIVE,
         deleted: DeletedFilter.NOT_DELETED,
         deletedBrands: DeletedFilter.NOT_DELETED,
+        deletedCategories: DeletedFilter.NOT_DELETED,
         page: 2,
         pageSize: 4,
         orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
@@ -154,6 +185,7 @@ describe('FindProductsRequestDTO', () => {
         activeBrands: ActiveFilter.ACTIVE,
         deleted: DeletedFilter.NOT_DELETED,
         deletedBrands: DeletedFilter.NOT_DELETED,
+        deletedCategories: DeletedFilter.NOT_DELETED,
         page: 2,
         pageSize: 4,
         orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
@@ -165,8 +197,10 @@ describe('FindProductsRequestDTO', () => {
         categoryIds: undefined,
         active: ActiveFilter.ALL,
         activeBrands: ActiveFilter.ACTIVE,
+        activeCategories: ActiveFilter.ACTIVE,
         deleted: DeletedFilter.NOT_DELETED,
         deletedBrands: DeletedFilter.NOT_DELETED,
+        deletedCategories: DeletedFilter.NOT_DELETED,
         page: 2,
         pageSize: 4,
         orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
@@ -196,8 +230,10 @@ describe('FindProductsRequestDTO', () => {
         categoryIds: [],
         active: ActiveFilter.ACTIVE,
         activeBrands: ActiveFilter.ACTIVE,
+        activeCategories: ActiveFilter.ACTIVE,
         deleted: DeletedFilter.NOT_DELETED,
         deletedBrands: DeletedFilter.NOT_DELETED,
+        deletedCategories: DeletedFilter.NOT_DELETED,
         page: PaginationConfigs.DEFAULT_PAGE,
         pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
         orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
@@ -224,8 +260,10 @@ describe('FindProductsRequestDTO', () => {
           categoryIds: categoryIds,
           active: ActiveFilter.ACTIVE,
           activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.NOT_DELETED,
           deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
           page: PaginationConfigs.DEFAULT_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -288,8 +326,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: [categoryId],
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.DEFAULT_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -327,8 +367,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: nonDuplicatedcategoryIds,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.DEFAULT_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -384,8 +426,10 @@ describe('FindProductsRequestDTO', () => {
         categoryIds,
         active: ActiveFilter.ALL,
         activeBrands: ActiveFilter.ACTIVE,
+        activeCategories: ActiveFilter.ACTIVE,
         deleted: DeletedFilter.NOT_DELETED,
         deletedBrands: DeletedFilter.NOT_DELETED,
+        deletedCategories: DeletedFilter.DELETED,
         page: 2,
         pageSize: 4,
         orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
@@ -397,8 +441,10 @@ describe('FindProductsRequestDTO', () => {
         categoryIds,
         active: ActiveFilter.ALL,
         activeBrands: ActiveFilter.ACTIVE,
+        activeCategories: ActiveFilter.ACTIVE,
         deleted: DeletedFilter.NOT_DELETED,
         deletedBrands: DeletedFilter.NOT_DELETED,
+        deletedCategories: DeletedFilter.DELETED,
         page: 2,
         pageSize: 4,
         orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
@@ -416,8 +462,10 @@ describe('FindProductsRequestDTO', () => {
         categoryIds: undefined,
         active: ActiveFilter.ALL,
         activeBrands: ActiveFilter.ACTIVE,
+        activeCategories: ActiveFilter.ACTIVE,
         deleted: DeletedFilter.NOT_DELETED,
         deletedBrands: DeletedFilter.NOT_DELETED,
+        deletedCategories: DeletedFilter.DELETED,
         page: 2,
         pageSize: 4,
         orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
@@ -429,8 +477,10 @@ describe('FindProductsRequestDTO', () => {
         categoryIds: undefined,
         active: ActiveFilter.ALL,
         activeBrands: ActiveFilter.ACTIVE,
+        activeCategories: ActiveFilter.ACTIVE,
         deleted: DeletedFilter.NOT_DELETED,
         deletedBrands: DeletedFilter.NOT_DELETED,
+        deletedCategories: DeletedFilter.DELETED,
         page: 2,
         pageSize: 4,
         orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
@@ -448,7 +498,10 @@ describe('FindProductsRequestDTO', () => {
         categoryIds: undefined,
         active: ActiveFilter.ALL,
         activeBrands: ActiveFilter.ACTIVE,
+        activeCategories: ActiveFilter.ACTIVE,
         deleted: DeletedFilter.NOT_DELETED,
+        deletedBrands: DeletedFilter.NOT_DELETED,
+        deletedCategories: DeletedFilter.DELETED,
         page: 2,
         pageSize: 4,
         orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
@@ -460,8 +513,10 @@ describe('FindProductsRequestDTO', () => {
         categoryIds: undefined,
         active: ActiveFilter.ALL,
         activeBrands: ActiveFilter.ACTIVE,
+        activeCategories: ActiveFilter.ACTIVE,
         deleted: DeletedFilter.NOT_DELETED,
         deletedBrands: DeletedFilter.NOT_DELETED,
+        deletedCategories: DeletedFilter.DELETED,
         page: 2,
         pageSize: 4,
         orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
@@ -482,8 +537,10 @@ describe('FindProductsRequestDTO', () => {
         categoryIds: undefined,
         active: ActiveFilter.ACTIVE,
         activeBrands: ActiveFilter.ACTIVE,
+        activeCategories: ActiveFilter.ACTIVE,
         deleted: DeletedFilter.NOT_DELETED,
         deletedBrands: DeletedFilter.NOT_DELETED,
+        deletedCategories: DeletedFilter.NOT_DELETED,
         page: PaginationConfigs.DEFAULT_PAGE,
         pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
         orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
@@ -510,8 +567,10 @@ describe('FindProductsRequestDTO', () => {
           categoryIds: undefined,
           active: ActiveFilter.ACTIVE,
           activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.NOT_DELETED,
           deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
           page: PaginationConfigs.DEFAULT_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -573,8 +632,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.DEFAULT_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -596,8 +657,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.DEFAULT_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -664,11 +727,14 @@ describe('FindProductsRequestDTO', () => {
         { active: ActiveFilter.ALL },
         {
           textQuery: undefined,
+          brandIds: undefined,
           categoryIds: undefined,
           active: ActiveFilter.ALL,
           activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.NOT_DELETED,
           deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
           page: PaginationConfigs.DEFAULT_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -681,11 +747,14 @@ describe('FindProductsRequestDTO', () => {
         { active: ActiveFilter.INACTIVE },
         {
           textQuery: undefined,
+          brandIds: undefined,
           categoryIds: undefined,
           active: ActiveFilter.INACTIVE,
           activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.NOT_DELETED,
           deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
           page: PaginationConfigs.DEFAULT_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -698,11 +767,14 @@ describe('FindProductsRequestDTO', () => {
         { active: ActiveFilter.ACTIVE },
         {
           textQuery: undefined,
+          brandIds: undefined,
           categoryIds: undefined,
           active: ActiveFilter.ACTIVE,
           activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.NOT_DELETED,
           deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
           page: PaginationConfigs.DEFAULT_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -715,11 +787,14 @@ describe('FindProductsRequestDTO', () => {
         { active: null },
         {
           textQuery: undefined,
+          brandIds: undefined,
           categoryIds: undefined,
           active: ActiveFilter.ACTIVE,
           activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.NOT_DELETED,
           deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
           page: PaginationConfigs.DEFAULT_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -732,11 +807,14 @@ describe('FindProductsRequestDTO', () => {
         { active: undefined },
         {
           textQuery: undefined,
+          brandIds: undefined,
           categoryIds: undefined,
           active: ActiveFilter.ACTIVE,
           activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.NOT_DELETED,
           deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
           page: PaginationConfigs.DEFAULT_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -786,12 +864,14 @@ describe('FindProductsRequestDTO', () => {
         { activeBrands: ActiveFilter.ALL },
         {
           textQuery: undefined,
+          brandIds: undefined,
           categoryIds: undefined,
-          brandsIds: undefined,
           active: ActiveFilter.ACTIVE,
           activeBrands: ActiveFilter.ALL,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.NOT_DELETED,
           deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
           page: PaginationConfigs.DEFAULT_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -808,8 +888,10 @@ describe('FindProductsRequestDTO', () => {
           brandIds: undefined,
           active: ActiveFilter.ACTIVE,
           activeBrands: ActiveFilter.INACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.NOT_DELETED,
           deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
           page: PaginationConfigs.DEFAULT_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -822,11 +904,14 @@ describe('FindProductsRequestDTO', () => {
         { activeBrands: ActiveFilter.ACTIVE },
         {
           textQuery: undefined,
+          brandIds: undefined,
           categoryIds: undefined,
           active: ActiveFilter.ACTIVE,
           activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.NOT_DELETED,
           deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
           page: PaginationConfigs.DEFAULT_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -839,11 +924,14 @@ describe('FindProductsRequestDTO', () => {
         { activeBrands: null },
         {
           textQuery: undefined,
+          brandIds: undefined,
           categoryIds: undefined,
           active: ActiveFilter.ACTIVE,
           activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.NOT_DELETED,
           deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
           page: PaginationConfigs.DEFAULT_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -857,11 +945,13 @@ describe('FindProductsRequestDTO', () => {
         {
           textQuery: undefined,
           categoryIds: undefined,
-          brandsIds: undefined,
+          brandIds: undefined,
           active: ActiveFilter.ACTIVE,
           activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.NOT_DELETED,
           deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
           page: PaginationConfigs.DEFAULT_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -872,35 +962,172 @@ describe('FindProductsRequestDTO', () => {
     it('should reject when activeBrands is number', async () => {
       await testReject(
         { activeBrands: 1 as unknown as ActiveFilter },
-        { isEnum: ActiveBrandMessage.INVALID },
+        { isEnum: ActiveBrandsMessage.INVALID },
       );
     });
 
     it('should reject when activeBrands is boolean', async () => {
       await testReject(
         { activeBrands: true as unknown as ActiveFilter },
-        { isEnum: ActiveBrandMessage.INVALID },
+        { isEnum: ActiveBrandsMessage.INVALID },
       );
     });
 
     it('should reject when activeBrands is array', async () => {
       await testReject(
         { activeBrands: [] as unknown as ActiveFilter },
-        { isEnum: ActiveBrandMessage.INVALID },
+        { isEnum: ActiveBrandsMessage.INVALID },
       );
     });
 
     it('should reject when activeBrands is object', async () => {
       await testReject(
         { activeBrands: {} as unknown as ActiveFilter },
-        { isEnum: ActiveBrandMessage.INVALID },
+        { isEnum: ActiveBrandsMessage.INVALID },
       );
     });
 
     it('should reject when activeBrands is invalid string', async () => {
       await testReject(
         { activeBrands: 'invalid' as unknown as ActiveFilter },
-        { isEnum: ActiveBrandMessage.INVALID },
+        { isEnum: ActiveBrandsMessage.INVALID },
+      );
+    });
+  });
+
+  describe('activeCategories', () => {
+    it('should accept when activeCategories is "all"', async () => {
+      await testAccept(
+        { activeCategories: ActiveFilter.ALL },
+        {
+          textQuery: undefined,
+          brandIds: undefined,
+          categoryIds: undefined,
+          active: ActiveFilter.ACTIVE,
+          activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ALL,
+          deleted: DeletedFilter.NOT_DELETED,
+          deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
+          orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
+          page: PaginationConfigs.DEFAULT_PAGE,
+          pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+        },
+      );
+    });
+
+    it('should accept when activeCategories is "deleted"', async () => {
+      await testAccept(
+        { activeCategories: ActiveFilter.INACTIVE },
+        {
+          textQuery: undefined,
+          categoryIds: undefined,
+          brandIds: undefined,
+          active: ActiveFilter.ACTIVE,
+          activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.INACTIVE,
+          deleted: DeletedFilter.NOT_DELETED,
+          deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
+          orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
+          page: PaginationConfigs.DEFAULT_PAGE,
+          pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+        },
+      );
+    });
+
+    it('should accept when activeCategories is "node_deleted"', async () => {
+      await testAccept(
+        { activeCategories: ActiveFilter.ACTIVE },
+        {
+          textQuery: undefined,
+          brandIds: undefined,
+          categoryIds: undefined,
+          active: ActiveFilter.ACTIVE,
+          activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
+          deleted: DeletedFilter.NOT_DELETED,
+          deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
+          orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
+          page: PaginationConfigs.DEFAULT_PAGE,
+          pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+        },
+      );
+    });
+
+    it('should replace null activeCategories with "node_deleted"', async () => {
+      await testAccept(
+        { activeCategories: null },
+        {
+          textQuery: undefined,
+          brandIds: undefined,
+          categoryIds: undefined,
+          active: ActiveFilter.ACTIVE,
+          activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
+          deleted: DeletedFilter.NOT_DELETED,
+          deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
+          orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
+          page: PaginationConfigs.DEFAULT_PAGE,
+          pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+        },
+      );
+    });
+
+    it('should replace undefined activeCategories with "not_deleted"', async () => {
+      await testAccept(
+        { activeCategories: undefined },
+        {
+          textQuery: undefined,
+          categoryIds: undefined,
+          brandIds: undefined,
+          active: ActiveFilter.ACTIVE,
+          activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
+          deleted: DeletedFilter.NOT_DELETED,
+          deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
+          orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
+          page: PaginationConfigs.DEFAULT_PAGE,
+          pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+        },
+      );
+    });
+
+    it('should reject when activeCategories is number', async () => {
+      await testReject(
+        { activeCategories: 1 as unknown as ActiveFilter },
+        { isEnum: ActiveCategoriesMessage.INVALID },
+      );
+    });
+
+    it('should reject when activeCategories is boolean', async () => {
+      await testReject(
+        { activeCategories: true as unknown as ActiveFilter },
+        { isEnum: ActiveCategoriesMessage.INVALID },
+      );
+    });
+
+    it('should reject when activeCategories is array', async () => {
+      await testReject(
+        { activeCategories: [] as unknown as ActiveFilter },
+        { isEnum: ActiveCategoriesMessage.INVALID },
+      );
+    });
+
+    it('should reject when activeCategories is object', async () => {
+      await testReject(
+        { activeCategories: {} as unknown as ActiveFilter },
+        { isEnum: ActiveCategoriesMessage.INVALID },
+      );
+    });
+
+    it('should reject when activeCategories is invalid string', async () => {
+      await testReject(
+        { activeCategories: 'invalid' as unknown as ActiveFilter },
+        { isEnum: ActiveCategoriesMessage.INVALID },
       );
     });
   });
@@ -912,11 +1139,13 @@ describe('FindProductsRequestDTO', () => {
         {
           textQuery: undefined,
           categoryIds: undefined,
-          brandsIds: undefined,
+          brandIds: undefined,
           active: ActiveFilter.ACTIVE,
           activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.NOT_DELETED,
           deletedBrands: DeletedFilter.ALL,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
           page: PaginationConfigs.DEFAULT_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -933,8 +1162,10 @@ describe('FindProductsRequestDTO', () => {
           brandIds: undefined,
           active: ActiveFilter.ACTIVE,
           activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.NOT_DELETED,
           deletedBrands: DeletedFilter.DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
           page: PaginationConfigs.DEFAULT_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -947,11 +1178,14 @@ describe('FindProductsRequestDTO', () => {
         { deletedBrands: DeletedFilter.NOT_DELETED },
         {
           textQuery: undefined,
+          brandIds: undefined,
           categoryIds: undefined,
           active: ActiveFilter.ACTIVE,
           activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.NOT_DELETED,
           deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
           page: PaginationConfigs.DEFAULT_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -964,11 +1198,14 @@ describe('FindProductsRequestDTO', () => {
         { deletedBrands: null },
         {
           textQuery: undefined,
+          brandIds: undefined,
           categoryIds: undefined,
           active: ActiveFilter.ACTIVE,
           activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.NOT_DELETED,
           deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
           page: PaginationConfigs.DEFAULT_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -981,12 +1218,14 @@ describe('FindProductsRequestDTO', () => {
         { deletedBrands: undefined },
         {
           textQuery: undefined,
+          brandIds: undefined,
           categoryIds: undefined,
-          brandsIds: undefined,
           active: ActiveFilter.ACTIVE,
           activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.NOT_DELETED,
           deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
           page: PaginationConfigs.DEFAULT_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -997,35 +1236,172 @@ describe('FindProductsRequestDTO', () => {
     it('should reject when deletedBrands is number', async () => {
       await testReject(
         { deletedBrands: 1 as unknown as DeletedFilter },
-        { isEnum: DeletedBrandMessage.INVALID },
+        { isEnum: DeletedBrandsMessage.INVALID },
       );
     });
 
     it('should reject when deletedBrands is boolean', async () => {
       await testReject(
         { deletedBrands: true as unknown as DeletedFilter },
-        { isEnum: DeletedBrandMessage.INVALID },
+        { isEnum: DeletedBrandsMessage.INVALID },
       );
     });
 
     it('should reject when deletedBrands is array', async () => {
       await testReject(
         { deletedBrands: [] as unknown as DeletedFilter },
-        { isEnum: DeletedBrandMessage.INVALID },
+        { isEnum: DeletedBrandsMessage.INVALID },
       );
     });
 
     it('should reject when deletedBrands is object', async () => {
       await testReject(
         { deletedBrands: {} as unknown as DeletedFilter },
-        { isEnum: DeletedBrandMessage.INVALID },
+        { isEnum: DeletedBrandsMessage.INVALID },
       );
     });
 
     it('should reject when deletedBrands is invalid string', async () => {
       await testReject(
         { deletedBrands: 'invalid' as unknown as DeletedFilter },
-        { isEnum: DeletedBrandMessage.INVALID },
+        { isEnum: DeletedBrandsMessage.INVALID },
+      );
+    });
+  });
+
+  describe('deletedCategories', () => {
+    it('should accept when deletedCategories is "all"', async () => {
+      await testAccept(
+        { deletedCategories: DeletedFilter.ALL },
+        {
+          textQuery: undefined,
+          categoryIds: undefined,
+          brandIds: undefined,
+          active: ActiveFilter.ACTIVE,
+          activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
+          deleted: DeletedFilter.NOT_DELETED,
+          deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.ALL,
+          orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
+          page: PaginationConfigs.DEFAULT_PAGE,
+          pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+        },
+      );
+    });
+
+    it('should accept when deletedCategories is "deleted"', async () => {
+      await testAccept(
+        { deletedCategories: DeletedFilter.DELETED },
+        {
+          textQuery: undefined,
+          categoryIds: undefined,
+          brandIds: undefined,
+          active: ActiveFilter.ACTIVE,
+          activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
+          deleted: DeletedFilter.NOT_DELETED,
+          deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.DELETED,
+          orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
+          page: PaginationConfigs.DEFAULT_PAGE,
+          pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+        },
+      );
+    });
+
+    it('should accept when deletedCategories is "not_deleted"', async () => {
+      await testAccept(
+        { deletedCategories: DeletedFilter.NOT_DELETED },
+        {
+          textQuery: undefined,
+          brandIds: undefined,
+          categoryIds: undefined,
+          active: ActiveFilter.ACTIVE,
+          activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
+          deleted: DeletedFilter.NOT_DELETED,
+          deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
+          orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
+          page: PaginationConfigs.DEFAULT_PAGE,
+          pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+        },
+      );
+    });
+
+    it('should replace null deletedCategories with "not_deleted"', async () => {
+      await testAccept(
+        { deletedCategories: null },
+        {
+          textQuery: undefined,
+          brandIds: undefined,
+          categoryIds: undefined,
+          active: ActiveFilter.ACTIVE,
+          activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
+          deleted: DeletedFilter.NOT_DELETED,
+          deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
+          orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
+          page: PaginationConfigs.DEFAULT_PAGE,
+          pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+        },
+      );
+    });
+
+    it('should replace undefined deletedCategories with "not_deleted"', async () => {
+      await testAccept(
+        { deletedBrands: undefined },
+        {
+          textQuery: undefined,
+          categoryIds: undefined,
+          brandIds: undefined,
+          active: ActiveFilter.ACTIVE,
+          activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
+          deleted: DeletedFilter.NOT_DELETED,
+          deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
+          orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
+          page: PaginationConfigs.DEFAULT_PAGE,
+          pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
+        },
+      );
+    });
+
+    it('should reject when deletedCategories is number', async () => {
+      await testReject(
+        { deletedCategories: 1 as unknown as DeletedFilter },
+        { isEnum: DeletedCategoriesMessage.INVALID },
+      );
+    });
+
+    it('should reject when deletedCategories is boolean', async () => {
+      await testReject(
+        { deletedCategories: true as unknown as DeletedFilter },
+        { isEnum: DeletedCategoriesMessage.INVALID },
+      );
+    });
+
+    it('should reject when deletedCategories is array', async () => {
+      await testReject(
+        { deletedCategories: [] as unknown as DeletedFilter },
+        { isEnum: DeletedCategoriesMessage.INVALID },
+      );
+    });
+
+    it('should reject when deletedCategories is object', async () => {
+      await testReject(
+        { deletedCategories: {} as unknown as DeletedFilter },
+        { isEnum: DeletedCategoriesMessage.INVALID },
+      );
+    });
+
+    it('should reject when deletedCategories is invalid string', async () => {
+      await testReject(
+        { deletedCategories: 'invalid' as unknown as DeletedFilter },
+        { isEnum: DeletedCategoriesMessage.INVALID },
       );
     });
   });
@@ -1036,11 +1412,14 @@ describe('FindProductsRequestDTO', () => {
         { deleted: DeletedFilter.ALL },
         {
           textQuery: undefined,
+          brandIds: undefined,
           categoryIds: undefined,
           active: ActiveFilter.ACTIVE,
           activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.ALL,
           deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
           page: PaginationConfigs.DEFAULT_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1053,11 +1432,14 @@ describe('FindProductsRequestDTO', () => {
         { deleted: DeletedFilter.DELETED },
         {
           textQuery: undefined,
+          brandIds: undefined,
           categoryIds: undefined,
           active: ActiveFilter.ACTIVE,
           activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.DELETED,
           deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
           page: PaginationConfigs.DEFAULT_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1070,11 +1452,14 @@ describe('FindProductsRequestDTO', () => {
         { deleted: DeletedFilter.NOT_DELETED },
         {
           textQuery: undefined,
+          brandIds: undefined,
           categoryIds: undefined,
           active: ActiveFilter.ACTIVE,
           activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.NOT_DELETED,
           deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
           page: PaginationConfigs.DEFAULT_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1087,11 +1472,14 @@ describe('FindProductsRequestDTO', () => {
         { deleted: null },
         {
           textQuery: undefined,
+          brandIds: undefined,
           categoryIds: undefined,
           active: ActiveFilter.ACTIVE,
           activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.NOT_DELETED,
           deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
           page: PaginationConfigs.DEFAULT_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1104,11 +1492,14 @@ describe('FindProductsRequestDTO', () => {
         { deleted: undefined },
         {
           textQuery: undefined,
+          brandIds: undefined,
           categoryIds: undefined,
           active: ActiveFilter.ACTIVE,
           activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.NOT_DELETED,
           deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
           page: PaginationConfigs.DEFAULT_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1163,8 +1554,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.MIN_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1181,8 +1574,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.MIN_PAGE + 1,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1199,8 +1594,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.MIN_PAGE + 1000,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1217,8 +1614,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.DEFAULT_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1235,8 +1634,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.DEFAULT_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1253,8 +1654,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.DEFAULT_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1271,8 +1674,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.DEFAULT_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1289,8 +1694,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.DEFAULT_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1309,8 +1716,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.DEFAULT_PAGE,
             pageSize: PaginationConfigs.MIN_PAGE,
@@ -1327,8 +1736,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.DEFAULT_PAGE,
             pageSize: PaginationConfigs.MIN_PAGE,
@@ -1345,8 +1756,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.DEFAULT_PAGE,
             pageSize: PaginationConfigs.MAX_PAGE_SIZE,
@@ -1363,8 +1776,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.DEFAULT_PAGE,
             pageSize: PaginationConfigs.MAX_PAGE_SIZE,
@@ -1381,8 +1796,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.DEFAULT_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1399,8 +1816,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.DEFAULT_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1417,8 +1836,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.DEFAULT_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1435,8 +1856,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.DEFAULT_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1453,8 +1876,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.DEFAULT_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1473,8 +1898,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.MIN_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1491,8 +1918,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: 2,
             pageSize: 3,
@@ -1512,8 +1941,10 @@ describe('FindProductsRequestDTO', () => {
           categoryIds: undefined,
           active: ActiveFilter.ACTIVE,
           activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.NOT_DELETED,
           deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: [ProductOrder.NAME_ASC],
           page: PaginationConfigs.MIN_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1530,8 +1961,10 @@ describe('FindProductsRequestDTO', () => {
           categoryIds: undefined,
           active: ActiveFilter.ACTIVE,
           activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.NOT_DELETED,
           deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: [ProductOrder.NAME_DESC],
           page: PaginationConfigs.MIN_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1548,8 +1981,10 @@ describe('FindProductsRequestDTO', () => {
           categoryIds: undefined,
           active: ActiveFilter.ACTIVE,
           activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.NOT_DELETED,
           deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: [ProductOrder.ACTIVE_ASC],
           page: PaginationConfigs.MIN_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1566,8 +2001,10 @@ describe('FindProductsRequestDTO', () => {
           categoryIds: undefined,
           active: ActiveFilter.ACTIVE,
           activeBrands: ActiveFilter.ACTIVE,
+          activeCategories: ActiveFilter.ACTIVE,
           deleted: DeletedFilter.NOT_DELETED,
           deletedBrands: DeletedFilter.NOT_DELETED,
+          deletedCategories: DeletedFilter.NOT_DELETED,
           orderBy: [ProductOrder.ACTIVE_DESC],
           page: PaginationConfigs.MIN_PAGE,
           pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1585,8 +2022,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.MIN_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1603,8 +2042,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.MIN_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1621,8 +2062,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.MIN_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1641,8 +2084,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: [ProductOrder.NAME_ASC, ProductOrder.ACTIVE_ASC],
             page: PaginationConfigs.MIN_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1659,8 +2104,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: [ProductOrder.NAME_ASC, ProductOrder.ACTIVE_DESC],
             page: PaginationConfigs.MIN_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1677,8 +2124,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_DESC],
             page: PaginationConfigs.MIN_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1695,8 +2144,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: [ProductOrder.NAME_DESC, ProductOrder.ACTIVE_ASC],
             page: PaginationConfigs.MIN_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1715,8 +2166,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.MIN_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1733,8 +2186,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.MIN_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1753,8 +2208,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.MIN_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1772,8 +2229,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.MIN_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1790,8 +2249,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.MIN_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1808,8 +2269,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.MIN_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1828,8 +2291,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.MIN_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1846,8 +2311,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.MIN_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1864,8 +2331,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.MIN_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1882,8 +2351,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.MIN_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1900,8 +2371,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.MIN_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1918,8 +2391,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.MIN_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1936,8 +2411,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.MIN_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1954,8 +2431,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.MIN_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -1972,8 +2451,10 @@ describe('FindProductsRequestDTO', () => {
             categoryIds: undefined,
             active: ActiveFilter.ACTIVE,
             activeBrands: ActiveFilter.ACTIVE,
+            activeCategories: ActiveFilter.ACTIVE,
             deleted: DeletedFilter.NOT_DELETED,
             deletedBrands: DeletedFilter.NOT_DELETED,
+            deletedCategories: DeletedFilter.NOT_DELETED,
             orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
             page: PaginationConfigs.MIN_PAGE,
             pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
@@ -2004,7 +2485,7 @@ describe('FindProductsRequestDTO', () => {
         isEnum: ActiveMessage.INVALID,
       });
       expect(errors[2].constraints).toEqual({
-        isEnum: ActiveBrandMessage.INVALID,
+        isEnum: ActiveBrandsMessage.INVALID,
       });
       expect(errors[3].constraints).toEqual({
         isEnum: DeletedMessage.INVALID,

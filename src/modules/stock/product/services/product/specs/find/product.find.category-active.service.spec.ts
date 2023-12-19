@@ -19,9 +19,9 @@ import { Product } from '../../../../models/product/product.entity';
 import { ProductService } from '../../product.service';
 
 // TODO: mensagem do tipo boolean. Mas recebe uma enum. Corrigir
-const ActiveBrandMessage = new BoolMessage('active brands');
+const ActiveCategoryMessage = new BoolMessage('active categories');
 
-describe('ProductService.find (activeBrands)', () => {
+describe('ProductService.find (activeCategories)', () => {
   let productService: ProductService;
   let module: TestingModule;
   let brandRepo: Repository<Brand>;
@@ -41,12 +41,15 @@ describe('ProductService.find (activeBrands)', () => {
   });
 
   async function createTestScenario() {
-    const [categoryId1] = await testInsertCategories(categoryRepo, [
-      { name: 'Category 1', active: true },
-    ]);
-    const [brandId1, brandId2] = await testInsertBrands(brandRepo, [
+    const [categoryId1, categoryId2] = await testInsertCategories(
+      categoryRepo,
+      [
+        { name: 'Category 1', active: true },
+        { name: 'Category 2', active: false },
+      ],
+    );
+    const [brandId1] = await testInsertBrands(brandRepo, [
       { name: 'Brand 1', active: true },
-      { name: 'Brand 2', active: false },
     ]);
     await testInsertProducts(productRepo, [
       {
@@ -66,8 +69,8 @@ describe('ProductService.find (activeBrands)', () => {
         price: 500,
         quantityInStock: 9,
         active: true,
-        brandId: brandId2,
-        categoryId: categoryId1,
+        brandId: brandId1,
+        categoryId: categoryId2,
       },
     ]);
   }
@@ -88,7 +91,8 @@ describe('ProductService.find (activeBrands)', () => {
       .addOrderBy(ProductConstants.PRODUCT_ACTIVE, SortConstants.ASC)
       .getMany();
   }
-  async function getActiveBrandsProducts() {
+
+  async function getactiveCategoriesProducts() {
     return productRepo
       .createQueryBuilder(ProductConstants.PRODUCT)
       .leftJoinAndSelect(
@@ -100,14 +104,15 @@ describe('ProductService.find (activeBrands)', () => {
         ProductConstants.PRODUCT_IMAGES,
         ProductConstants.IMAGES,
       )
-      .where(ProductConstants.BRAND_ACTIVE_EQUALS_TO, {
-        isActiveBrand: true,
+      .where(ProductConstants.CATEGORY_ACTIVE_EQUALS_TO, {
+        isActiveCategory: true,
       })
       .orderBy(ProductConstants.PRODUCT_NAME, SortConstants.ASC)
       .addOrderBy(ProductConstants.PRODUCT_ACTIVE, SortConstants.ASC)
       .getMany();
   }
-  async function getInactiveBrandsProducts() {
+
+  async function getInactiveCategoriesProducts() {
     return productRepo
       .createQueryBuilder(ProductConstants.PRODUCT)
       .leftJoinAndSelect(
@@ -119,19 +124,19 @@ describe('ProductService.find (activeBrands)', () => {
         ProductConstants.PRODUCT_IMAGES,
         ProductConstants.IMAGES,
       )
-      .where(ProductConstants.BRAND_ACTIVE_EQUALS_TO, {
-        isActiveBrand: false,
+      .where(ProductConstants.CATEGORY_ACTIVE_EQUALS_TO, {
+        isActiveCategory: false,
       })
       .orderBy(ProductConstants.PRODUCT_NAME, SortConstants.ASC)
       .addOrderBy(ProductConstants.PRODUCT_ACTIVE, SortConstants.ASC)
       .getMany();
   }
 
-  it('should filter products by active brands when activeBrands = "active"', async () => {
+  it('should filter products by active categories when activeCategories = "active"', async () => {
     await createTestScenario();
-    const products = await getActiveBrandsProducts();
+    const products = await getactiveCategoriesProducts();
     const response = await productService.find({
-      activeBrands: ActiveFilter.ACTIVE,
+      activeCategories: ActiveFilter.ACTIVE,
     });
     expect(response).toEqual({
       textQuery: undefined,
@@ -143,11 +148,11 @@ describe('ProductService.find (activeBrands)', () => {
     });
   });
 
-  it('should filter products by inactive brands when activeBrands = "inactive"', async () => {
+  it('should filter products by inactive categories when activeCategories = "inactive"', async () => {
     await createTestScenario();
-    const products = await getInactiveBrandsProducts();
+    const products = await getInactiveCategoriesProducts();
     const response = await productService.find({
-      activeBrands: ActiveFilter.INACTIVE,
+      activeCategories: ActiveFilter.INACTIVE,
     });
     expect(response).toEqual({
       textQuery: undefined,
@@ -159,11 +164,11 @@ describe('ProductService.find (activeBrands)', () => {
     });
   });
 
-  it('should not filter by active or inactive brands when activeBrands = "all"', async () => {
+  it('should not filter by active or inactive categories when activeCategories = "all"', async () => {
     await createTestScenario();
     const products = await getAllProducts();
     const response = await productService.find({
-      activeBrands: ActiveFilter.ALL,
+      activeCategories: ActiveFilter.ALL,
     });
     expect(response).toEqual({
       textQuery: undefined,
@@ -175,10 +180,10 @@ describe('ProductService.find (activeBrands)', () => {
     });
   });
 
-  it('should filter products by active brands when activeBrands = null', async () => {
+  it('should filter products by active categories when activeCategories = null', async () => {
     await createTestScenario();
-    const products = await getActiveBrandsProducts();
-    const response = await productService.find({ activeBrands: null });
+    const products = await getactiveCategoriesProducts();
+    const response = await productService.find({ activeCategories: null });
     expect(response).toEqual({
       textQuery: undefined,
       count: 1,
@@ -189,10 +194,10 @@ describe('ProductService.find (activeBrands)', () => {
     });
   });
 
-  it('should filter products by active brands when activeBrands = undefined', async () => {
+  it('should filter products by active categories when activeCategories = undefined', async () => {
     await createTestScenario();
-    const products = await getActiveBrandsProducts();
-    const response = await productService.find({ activeBrands: undefined });
+    const products = await getactiveCategoriesProducts();
+    const response = await productService.find({ activeCategories: undefined });
     expect(response).toEqual({
       textQuery: undefined,
       count: 1,
@@ -203,9 +208,9 @@ describe('ProductService.find (activeBrands)', () => {
     });
   });
 
-  it('should filter products by active brands when activeBrands is not defined', async () => {
+  it('should filter products by active categories when activeCategories is not defined', async () => {
     await createTestScenario();
-    const products = await getActiveBrandsProducts();
+    const products = await getactiveCategoriesProducts();
     const response = await productService.find({});
     expect(response).toEqual({
       textQuery: undefined,
@@ -217,9 +222,9 @@ describe('ProductService.find (activeBrands)', () => {
     });
   });
 
-  it('should filter products by active brands when findDTO is null', async () => {
+  it('should filter products by active categories when findDTO is null', async () => {
     await createTestScenario();
-    const products = await getActiveBrandsProducts();
+    const products = await getactiveCategoriesProducts();
     const response = await productService.find(null);
     expect(response).toEqual({
       textQuery: undefined,
@@ -231,9 +236,9 @@ describe('ProductService.find (activeBrands)', () => {
     });
   });
 
-  it('should filter products by active brands when findDTO is undefined', async () => {
+  it('should filter products by active categories when findDTO is undefined', async () => {
     await createTestScenario();
-    const products = await getActiveBrandsProducts();
+    const products = await getactiveCategoriesProducts();
     const response = await productService.find(undefined);
     expect(response).toEqual({
       textQuery: undefined,
@@ -245,9 +250,9 @@ describe('ProductService.find (activeBrands)', () => {
     });
   });
 
-  it('should filter products by active brands when findDTO is not defined', async () => {
+  it('should filter products by active categories when findDTO is not defined', async () => {
     await createTestScenario();
-    const products = await getActiveBrandsProducts();
+    const products = await getactiveCategoriesProducts();
     const response = await productService.find(undefined);
     expect(response).toEqual({
       textQuery: undefined,
@@ -259,43 +264,27 @@ describe('ProductService.find (activeBrands)', () => {
     });
   });
 
-  it('should reject when activeBrands is number', async () => {
+  it('should reject when activeCategories is number', async () => {
     await createTestScenario();
     const fn = () =>
-      productService.find({ activeBrands: 1 as unknown as ActiveFilter });
+      productService.find({ activeCategories: 1 as unknown as ActiveFilter });
     await expect(fn()).rejects.toThrow(UnprocessableEntityException);
     try {
       await fn();
     } catch (ex) {
       expect(ex.response).toEqual({
         error: ExceptionText.UNPROCESSABLE_ENTITY_EXCEPTION,
-        message: { activeBrands: ActiveBrandMessage.INVALID },
+        message: { activeCategories: ActiveCategoryMessage.INVALID },
         statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
       });
     }
   });
 
-  it('should reject when activeBrands is boolean', async () => {
-    await createTestScenario();
-    const fn = () =>
-      productService.find({ activeBrands: true as unknown as ActiveFilter });
-    await expect(fn()).rejects.toThrow(UnprocessableEntityException);
-    try {
-      await fn();
-    } catch (ex) {
-      expect(ex.response).toEqual({
-        error: ExceptionText.UNPROCESSABLE_ENTITY_EXCEPTION,
-        message: { activeBrands: ActiveBrandMessage.INVALID },
-        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-      });
-    }
-  });
-
-  it('should reject when activeBrands is invalid string', async () => {
+  it('should reject when activeCategories is boolean', async () => {
     await createTestScenario();
     const fn = () =>
       productService.find({
-        activeBrands: 'invalid' as unknown as ActiveFilter,
+        activeCategories: true as unknown as ActiveFilter,
       });
     await expect(fn()).rejects.toThrow(UnprocessableEntityException);
     try {
@@ -303,39 +292,57 @@ describe('ProductService.find (activeBrands)', () => {
     } catch (ex) {
       expect(ex.response).toEqual({
         error: ExceptionText.UNPROCESSABLE_ENTITY_EXCEPTION,
-        message: { activeBrands: ActiveBrandMessage.INVALID },
+        message: { activeCategories: ActiveCategoryMessage.INVALID },
         statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
       });
     }
   });
 
-  it('should reject when activeBrands is array', async () => {
+  it('should reject when activeCategories is invalid string', async () => {
     await createTestScenario();
     const fn = () =>
-      productService.find({ activeBrands: [] as unknown as ActiveFilter });
+      productService.find({
+        activeCategories: 'invalid' as unknown as ActiveFilter,
+      });
     await expect(fn()).rejects.toThrow(UnprocessableEntityException);
     try {
       await fn();
     } catch (ex) {
       expect(ex.response).toEqual({
         error: ExceptionText.UNPROCESSABLE_ENTITY_EXCEPTION,
-        message: { activeBrands: ActiveBrandMessage.INVALID },
+        message: { activeCategories: ActiveCategoryMessage.INVALID },
         statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
       });
     }
   });
 
-  it('should reject when activeBrands is object', async () => {
+  it('should reject when activeCategories is array', async () => {
     await createTestScenario();
     const fn = () =>
-      productService.find({ activeBrands: {} as unknown as ActiveFilter });
+      productService.find({ activeCategories: [] as unknown as ActiveFilter });
     await expect(fn()).rejects.toThrow(UnprocessableEntityException);
     try {
       await fn();
     } catch (ex) {
       expect(ex.response).toEqual({
         error: ExceptionText.UNPROCESSABLE_ENTITY_EXCEPTION,
-        message: { activeBrands: ActiveBrandMessage.INVALID },
+        message: { activeCategories: ActiveCategoryMessage.INVALID },
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      });
+    }
+  });
+
+  it('should reject when activeCategories is object', async () => {
+    await createTestScenario();
+    const fn = () =>
+      productService.find({ activeCategories: {} as unknown as ActiveFilter });
+    await expect(fn()).rejects.toThrow(UnprocessableEntityException);
+    try {
+      await fn();
+    } catch (ex) {
+      expect(ex.response).toEqual({
+        error: ExceptionText.UNPROCESSABLE_ENTITY_EXCEPTION,
+        message: { activeCategories: ActiveCategoryMessage.INVALID },
         statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
       });
     }

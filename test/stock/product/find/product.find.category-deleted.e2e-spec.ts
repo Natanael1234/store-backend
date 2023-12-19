@@ -11,7 +11,7 @@ import { ProductMessage } from '../../../../src/modules/stock/product/messages/p
 import { Product } from '../../../../src/modules/stock/product/models/product/product.entity';
 import { PaginationConfigs } from '../../../../src/modules/system/configs/pagination/pagination.configs';
 import { SortConstants } from '../../../../src/modules/system/constants/sort/sort.constants';
-import { ActiveFilter } from '../../../../src/modules/system/enums/filter/active-filter/active-filter.enum';
+import { DeletedFilter } from '../../../../src/modules/system/enums/filter/deleted-filter/deleted-filter.enum';
 import { ExceptionText } from '../../../../src/modules/system/messages/exception-text/exception-text.enum';
 import { ValidationPipe } from '../../../../src/modules/system/pipes/custom-validation.pipe';
 import { testInsertBrands } from '../../../../src/test/brand/test-brand-utils';
@@ -23,7 +23,7 @@ import {
   testGetMin,
 } from '../../../utils/test-end-to-end.utils';
 
-describe('ProductController (e2e) - get/products (activeBrands)', () => {
+describe('ProductController (e2e) - get/products (deletedCategories)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let brandRepo: Repository<Brand>;
@@ -58,12 +58,15 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
   });
 
   async function createTestScenario() {
-    const [categoryId1] = await testInsertCategories(categoryRepo, [
-      { name: 'Category 1', active: true },
-    ]);
-    const [brandId1, brandId2] = await testInsertBrands(brandRepo, [
+    const [categoryId1, categoryId2] = await testInsertCategories(
+      categoryRepo,
+      [
+        { name: 'Category 1', active: true },
+        { name: 'Category 2', active: true, deletedAt: new Date() },
+      ],
+    );
+    const [brandId1] = await testInsertBrands(brandRepo, [
       { name: 'Brand 1', active: true },
-      { name: 'Brand 2', active: false },
     ]);
     await testInsertProducts(productRepo, [
       {
@@ -73,8 +76,8 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
         price: 9.12,
         quantityInStock: 3,
         active: true,
-        categoryId: categoryId1,
         brandId: brandId1,
+        categoryId: categoryId1,
       },
       {
         code: 'C002',
@@ -83,8 +86,8 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
         price: 500,
         quantityInStock: 9,
         active: true,
-        categoryId: categoryId1,
-        brandId: brandId2,
+        brandId: brandId1,
+        categoryId: categoryId2,
       },
     ]);
   }
@@ -94,81 +97,91 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       await productRepo
         .createQueryBuilder(ProductConstants.PRODUCT)
         .leftJoinAndSelect(
+          ProductConstants.PRODUCT_BRAND,
+          ProductConstants.BRAND,
+        )
+        .withDeleted()
+        .leftJoinAndSelect(
           ProductConstants.PRODUCT_CATEGORY,
           ProductConstants.CATEGORY,
         )
         .leftJoinAndSelect(
-          ProductConstants.PRODUCT_BRAND,
-          ProductConstants.BRAND,
-        )
-        .leftJoinAndSelect(
           ProductConstants.PRODUCT_IMAGES,
-          ProductConstants.IMAGES,
+          ProductConstants.IMAGE,
         )
+        .withDeleted()
         .orderBy(ProductConstants.PRODUCT_NAME, SortConstants.ASC)
         .addOrderBy(ProductConstants.PRODUCT_ACTIVE, SortConstants.ASC)
         .getMany(),
     );
   }
 
-  async function findActiveBrandsProducts() {
+  async function findNotDeletedCategoriesProducts() {
     return objectToJSON(
       await productRepo
         .createQueryBuilder(ProductConstants.PRODUCT)
         .leftJoinAndSelect(
-          ProductConstants.PRODUCT_CATEGORY,
-          ProductConstants.CATEGORY,
-        )
-        .leftJoinAndSelect(
           ProductConstants.PRODUCT_BRAND,
           ProductConstants.BRAND,
         )
         .leftJoinAndSelect(
-          ProductConstants.PRODUCT_IMAGES,
-          ProductConstants.IMAGES,
+          ProductConstants.PRODUCT_CATEGORY,
+          ProductConstants.CATEGORY,
         )
-        .where(ProductConstants.BRAND_ACTIVE_EQUALS_TO, {
-          isActiveBrand: true,
+        .leftJoinAndSelect(
+          ProductConstants.PRODUCT_IMAGES,
+          ProductConstants.IMAGE,
+        )
+        .where(ProductConstants.PRODUCT_ACTIVE_EQUALS_TO, {
+          isActiveProduct: true,
         })
+        .andWhere(ProductConstants.CATEGORY_ACTIVE_EQUALS_TO, {
+          isActiveCategory: true,
+        })
+        .andWhere(ProductConstants.CATEGORY_DELETED_AT_IS_NULL)
         .orderBy(ProductConstants.PRODUCT_NAME, SortConstants.ASC)
         .addOrderBy(ProductConstants.PRODUCT_ACTIVE, SortConstants.ASC)
         .getMany(),
     );
   }
 
-  async function findInactiveBrandsProducts() {
+  async function findDeletedCategoriesProducts() {
     return objectToJSON(
       await productRepo
         .createQueryBuilder(ProductConstants.PRODUCT)
         .leftJoinAndSelect(
-          ProductConstants.PRODUCT_CATEGORY,
-          ProductConstants.CATEGORY,
-        )
-        .leftJoinAndSelect(
           ProductConstants.PRODUCT_BRAND,
           ProductConstants.BRAND,
+        )
+        .withDeleted()
+        .leftJoinAndSelect(
+          ProductConstants.PRODUCT_CATEGORY,
+          ProductConstants.CATEGORY,
         )
         .leftJoinAndSelect(
           ProductConstants.PRODUCT_IMAGES,
           ProductConstants.IMAGES,
         )
-        .where(ProductConstants.BRAND_ACTIVE_EQUALS_TO, {
-          isActiveBrand: false,
-        })
+        .withDeleted()
+        .where(ProductConstants.CATEGORY_DELETED_AT_IS_NOT_NULL)
         .orderBy(ProductConstants.PRODUCT_NAME, SortConstants.ASC)
         .addOrderBy(ProductConstants.PRODUCT_ACTIVE, SortConstants.ASC)
         .getMany(),
     );
   }
 
-  describe('active = "active"', () => {
-    it('should retrieve products when activeBrands = "active" and user is root', async () => {
+  describe('deleted = "not_deleted"', () => {
+    it('should retrieve products when deletedCategories = "not_deleted" and user is root', async () => {
       await createTestScenario();
-      const product = await findActiveBrandsProducts();
+      const products = await findNotDeletedCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: ActiveFilter.ACTIVE }) },
+        {
+          query: JSON.stringify({
+            deletedCategories: DeletedFilter.NOT_DELETED,
+          }),
+        },
         rootToken,
         HttpStatus.OK,
       );
@@ -178,17 +191,21 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
         page: PaginationConfigs.DEFAULT_PAGE,
         pageSize: PaginationConfigs.DEFAULT_PAGE_SIZE,
         orderBy: ProductConfigs.PRODUCT_DEFAULT_ORDER_BY,
-        results: product,
+        results: products,
       });
     });
 
-    it('should retrieve products when activeBrands = "active" and user is admin', async () => {
+    it('should retrieve products deletedCategories = "not_deleted" and user is admin', async () => {
       await createTestScenario();
-      const product = await findActiveBrandsProducts();
+      const product = await findNotDeletedCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: ActiveFilter.ACTIVE }) },
+        {
+          query: JSON.stringify({
+            deletedCategories: DeletedFilter.NOT_DELETED,
+          }),
+        },
         adminToken,
         HttpStatus.OK,
       );
@@ -202,13 +219,17 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should retrieve products when activeBrands = "active" and user is basic user', async () => {
+    it('should retrieve products when deletedCategories = "not_deleted" and user is basic user', async () => {
       await createTestScenario();
-      const product = await findActiveBrandsProducts();
+      const product = await findNotDeletedCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: ActiveFilter.ACTIVE }) },
+        {
+          query: JSON.stringify({
+            deletedCategories: DeletedFilter.NOT_DELETED,
+          }),
+        },
         userToken,
         HttpStatus.OK,
       );
@@ -222,13 +243,17 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should retrieve products when activeBrands = "active" and user is not authenticated', async () => {
+    it('should retrieve products when deletedCategories = "not_deleted" and user is not authenticated', async () => {
       await createTestScenario();
-      const product = await findActiveBrandsProducts();
+      const product = await findNotDeletedCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: ActiveFilter.ACTIVE }) },
+        {
+          query: JSON.stringify({
+            deletedCategories: DeletedFilter.NOT_DELETED,
+          }),
+        },
         null,
         HttpStatus.OK,
       );
@@ -243,14 +268,14 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
     });
   });
 
-  describe('active = "inactive"', () => {
-    it('should retrieve products when activeBrands = "inactive" and user is root', async () => {
+  describe('deleted = "deleted"', () => {
+    it('should retrieve products when deletedCategories = "deleted" and user is root', async () => {
       await createTestScenario();
-      const product = await findInactiveBrandsProducts();
+      const product = await findDeletedCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: ActiveFilter.INACTIVE }) },
+        { query: JSON.stringify({ deletedCategories: DeletedFilter.DELETED }) },
         rootToken,
         HttpStatus.OK,
       );
@@ -264,13 +289,13 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should retrieve products when activeBrands = "inactive" and user is admin', async () => {
+    it('should retrieve products when deletedCategories = "deleted" and user is admin', async () => {
       await createTestScenario();
-      const product = await findInactiveBrandsProducts();
+      const product = await findDeletedCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: ActiveFilter.INACTIVE }) },
+        { query: JSON.stringify({ deletedCategories: DeletedFilter.DELETED }) },
         adminToken,
         HttpStatus.OK,
       );
@@ -284,47 +309,47 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should not retrieve products when activeBrands = "inactive" and user is basic user', async () => {
+    it('should not retrieve products when deletedCategories = "deleted" and user is basic user', async () => {
       await createTestScenario();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: ActiveFilter.INACTIVE }) },
+        { query: JSON.stringify({ deletedCategories: DeletedFilter.DELETED }) },
         userToken,
         HttpStatus.UNAUTHORIZED,
       );
       expect(response).toEqual({
         error: ExceptionText.UNAUTHORIZED,
-        message: ProductMessage.PRIVATE_ACCESS,
+        message: ProductMessage.DELETED_ACCESS,
         statusCode: HttpStatus.UNAUTHORIZED,
       });
     });
 
-    it('should not retrieve products when activeBrands = "inactive" and user is not authenticated', async () => {
+    it('should not retrieve products when deletedCategories = "deleted" and user is not authenticated', async () => {
       await createTestScenario();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: ActiveFilter.INACTIVE }) },
+        { query: JSON.stringify({ deletedCategories: DeletedFilter.DELETED }) },
         null,
         HttpStatus.UNAUTHORIZED,
       );
       expect(response).toEqual({
         error: ExceptionText.UNAUTHORIZED,
-        message: ProductMessage.PRIVATE_ACCESS,
+        message: ProductMessage.DELETED_ACCESS,
         statusCode: HttpStatus.UNAUTHORIZED,
       });
     });
   });
 
-  describe('active = "all"', () => {
-    it('should retrieve products when active = "all" and user is root', async () => {
+  describe('deleted = "all"', () => {
+    it('should retrieve products when deletedCategories = "all" and user is root', async () => {
       await createTestScenario();
       const product = await findAllProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: ActiveFilter.ALL }) },
+        { query: JSON.stringify({ deletedCategories: DeletedFilter.ALL }) },
         rootToken,
         HttpStatus.OK,
       );
@@ -338,13 +363,13 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should retrieve products when active = "all" and user is admin', async () => {
+    it('should retrieve products when not_deleted = "all" and user is admin', async () => {
       await createTestScenario();
       const product = await findAllProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: ActiveFilter.ALL }) },
+        { query: JSON.stringify({ deletedCategories: DeletedFilter.ALL }) },
         adminToken,
         HttpStatus.OK,
       );
@@ -358,47 +383,47 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should not retrieve products when activeBrands = "all" and user is basic user', async () => {
+    it('should not retrieve products when deletedCategories = "all" and user is basic user', async () => {
       await createTestScenario();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: ActiveFilter.ALL }) },
+        { query: JSON.stringify({ deletedCategories: DeletedFilter.ALL }) },
         userToken,
         HttpStatus.UNAUTHORIZED,
       );
       expect(response).toEqual({
         error: ExceptionText.UNAUTHORIZED,
-        message: ProductMessage.PRIVATE_ACCESS,
+        message: ProductMessage.DELETED_ACCESS,
         statusCode: HttpStatus.UNAUTHORIZED,
       });
     });
 
-    it('should not retrieve products when activeBrands = "all" and user is not authenticated', async () => {
+    it('should not retrieve products when deletedCategories = "all" and user is not authenticated', async () => {
       await createTestScenario();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: ActiveFilter.ALL }) },
+        { query: JSON.stringify({ deletedCategories: DeletedFilter.ALL }) },
         null,
         HttpStatus.UNAUTHORIZED,
       );
       expect(response).toEqual({
         error: ExceptionText.UNAUTHORIZED,
-        message: ProductMessage.PRIVATE_ACCESS,
+        message: ProductMessage.DELETED_ACCESS,
         statusCode: HttpStatus.UNAUTHORIZED,
       });
     });
   });
 
-  describe('active = null', () => {
-    it('should retrieve products when activeBrands = null and user is root', async () => {
+  describe('deleted = null', () => {
+    it('should retrieve products when deletedCategories = null and user is root', async () => {
       await createTestScenario();
-      const product = await findActiveBrandsProducts();
+      const product = await findNotDeletedCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: null }) },
+        { query: JSON.stringify({ deletedCategories: null }) },
         rootToken,
         HttpStatus.OK,
       );
@@ -412,13 +437,13 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should retrieve products when activeBrands = null and user is admin', async () => {
+    it('should retrieve products when deletedCategories = null and user is admin', async () => {
       await createTestScenario();
-      const product = await findActiveBrandsProducts();
+      const product = await findNotDeletedCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: null }) },
+        { query: JSON.stringify({ deletedCategories: null }) },
         adminToken,
         HttpStatus.OK,
       );
@@ -432,13 +457,13 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should retrieve products when activeBrands = null and user is basic user', async () => {
+    it('should retrieve products when deletedCategories = null and user is basic user', async () => {
       await createTestScenario();
-      const product = await findActiveBrandsProducts();
+      const product = await findNotDeletedCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: null }) },
+        { query: JSON.stringify({ deletedCategories: null }) },
         userToken,
         HttpStatus.OK,
       );
@@ -452,13 +477,13 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should retrieve products when activeBrands = null and user is not authenticated', async () => {
+    it('should retrieve products when deletedCategories = null and user is not authenticated', async () => {
       await createTestScenario();
-      const product = await findActiveBrandsProducts();
+      const product = await findNotDeletedCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: null }) },
+        { query: JSON.stringify({ deletedCategories: null }) },
         null,
         HttpStatus.OK,
       );
@@ -473,14 +498,14 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
     });
   });
 
-  describe('active = undefined', () => {
-    it('should retrieve products when activeBrands = null and user is root', async () => {
+  describe('deleted = undefined', () => {
+    it('should retrieve products when deletedCategories = null and user is root', async () => {
       await createTestScenario();
-      const product = await findActiveBrandsProducts();
+      const product = await findNotDeletedCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: undefined }) },
+        { query: JSON.stringify({ deletedCategories: undefined }) },
         rootToken,
         HttpStatus.OK,
       );
@@ -494,13 +519,13 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should retrieve products when activeBrands = undefined and user is admin', async () => {
+    it('should retrieve products when deletedCategories = undefined and user is admin', async () => {
       await createTestScenario();
-      const product = await findActiveBrandsProducts();
+      const product = await findNotDeletedCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: undefined }) },
+        { query: JSON.stringify({ deletedCategories: undefined }) },
         adminToken,
         HttpStatus.OK,
       );
@@ -514,13 +539,13 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should retrieve products when activeBrands = undefined and user is basic user', async () => {
+    it('should retrieve products when deletedCategories = undefined and user is basic user', async () => {
       await createTestScenario();
-      const product = await findActiveBrandsProducts();
+      const product = await findNotDeletedCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: undefined }) },
+        { query: JSON.stringify({ deletedCategories: undefined }) },
         userToken,
         HttpStatus.OK,
       );
@@ -534,13 +559,13 @@ describe('ProductController (e2e) - get/products (activeBrands)', () => {
       });
     });
 
-    it('should retrieve products when activeBrands = undefined and user is not authenticated', async () => {
+    it('should retrieve products when deletedCategories = undefined and user is not authenticated', async () => {
       await createTestScenario();
-      const product = await findActiveBrandsProducts();
+      const product = await findNotDeletedCategoriesProducts();
       const response = await testGetMin(
         app,
         `/products`,
-        { query: JSON.stringify({ activeBrands: undefined }) },
+        { query: JSON.stringify({ deletedCategories: undefined }) },
         null,
         HttpStatus.OK,
       );

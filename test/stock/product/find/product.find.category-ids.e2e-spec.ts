@@ -33,7 +33,7 @@ import {
   testGetMin,
 } from '../../../utils/test-end-to-end.utils';
 
-describe('ProductController (e2e) - get/producs (categoryIds)', () => {
+describe('ProductController (e2e) - get/products (categoryIds)', () => {
   let app: INestApplication;
   let module: TestingModule;
   let brandRepo: Repository<Brand>;
