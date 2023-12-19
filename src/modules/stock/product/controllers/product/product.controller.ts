@@ -38,13 +38,17 @@ function checkPermissions(query: FindProductsRequestDTO, user: User) {
   ) {
     if (
       query.active == ActiveFilter.ALL ||
-      query.active == ActiveFilter.INACTIVE
+      query.active == ActiveFilter.INACTIVE ||
+      query.activeBrands == ActiveFilter.ALL ||
+      query.activeBrands == ActiveFilter.INACTIVE
     ) {
       throw new UnauthorizedException(ProductMessage.PRIVATE_ACCESS);
     }
     if (
       query.deleted == DeletedFilter.ALL ||
-      query.deleted == DeletedFilter.DELETED
+      query.deleted == DeletedFilter.DELETED ||
+      query.deletedBrands == DeletedFilter.ALL ||
+      query.deletedBrands == DeletedFilter.DELETED
     ) {
       throw new UnauthorizedException(ProductMessage.DELETED_ACCESS);
     }

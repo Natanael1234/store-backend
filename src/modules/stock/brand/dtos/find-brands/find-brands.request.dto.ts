@@ -23,7 +23,7 @@ export class FindBrandsRequestDTO {
    *
    * @example "all"
    */
-  @Active()
+  @Active('active')
   active?: ActiveFilter;
 
   /**
@@ -31,7 +31,7 @@ export class FindBrandsRequestDTO {
    *
    * @example "not_deleted"
    */
-  @Deleted()
+  @Deleted('deleted')
   deleted?: DeletedFilter;
 
   /**

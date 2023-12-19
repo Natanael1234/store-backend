@@ -41,13 +41,20 @@ export class ProductConstants {
   static readonly PRODUCT_NAME_LIKE_TEXT_QUERY = `LOWER(product.name) LIKE :textQuery`;
   static readonly PRODUCT_ACTIVE_EQUALS_TO =
     'product.active = :isActiveProduct';
-  static readonly PRODUCT_BRAND_ACTIVE_EQUALS_TO =
-    'brand.active = :isActiveBrand';
-  static readonly PRODUCT_CATEGORY_ACTIVE_EQUALS_TO =
-    'category.active = :isActiveCategory';
+
   static readonly PRODUCT_DELETED_AT_IS_NOT_NULL =
     'product.deletedAt IS NOT NULL';
   static readonly PRODUCT_DELETED_AT_IS_NULL = 'product.deletedAt IS NULL';
+
+  static readonly BRAND_ACTIVE_EQUALS_TO = 'brand.active = :isActiveBrand';
+  static readonly BRAND_DELETED_AT_IS_NOT_NULL = 'brand.deletedAt IS NOT NULL';
+  static readonly BRAND_DELETED_AT_IS_NULL = 'brand.deletedAt IS NULL';
+
+  static readonly CATEGORY_ACTIVE_EQUALS_TO =
+    'category.active = :isActiveCategory';
+  static readonly CATEGORY_DELETED_AT_IS_NOT_NULL =
+    'category.deletedAt IS NOT NULL';
+  static readonly CATEGORY_DELETED_AT_IS_NULL = 'category.deletedAt IS NULL';
 
   static readonly IMAGE_MAIN_EQUALS_TO = 'image.main = :main';
 }

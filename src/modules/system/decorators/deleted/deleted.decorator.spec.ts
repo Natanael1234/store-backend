@@ -16,7 +16,7 @@ describe('Deleted decorator', () => {
     expected: { deleted?: 'all' | 'deleted' | 'not_deleted' },
   ) {
     class Clazz {
-      @Deleted() deleted: DeletedFilter;
+      @Deleted('deleted') deleted: DeletedFilter;
     }
 
     const errors = await validateFirstError(data, Clazz);
@@ -27,7 +27,7 @@ describe('Deleted decorator', () => {
 
   async function testReject(data: { deleted?: DeletedFilter }, constraints) {
     class Clazz {
-      @Deleted() deleted: DeletedFilter;
+      @Deleted('deleted') deleted: DeletedFilter;
     }
     const errors = await validateFirstError(data, Clazz);
     expect(errors).toHaveLength(1);

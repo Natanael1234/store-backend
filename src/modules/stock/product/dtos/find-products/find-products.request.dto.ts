@@ -24,16 +24,32 @@ export class FindProductsRequestDTO {
    *
    * @example "all"
    */
-  @Active()
+  @Active('active')
   active?: ActiveFilter;
+
+  /**
+   * Active brand state filter. "active" by default.
+   *
+   * @example "all"
+   */
+  @Active('active brands')
+  activeBrands?: ActiveFilter;
 
   /**
    * Deleted state filter. "not_deleted" by default.
    *
    * @example "not_deleted"
    */
-  @Deleted()
+  @Deleted('deleted')
   deleted?: DeletedFilter;
+
+  /**
+   * Deleted brand state filter. "not_deleted" by default.
+   *
+   * @example "not_deleted"
+   */
+  @Deleted('deleted brands')
+  deletedBrands?: DeletedFilter;
 
   /**
    * Brands ids filter.
