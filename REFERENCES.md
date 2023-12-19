@@ -36,7 +36,7 @@ https://github.com/jmcdo29/testing-nestjs
 
 https://docs.nestjs.com/recipes/documentation
 
-# minio (storage)
+# minio (cloud storage)
 
 http://www.sefidian.com/2022/04/08/deploy-standalone-minio-using-docker-compose/
 https://github.com/minio/minio-js#readme
